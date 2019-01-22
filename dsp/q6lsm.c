@@ -1944,8 +1944,8 @@ static int q6lsm_snd_cal_free(struct lsm_client *client,
 					__func__, rc);
 		cal->mem_map_handle = 0;
 	}
-	msm_audio_ion_free(cal->dma_buf);
-	cal->dma_buf = NULL;
+	msm_audio_ion_free(cal->mem_handle);
+	cal->mem_handle = NULL;
 	cal->data = NULL;
 	cal->phys = 0;
 	mutex_unlock(&client->cmd_lock);
@@ -2006,12 +2006,12 @@ static int q6lsm_snd_cal_alloc(struct lsm_client *client,
 	pr_debug("%s: cal info data size %zd Total mem %zd, stage_idx %d\n",
 		 __func__, len, total_mem, stage_idx);
 
-	rc = msm_audio_ion_alloc(&cal->dma_buf, total_mem,
+	rc = msm_audio_ion_alloc(&cal->mem_handle, total_mem,
 			&cal->phys, &len, &cal->data);
 	if (rc) {
 		pr_err("%s: Audio ION alloc is failed for stage_idx %d, rc = %d\n",
 			__func__, stage_idx, rc);
-		cal->dma_buf = NULL;
+		cal->mem_handle = NULL;
 		cal->data = NULL;
 		goto exit;
 	}
@@ -2071,8 +2071,8 @@ int q6lsm_snd_model_buf_free(struct lsm_client *client,
 				__func__, rc);
 		sm->mem_map_handle = 0;
 	}
-	msm_audio_ion_free(sm->dma_buf);
-	sm->dma_buf = NULL;
+	msm_audio_ion_free(sm->mem_handle);
+	sm->mem_handle = NULL;
 	sm->data = NULL;
 	sm->phys = 0;
 	mutex_unlock(&client->cmd_lock);
@@ -2237,8 +2237,8 @@ int q6lsm_snd_model_buf_alloc(struct lsm_client *client, size_t len,
 		total_mem = PAGE_ALIGN(len);
 		pr_debug("%s: sm param size %zd Total mem %zd, stage_idx %d\n",
 				 __func__, len, total_mem, stage_idx);
-		rc = msm_audio_ion_alloc(&sm->dma_buf, total_mem,
-					 &sm->phys, &len, &sm->data);
+		rc = msm_audio_ion_alloc(&sm->mem_handle, total_mem,
+								&sm->phys, &len, &sm->data);
 		if (rc) {
 			pr_err("%s: Audio ION alloc is failed, rc = %d, stage_idx = %d\n",
 				__func__, rc, stage_idx);
@@ -2876,7 +2876,7 @@ int q6lsm_lab_buffer_alloc(struct lsm_client *client, bool alloc)
 				out_params->period_count);
 			return -ENOMEM;
 		}
-		ret = msm_audio_ion_alloc(&client->lab_buffer[0].dma_buf,
+		ret = msm_audio_ion_alloc(&client->lab_buffer[0].mem_handle,
 			allocate_size, &client->lab_buffer[0].phys,
 			&len,
 			&client->lab_buffer[0].data);
@@ -2891,7 +2891,7 @@ int q6lsm_lab_buffer_alloc(struct lsm_client *client, bool alloc)
 				pr_err("%s: memory map filed ret %d size %zd\n",
 					__func__, ret, len);
 				msm_audio_ion_free(
-				client->lab_buffer[0].dma_buf);
+				client->lab_buffer[0].mem_handle);
 			}
 		}
 		if (ret) {
@@ -2923,7 +2923,7 @@ int q6lsm_lab_buffer_alloc(struct lsm_client *client, bool alloc)
 		ret = q6lsm_memory_unmap_regions(client,
 			client->lab_buffer[0].mem_map_handle);
 		if (!ret)
-			msm_audio_ion_free(client->lab_buffer[0].dma_buf);
+			msm_audio_ion_free(client->lab_buffer[0].mem_handle);
 		else
 			pr_err("%s: unmap failed not freeing memory\n",
 			__func__);

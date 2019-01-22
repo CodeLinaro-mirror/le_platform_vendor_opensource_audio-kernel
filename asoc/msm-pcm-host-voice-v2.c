@@ -114,7 +114,7 @@ struct session {
 	struct tap_point rx_tap_point;
 	phys_addr_t sess_paddr;
 	void *sess_kvaddr;
-	struct dma_buf *dma_buf;
+	void *mem_handle;
 	struct mem_map_table tp_mem_table;
 };
 
@@ -446,10 +446,10 @@ static void hpcm_free_allocated_mem(struct hpcm_drv *prtd)
 	paddr = sess->sess_paddr;
 
 	if (paddr) {
-		msm_audio_ion_free(sess->dma_buf);
-		sess->dma_buf = NULL;
-		msm_audio_ion_free(sess->tp_mem_table.dma_buf);
-		sess->tp_mem_table.dma_buf = NULL;
+		msm_audio_ion_free(sess->mem_handle);
+		sess->mem_handle = NULL;
+		msm_audio_ion_free(sess->tp_mem_table.mem_handle);
+		sess->tp_mem_table.mem_handle = NULL;
 		sess->sess_paddr = 0;
 		sess->sess_kvaddr = 0;
 
@@ -518,7 +518,7 @@ static int hpcm_allocate_shared_memory(struct hpcm_drv *prtd)
 	txtp = &sess->tx_tap_point;
 	rxtp = &sess->rx_tap_point;
 
-	result = msm_audio_ion_alloc(&sess->dma_buf,
+	result = msm_audio_ion_alloc(&sess->mem_handle,
 				     VHPCM_BLOCK_SIZE,
 				     &sess->sess_paddr,
 				     &mem_len,
@@ -534,7 +534,7 @@ static int hpcm_allocate_shared_memory(struct hpcm_drv *prtd)
 	pr_debug("%s: Host PCM memory block allocated\n", __func__);
 
 	/* Allocate mem_map_table for tap point */
-	result = msm_audio_ion_alloc(&sess->tp_mem_table.dma_buf,
+	result = msm_audio_ion_alloc(&sess->tp_mem_table.mem_handle,
 			sizeof(struct vss_imemory_table_t),
 			&sess->tp_mem_table.phys,
 			&len,
@@ -543,8 +543,8 @@ static int hpcm_allocate_shared_memory(struct hpcm_drv *prtd)
 	if (result) {
 		pr_err("%s: msm_audio_ion_alloc error, rc = %d\n",
 			__func__, result);
-		msm_audio_ion_free(sess->dma_buf);
-		sess->dma_buf = NULL;
+		msm_audio_ion_free(sess->mem_handle);
+		sess->mem_handle = NULL;
 		sess->sess_paddr = 0;
 		sess->sess_kvaddr = 0;
 		ret = -ENOMEM;
