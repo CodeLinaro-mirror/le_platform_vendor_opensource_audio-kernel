@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef __QDSP6VOICE_H__
 #define __QDSP6VOICE_H__
@@ -153,7 +153,7 @@ struct mem_buffer {
 };
 
 struct share_mem_buf {
-	struct dma_buf		*dma_buf;
+	void			*mem_handle;
 	struct mem_buffer	buf[NUM_OF_BUFFERS];
 };
 
@@ -161,7 +161,7 @@ struct mem_map_table {
 	dma_addr_t		phys;
 	void			*data;
 	size_t			size; /* size of buffer */
-	struct dma_buf		*dma_buf;
+	void			*mem_handle;
 };
 
 /* Common */

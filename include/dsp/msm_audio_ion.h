@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2013-2015, 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2015, 2017-2020, 2024 The Linux Foundation. All rights reserved.
  */
 
 #ifndef _LINUX_MSM_AUDIO_ION_H
@@ -15,17 +15,17 @@ enum {
 	MSM_AUDIO_ION_CLEAN_CACHES,
 };
 
-int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
+int msm_audio_ion_alloc(void **handle, size_t bufsz,
 			dma_addr_t *paddr, size_t *pa_len, void **vaddr);
 
-int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
+int msm_audio_ion_import(void **handle, int fd,
 			unsigned long *ionflag, size_t bufsz,
 			dma_addr_t *paddr, size_t *pa_len, void **vaddr);
-int msm_audio_ion_free(struct dma_buf *dma_buf);
-int msm_audio_ion_import_cma(struct dma_buf **dma_buf, int fd,
+int msm_audio_ion_free(void *handle);
+int msm_audio_ion_import_cma(void **handle, int fd,
 			     unsigned long *ionflag, size_t bufsz,
 			     dma_addr_t *paddr, size_t *pa_len, void **vaddr);
-int msm_audio_ion_free_cma(struct dma_buf *dma_buf);
+int msm_audio_ion_free_cma(void *handle);
 int msm_audio_ion_mmap(struct audio_buffer *abuff, struct vm_area_struct *vma);
 int msm_audio_ion_cache_operations(struct audio_buffer *abuff, int cache_op);
 

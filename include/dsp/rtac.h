@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2011, 2013-2015, 2017-2019, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __RTAC_H__
@@ -30,7 +30,7 @@ enum {
 struct rtac_cal_mem_map_data {
 	uint32_t		map_size;
 	uint32_t		map_handle;
-	struct dma_buf		*dma_buf;
+	void			*mem_handle;
 };
 
 struct rtac_cal_data {

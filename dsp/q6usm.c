@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019, 2024 The Linux Foundation. All rights reserved.
  */
 #include <linux/mutex.h>
 #include <linux/wait.h>
@@ -201,13 +201,13 @@ static int q6usm_us_client_buf_free(unsigned int dir,
 	pr_debug("%s: data[%pK]phys[%llx][%pK]\n", __func__,
 		 (void *)port->data, (u64)port->phys, (void *)&port->phys);
 
-	msm_audio_ion_free(port->dma_buf);
+	msm_audio_ion_free(port->mem_handle);
 
 	port->data = NULL;
 	port->phys = 0;
 	port->buf_size = 0;
 	port->buf_cnt = 0;
-	port->dma_buf = NULL;
+	port->mem_handle = NULL;
 
 	mutex_unlock(&usc->cmd_lock);
 	return rc;
@@ -241,12 +241,12 @@ int q6usm_us_param_buf_free(unsigned int dir,
 		 (void *)port->param_buf, (u64)port->param_phys,
 		 (void *)&port->param_phys);
 
-	msm_audio_ion_free(port->param_dma_buf);
+	msm_audio_ion_free(port->param_mem_handle);
 
 	port->param_buf = NULL;
 	port->param_phys = 0;
 	port->param_buf_size = 0;
-	port->param_dma_buf = NULL;
+	port->param_mem_handle = NULL;
 
 	mutex_unlock(&usc->cmd_lock);
 	return rc;
@@ -388,7 +388,7 @@ int q6usm_us_client_buf_alloc(unsigned int dir,
 	/* The size to allocate should be multiple of 4K bytes */
 	size = PAGE_ALIGN(size);
 
-	rc = msm_audio_ion_alloc(&port->dma_buf,
+	rc = msm_audio_ion_alloc(&port->mem_handle,
 		size, &port->phys,
 		&len, &port->data);
 
@@ -453,7 +453,7 @@ int q6usm_us_param_buf_alloc(unsigned int dir,
 	/* The size to allocate should be multiple of 4K bytes */
 	size = PAGE_ALIGN(size);
 
-	rc = msm_audio_ion_alloc(&port->param_dma_buf,
+	rc = msm_audio_ion_alloc(&port->param_mem_handle,
 		size, &port->param_phys,
 		&len, &port->param_buf);
 
@@ -737,7 +737,7 @@ uint32_t q6usm_get_virtual_address(int dir,
 		ab.used = 1;
 		ab.size = size;
 		ab.actual_size = size;
-		ab.dma_buf = port->dma_buf;
+		ab.mem_handle = port->mem_handle;
 
 		ret = msm_audio_ion_mmap(&ab, vms);
 

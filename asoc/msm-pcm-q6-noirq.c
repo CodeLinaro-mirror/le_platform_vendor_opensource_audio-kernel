@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -498,7 +498,7 @@ static int msm_pcm_mmap_fd(struct snd_pcm_substream *substream,
 	 * This was the flag used by previous internal wrapper API, which
 	 * used to call dma_buf_fd internally.
 	 */
-	mmap_fd->fd = dma_buf_fd(ab->dma_buf, O_CLOEXEC);
+	mmap_fd->fd = dma_buf_fd(ab->mem_handle, O_CLOEXEC);
 	if (mmap_fd->fd < 0) {
 		pr_err("%s: dma_buf_fd failed, fd:%d\n",
 			__func__, mmap_fd->fd);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/fs.h>
@@ -451,12 +451,12 @@ static void delete_cal_block(struct cal_block_data *cal_block)
 	cal_block->client_info = NULL;
 	kfree(cal_block->cal_info);
 	cal_block->cal_info = NULL;
-	if (cal_block->map_data.dma_buf  != NULL) {
+	if (cal_block->map_data.mem_handle  != NULL) {
 		if (cal_block->cma_mem)
-			msm_audio_ion_free_cma(cal_block->map_data.dma_buf);
+			msm_audio_ion_free_cma(cal_block->map_data.mem_handle);
 		else
-			msm_audio_ion_free(cal_block->map_data.dma_buf);
-		cal_block->map_data.dma_buf = NULL;
+			msm_audio_ion_free(cal_block->map_data.mem_handle);
+		cal_block->map_data.mem_handle = NULL;
 	}
 	kfree(cal_block);
 done:
@@ -615,14 +615,14 @@ static int cal_block_ion_alloc(struct cal_block_data *cal_block)
 	}
 
 	if (cal_block->cma_mem) {
-		ret = msm_audio_ion_import_cma(&cal_block->map_data.dma_buf,
+		ret = msm_audio_ion_import_cma(&cal_block->map_data.mem_handle,
 			cal_block->map_data.ion_map_handle,
 			NULL, 0,
 			&cal_block->cal_data.paddr,
 			&cal_block->map_data.map_size,
 			&cal_block->cal_data.kvaddr);
 	} else {
-		ret = msm_audio_ion_import(&cal_block->map_data.dma_buf,
+		ret = msm_audio_ion_import(&cal_block->map_data.mem_handle,
 			cal_block->map_data.ion_map_handle,
 			NULL, 0,
 			&cal_block->cal_data.paddr,
@@ -756,10 +756,10 @@ static int realloc_memory(struct cal_block_data *cal_block)
 	int ret = 0;
 
 	if (cal_block->cma_mem)
-		msm_audio_ion_free_cma(cal_block->map_data.dma_buf);
+		msm_audio_ion_free_cma(cal_block->map_data.mem_handle);
 	else
-		msm_audio_ion_free(cal_block->map_data.dma_buf);
-	cal_block->map_data.dma_buf = NULL;
+		msm_audio_ion_free(cal_block->map_data.mem_handle);
+	cal_block->map_data.mem_handle = NULL;
 	cal_block->cal_data.size = 0;
 
 	ret = cal_block_ion_alloc(cal_block);
