@@ -3391,8 +3391,19 @@ static struct platform_driver mdm_asoc_machine_driver = {
 	.remove = mdm_asoc_machine_remove,
 };
 
+static int __init mdm_soc_platform_init(void)
+{
+	platform_driver_register(&mdm_asoc_machine_driver);
+	return 0;
+}
 
-module_platform_driver(mdm_asoc_machine_driver);
+static void mdm_soc_platform_exit(void)
+{
+	platform_driver_unregister(&mdm_asoc_machine_driver);
+}
+
+module_init(mdm_soc_platform_init);
+module_exit(mdm_soc_platform_exit);
 
 MODULE_DESCRIPTION("ALSA SoC msm");
 MODULE_LICENSE("GPL");
