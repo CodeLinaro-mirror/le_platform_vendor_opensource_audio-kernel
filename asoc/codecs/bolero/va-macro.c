@@ -57,9 +57,14 @@
 #define VA_MACRO_CHILD_DEVICES_MAX 3
 
 static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
-static int va_tx_unmute_delay = BOLERO_CDC_VA_TX_DMIC_UNMUTE_DELAY_MS;
-module_param(va_tx_unmute_delay, int, 0664);
-MODULE_PARM_DESC(va_tx_unmute_delay, "delay to unmute the tx path");
+
+static int va_tx_amic_unmute_delay = BOLERO_CDC_VA_TX_AMIC_UNMUTE_DELAY_MS;
+module_param(va_tx_amic_unmute_delay, int, 0664);
+MODULE_PARM_DESC(va_tx_amic_unmute_delay, "delay to unmute the tx amic path");
+
+static int va_tx_dmic_unmute_delay = BOLERO_CDC_VA_TX_DMIC_UNMUTE_DELAY_MS;
+module_param(va_tx_dmic_unmute_delay, int, 0664);
+MODULE_PARM_DESC(va_tx_dmic_unmute_delay, "delay to unmute the tx dmic path");
 
 static int va_macro_core_vote(void *handle, bool enable);
 
@@ -1210,11 +1215,14 @@ static int va_macro_enable_dec(struct snd_soc_dapm_widget *w,
 					    TX_HPF_CUT_OFF_FREQ_MASK,
 					    CF_MIN_3DB_150HZ << 5);
 		}
-		if (is_amic_enabled(component, decimator) < BOLERO_ADC_MAX) {
+		if (is_amic_enabled(component, decimator)) {
 			hpf_delay = BOLERO_CDC_VA_TX_AMIC_HPF_DELAY_MS;
 			unmute_delay = BOLERO_CDC_VA_TX_AMIC_UNMUTE_DELAY_MS;
-			if (va_tx_unmute_delay < unmute_delay)
-				va_tx_unmute_delay = unmute_delay;
+			if (unmute_delay < va_tx_amic_unmute_delay)
+				unmute_delay = va_tx_amic_unmute_delay;
+		} else {
+			if (unmute_delay < va_tx_dmic_unmute_delay)
+				unmute_delay = va_tx_dmic_unmute_delay;
 		}
 		snd_soc_component_update_bits(component,
 				hpf_gate_reg, 0x03, 0x02);
@@ -1234,7 +1242,7 @@ static int va_macro_enable_dec(struct snd_soc_dapm_widget *w,
 		/* schedule work queue to Remove Mute */
 		queue_delayed_work(system_freezable_wq,
 				   &va_priv->va_mute_dwork[decimator].dwork,
-				   msecs_to_jiffies(va_tx_unmute_delay));
+				   msecs_to_jiffies(unmute_delay));
 		if (va_priv->va_hpf_work[decimator].hpf_cut_off_freq !=
 							CF_MIN_3DB_150HZ)
 			queue_delayed_work(system_freezable_wq,
@@ -3211,13 +3219,13 @@ static int va_macro_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "%s: register macro failed\n", __func__);
 		goto reg_macro_fail;
 	}
-	if (is_used_va_swr_gpio)
-		schedule_work(&va_priv->va_macro_add_child_devices_work);
 	pm_runtime_set_autosuspend_delay(&pdev->dev, VA_AUTO_SUSPEND_DELAY);
 	pm_runtime_use_autosuspend(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
 	pm_suspend_ignore_children(&pdev->dev, true);
 	pm_runtime_enable(&pdev->dev);
+	if (is_used_va_swr_gpio)
+		schedule_work(&va_priv->va_macro_add_child_devices_work);
 	return ret;
 
 reg_macro_fail:

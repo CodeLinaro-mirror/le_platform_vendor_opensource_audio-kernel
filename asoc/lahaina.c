@@ -31,8 +31,10 @@
 #include "asoc/msm-cdc-pinctrl.h"
 #include "asoc/wcd-mbhc-v2.h"
 #include "codecs/wcd938x/wcd938x-mbhc.h"
+#include "codecs/wcd937x/wcd937x-mbhc.h"
 #include "codecs/wsa883x/wsa883x.h"
 #include "codecs/wcd938x/wcd938x.h"
+#include "codecs/wcd937x/wcd937x.h"
 #include "codecs/bolero/bolero-cdc.h"
 #include <dt-bindings/sound/audio-codec-port-types.h>
 #include "codecs/bolero/wsa-macro.h"
@@ -826,6 +828,40 @@ static SOC_ENUM_SINGLE_EXT_DECL(va_cdc_dma_tx_0_sample_rate,
 static SOC_ENUM_SINGLE_EXT_DECL(va_cdc_dma_tx_1_sample_rate,
 				cdc_dma_sample_rate_text);
 static SOC_ENUM_SINGLE_EXT_DECL(va_cdc_dma_tx_2_sample_rate,
+				cdc_dma_sample_rate_text);
+
+/* WCD9370 */
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_0_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_1_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_2_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_3_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_5_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_0_sample_rate,
+				cdc80_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_1_sample_rate,
+				cdc80_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_2_sample_rate,
+				cdc80_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_3_sample_rate,
+				cdc80_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc70_dma_rx_5_sample_rate,
+				cdc80_dma_sample_rate_text);
+
+/* WCD9375 */
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_0_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_1_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_2_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_3_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_5_format, bit_format_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_0_sample_rate,
+				cdc_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_1_sample_rate,
+				cdc_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_2_sample_rate,
+				cdc_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_3_sample_rate,
+				cdc_dma_sample_rate_text);
+static SOC_ENUM_SINGLE_EXT_DECL(rx_cdc75_dma_rx_5_sample_rate,
 				cdc_dma_sample_rate_text);
 
 /* WCD9380 */
@@ -3769,6 +3805,72 @@ static const struct snd_kcontrol_new msm_int_snd_controls[] = {
 			cdc_dma_tx_sample_rate_put),
 };
 
+static const struct snd_kcontrol_new msm_int_wcd9370_snd_controls[] = {
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_0 Format", rx_cdc70_dma_rx_0_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_1 Format", rx_cdc70_dma_rx_1_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_2 Format", rx_cdc70_dma_rx_2_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_3 Format", rx_cdc70_dma_rx_3_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_5 Format", rx_cdc70_dma_rx_5_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_0 SampleRate",
+			rx_cdc70_dma_rx_0_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_1 SampleRate",
+			rx_cdc70_dma_rx_1_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_2 SampleRate",
+			rx_cdc70_dma_rx_2_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_3 SampleRate",
+			rx_cdc70_dma_rx_3_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_5 SampleRate",
+			rx_cdc70_dma_rx_5_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+};
+
+static const struct snd_kcontrol_new msm_int_wcd9375_snd_controls[] = {
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_0 Format", rx_cdc75_dma_rx_0_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_1 Format", rx_cdc75_dma_rx_1_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_2 Format", rx_cdc75_dma_rx_2_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_3 Format", rx_cdc75_dma_rx_3_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_5 Format", rx_cdc75_dma_rx_5_format,
+			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_0 SampleRate",
+			rx_cdc75_dma_rx_0_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_1 SampleRate",
+			rx_cdc75_dma_rx_1_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_2 SampleRate",
+			rx_cdc75_dma_rx_2_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_3 SampleRate",
+			rx_cdc75_dma_rx_3_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+	SOC_ENUM_EXT("RX_CDC_DMA_RX_5 SampleRate",
+			rx_cdc75_dma_rx_5_sample_rate,
+			cdc_dma_rx_sample_rate_get,
+			cdc_dma_rx_sample_rate_put),
+};
+
 static const struct snd_kcontrol_new msm_int_wcd9380_snd_controls[] = {
 	SOC_ENUM_EXT("RX_CDC_DMA_RX_0 Format", rx_cdc80_dma_rx_0_format,
 			cdc_dma_rx_format_get, cdc_dma_rx_format_put),
@@ -4934,6 +5036,7 @@ static void lahaina_tdm_snd_shutdown(struct snd_pcm_substream *substream)
 	}
 }
 
+#ifndef CONFIG_AUXPCM_DISABLE
 static int lahaina_aux_snd_startup(struct snd_pcm_substream *substream)
 {
 	int ret = 0;
@@ -4995,6 +5098,7 @@ static void lahaina_aux_snd_shutdown(struct snd_pcm_substream *substream)
 		}
 	}
 }
+#endif
 
 static int msm_snd_cdc_dma_startup(struct snd_pcm_substream *substream)
 {
@@ -5099,8 +5203,14 @@ static void set_cps_config(struct snd_soc_pcm_runtime *rtd,
 		/* bits 24:27 carry read length in bytes */
 		val |= 1 << 24;
 
+		/* bits 16:19 carry command id */
+		val |= (i*2) << 16;
+
 		/* Update dev num in packed reg addr */
 		pdata->cps_config.spkr_dep_cfg[i].vbatt_pkd_reg_addr |= val;
+
+		val &= 0xFF0FFFF;
+		val |= ((i*2)+1) << 16;
 		pdata->cps_config.spkr_dep_cfg[i].temp_pkd_reg_addr |= val;
 		i++;
 		ch_configured++;
@@ -5474,10 +5584,12 @@ err:
 	return ret;
 }
 
+#ifndef CONFIG_AUXPCM_DISABLE
 static struct snd_soc_ops lahaina_aux_be_ops = {
 	.startup = lahaina_aux_snd_startup,
 	.shutdown = lahaina_aux_snd_shutdown
 };
+#endif
 
 static struct snd_soc_ops lahaina_tdm_be_ops = {
 	.hw_params = lahaina_tdm_snd_hw_params,
@@ -6766,6 +6878,7 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 	},
 };
 
+#ifndef CONFIG_AUXPCM_DISABLE
 static struct snd_soc_dai_link msm_auxpcm_be_dai_links[] = {
 	/* Primary AUX PCM Backend DAI Links */
 	{
@@ -6908,6 +7021,7 @@ static struct snd_soc_dai_link msm_auxpcm_be_dai_links[] = {
 		SND_SOC_DAILINK_REG(sen_auxpcm_tx),
 	},
 };
+#endif
 
 static struct snd_soc_dai_link msm_wsa_cdc_dma_be_dai_links[] = {
 	/* WSA CDC DMA Backend DAI Links */
@@ -7134,7 +7248,9 @@ static struct snd_soc_dai_link msm_lahaina_dai_links[
 			ARRAY_SIZE(msm_common_misc_fe_dai_links) +
 			ARRAY_SIZE(msm_common_be_dai_links) +
 			ARRAY_SIZE(msm_mi2s_be_dai_links) +
+#ifndef CONFIG_AUXPCM_DISABLE
 			ARRAY_SIZE(msm_auxpcm_be_dai_links) +
+#endif
 			ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
 			ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links) +
 			ARRAY_SIZE(msm_va_cdc_dma_be_dai_links) +
@@ -7393,6 +7509,7 @@ static int msm_snd_card_late_probe(struct snd_soc_card *card)
 	struct msm_asoc_mach_data *pdata;
 	int ret = 0;
 	void *mbhc_calibration;
+	bool is_wcd937x = false;
 
 	pdata = snd_soc_card_get_drvdata(card);
 	if (!pdata)
@@ -7411,15 +7528,23 @@ static int msm_snd_card_late_probe(struct snd_soc_card *card)
 
 	component = snd_soc_rtdcom_lookup(rtd, WCD938X_DRV_NAME);
 	if (!component) {
-		pr_err("%s component is NULL\n", __func__);
-		return -EINVAL;
+		component = snd_soc_rtdcom_lookup(rtd, WCD937X_DRV_NAME);
+		if (!component) {
+			pr_err("%s component is NULL\n", __func__);
+			return -EINVAL;
+		} else {
+			is_wcd937x = true;
+		}
 	}
 
 	mbhc_calibration = def_wcd_mbhc_cal();
 	if (!mbhc_calibration)
 		return -ENOMEM;
 	wcd_mbhc_cfg.calibration = mbhc_calibration;
-	ret = wcd938x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
+	if (!is_wcd937x)
+		ret = wcd938x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
+	else
+		ret = wcd937x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
 	if (ret) {
 		dev_err(component->dev, "%s: mbhc hs detect failed, err:%d\n",
 			__func__, ret);
@@ -7441,7 +7566,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	int total_links = 0;
 	int rc = 0;
 	u32 mi2s_audio_intf = 0;
-	u32 auxpcm_audio_intf = 0;
 	u32 val = 0;
 	u32 wcn_btfm_intf = 0;
 	const struct of_device_id *match;
@@ -7526,15 +7650,15 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					ARRAY_SIZE(msm_mi2s_be_dai_links);
 			}
 		}
-
+#ifndef CONFIG_AUXPCM_DISABLE
 		rc = of_property_read_u32(dev->of_node,
 					  "qcom,auxpcm-audio-intf",
-					  &auxpcm_audio_intf);
+					  &val);
 		if (rc) {
 			dev_dbg(dev, "%s: No DT match Aux PCM interface\n",
 				__func__);
 		} else {
-			if (auxpcm_audio_intf) {
+			if (val) {
 				memcpy(msm_lahaina_dai_links + total_links,
 					msm_auxpcm_be_dai_links,
 					sizeof(msm_auxpcm_be_dai_links));
@@ -7542,6 +7666,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					ARRAY_SIZE(msm_auxpcm_be_dai_links);
 			}
 		}
+#endif
 
 #if IS_ENABLED(CONFIG_AUDIO_QGKI)
 		rc = of_property_read_u32(dev->of_node,
@@ -7676,6 +7801,7 @@ static int msm_int_wsa_init(struct snd_soc_pcm_runtime *rtd)
 static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_component *component = NULL;
+	struct snd_soc_component *bolero_component = NULL;
 	struct snd_soc_dapm_context *dapm = NULL;
 	int ret = 0;
 	int codec_variant = -1;
@@ -7692,6 +7818,8 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 		pr_err("%s: could not find component for bolero_codec\n",
 			__func__);
 		return ret;
+	} else {
+		bolero_component = component;
 	}
 
 	dapm = snd_soc_component_get_dapm(component);
@@ -7738,13 +7866,6 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 
 	card = rtd->card->snd_card;
 
-	if (strnstr(rtd->card->name, "shima", strlen(rtd->card->name)) != NULL)
-		bolero_set_port_map(component, ARRAY_SIZE(sm_port_map_shima),
-				sm_port_map_shima);
-	else
-		bolero_set_port_map(component, ARRAY_SIZE(sm_port_map),
-				sm_port_map);
-
 	if (!pdata->codec_root) {
 		entry = msm_snd_info_create_subdir(card->module, "codecs",
 						 card->proc_root);
@@ -7764,8 +7885,11 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 	}
 	component = snd_soc_rtdcom_lookup(rtd, WCD938X_DRV_NAME);
 	if (!component) {
-		pr_err("%s component is NULL\n", __func__);
-		return -EINVAL;
+		component = snd_soc_rtdcom_lookup(rtd, WCD937X_DRV_NAME);
+		if (!component) {
+			pr_err("%s component is NULL\n", __func__);
+			return -EINVAL;
+		}
 	}
 	dapm = snd_soc_component_get_dapm(component);
 	card = component->card->snd_card;
@@ -7780,18 +7904,51 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 	snd_soc_dapm_ignore_suspend(dapm, "AMIC4");
 	snd_soc_dapm_sync(dapm);
 
-	wcd938x_info_create_codec_entry(pdata->codec_root, component);
+	if (!strncmp(component->driver->name, WCD937X_DRV_NAME,
+	    strlen(WCD937X_DRV_NAME))) {
+		wcd937x_info_create_codec_entry(pdata->codec_root, component);
+		codec_variant = wcd937x_get_codec_variant(component);
+		dev_dbg(component->dev, "%s: variant %d\n",
+			 __func__, codec_variant);
+		if (codec_variant == WCD9370_VARIANT)
+			ret = snd_soc_add_component_controls(component,
+				msm_int_wcd9370_snd_controls,
+				ARRAY_SIZE(msm_int_wcd9370_snd_controls));
+		else if (codec_variant == WCD9375_VARIANT)
+			ret = snd_soc_add_component_controls(component,
+				msm_int_wcd9375_snd_controls,
+				ARRAY_SIZE(msm_int_wcd9375_snd_controls));
+		bolero_set_port_map(bolero_component,
+			ARRAY_SIZE(sm_port_map_wcd937x), sm_port_map_wcd937x);
+	} else if (!strncmp(component->driver->name, WCD938X_DRV_NAME,
+		   strlen(WCD938X_DRV_NAME))) {
+		wcd938x_info_create_codec_entry(pdata->codec_root, component);
 
-	codec_variant = wcd938x_get_codec_variant(component);
-	dev_dbg(component->dev, "%s: variant %d\n", __func__, codec_variant);
-	if (codec_variant == WCD9380)
-		ret = snd_soc_add_component_controls(component,
-					msm_int_wcd9380_snd_controls,
-					ARRAY_SIZE(msm_int_wcd9380_snd_controls));
-	else if (codec_variant == WCD9385)
-		ret = snd_soc_add_component_controls(component,
-					msm_int_wcd9385_snd_controls,
-					ARRAY_SIZE(msm_int_wcd9385_snd_controls));
+		codec_variant = wcd938x_get_codec_variant(component);
+		dev_dbg(component->dev, "%s: variant %d\n",
+			 __func__, codec_variant);
+		if (codec_variant == WCD9380)
+			ret = snd_soc_add_component_controls(component,
+				msm_int_wcd9380_snd_controls,
+				ARRAY_SIZE(msm_int_wcd9380_snd_controls));
+		else if (codec_variant == WCD9385)
+			ret = snd_soc_add_component_controls(component,
+				msm_int_wcd9385_snd_controls,
+				ARRAY_SIZE(msm_int_wcd9385_snd_controls));
+
+		if ((strnstr(rtd->card->name, "shima", strlen(rtd->card->name))
+		    != NULL) || (strnstr(rtd->card->name, "yupik",
+		    strlen(rtd->card->name)) != NULL))
+			bolero_set_port_map(bolero_component,
+				ARRAY_SIZE(sm_port_map_shima),
+				sm_port_map_shima);
+		else
+			bolero_set_port_map(bolero_component,
+				ARRAY_SIZE(sm_port_map), sm_port_map);
+	} else {
+		bolero_set_port_map(bolero_component, ARRAY_SIZE(sm_port_map),
+				 sm_port_map);
+	}
 
 	if (ret < 0) {
 		dev_err(component->dev, "%s: add codec specific snd controls failed: %d\n",
