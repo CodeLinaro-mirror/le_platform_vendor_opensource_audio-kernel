@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/debugfs.h>
@@ -975,6 +975,20 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 		mutex_lock(&this_afe.afe_cmd_lock);
 		for (i = 0; i < AFE_LPASS_CORE_HW_VOTE_MAX; i++)
 			this_afe.lpass_hw_core_client_hdl[i] = 0;
+
+		/*
+		 * Free the port mapping structures used for AVCS module
+		 * load/unload.
+		 */
+		for (i = 0; i < MAX_ALLOWED_USE_CASES; i++) {
+			if (pm[i]) {
+				kfree(pm[i]->payload);
+				pm[i]->payload = NULL;
+				kfree(pm[i]);
+				pm[i] = NULL;
+			}
+		}
+
 		mutex_unlock(&this_afe.afe_cmd_lock);
 
 		/*
@@ -8614,10 +8628,8 @@ done:
 }
 EXPORT_SYMBOL(afe_set_display_stream);
 
-int afe_validate_port(u16 port_id)
+static bool is_port_valid(u16 port_id)
 {
-	int ret;
-
 	switch (port_id) {
 	case PRIMARY_I2S_RX:
 	case PRIMARY_I2S_TX:
@@ -8827,15 +8839,23 @@ int afe_validate_port(u16 port_id)
 	case RT_PROXY_PORT_002_RX:
 	case RT_PROXY_PORT_002_TX:
 	{
-		ret = 0;
-		break;
+		return true;
 	}
-
 	default:
+		return false;
+	}
+}
+
+int afe_validate_port(u16 port_id)
+{
+	int ret;
+
+	if (is_port_valid(port_id)) {
+		ret = 0;
+	} else {
 		pr_err("%s: default ret 0x%x\n", __func__, port_id);
 		ret = -EINVAL;
 	}
-
 	return ret;
 }
 
@@ -8870,7 +8890,9 @@ int afe_convert_virtual_to_portid(u16 port_id)
 	 * if port_id is virtual, convert to physical..
 	 * if port_id is already physical, return physical
 	 */
-	if (afe_validate_port(port_id) < 0) {
+	if (is_port_valid(port_id)) {
+		ret = port_id;
+	} else {
 		if (port_id == RT_PROXY_DAI_001_RX ||
 		    port_id == RT_PROXY_DAI_001_TX ||
 		    port_id == RT_PROXY_DAI_002_RX ||
@@ -8883,8 +8905,7 @@ int afe_convert_virtual_to_portid(u16 port_id)
 				__func__, port_id);
 			ret = -EINVAL;
 		}
-	} else
-		ret = port_id;
+	}
 
 	return ret;
 }
