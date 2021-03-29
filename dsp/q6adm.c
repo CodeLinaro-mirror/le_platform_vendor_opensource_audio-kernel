@@ -109,6 +109,7 @@ struct adm_ctl {
 	uint32_t copp_token;
 	int tx_port_id;
 	bool hyp_assigned;
+	int fnn_app_type;
 };
 
 static struct adm_ctl			this_adm;
@@ -2351,6 +2352,7 @@ static void send_adm_cal_type(int cal_index, int path, int port_id,
 		}
 		this_adm.tx_port_id = port_id;
 		this_adm.hyp_assigned = true;
+		this_adm.fnn_app_type = app_type;
 		pr_debug("%s: hyp_assign_phys success in tx_port_id 0x%x\n",
 			 __func__, this_adm.tx_port_id);
 	}
@@ -3120,7 +3122,8 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 	}
 
 	if ((topology == VPM_TX_SM_ECNS_V2_COPP_TOPOLOGY) ||
-	    (topology == VPM_TX_DM_FLUENCE_EF_COPP_TOPOLOGY)) {
+	    (topology == VPM_TX_DM_FLUENCE_EF_COPP_TOPOLOGY) ||
+	    (topology == VPM_TX_VOICE_FLUENCE_NN_COPP_TOPOLOGY)) {
 		if ((rate != ADM_CMD_COPP_OPEN_SAMPLE_RATE_8K) &&
 		    (rate != ADM_CMD_COPP_OPEN_SAMPLE_RATE_16K) &&
 		    (rate != ADM_CMD_COPP_OPEN_SAMPLE_RATE_32K) &&
@@ -3877,13 +3880,14 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 {
 	struct apr_hdr close;
 
-	int ret = 0, port_idx;
+	int ret = 0, port_idx, app_type;
 	int copp_id = RESET_COPP_ID;
 	bool result = false;
 	int dest_perms[1] = {PERM_READ | PERM_WRITE | PERM_EXEC};
 	int source_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
 	int dest_vm[1] = {VMID_HLOS};
 	struct cal_block_data *cal_block = NULL;
+	struct audio_cal_info_audproc *audproc_cal_info = NULL;
 	int cal_index = ADM_AUDPROC_PERSISTENT_CAL;
 
 	pr_debug("%s: port_id=0x%x perf_mode: %d copp_idx: %d\n", __func__,
@@ -3903,6 +3907,7 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 	}
 
 	port_channel_map[port_idx].set_channel_map = false;
+	app_type = atomic_read(&this_adm.copp.app_type[port_idx][copp_idx]);
 	if (this_adm.copp.adm_delay[port_idx][copp_idx] && perf_mode
 		== LEGACY_PCM_MODE) {
 		atomic_set(&this_adm.copp.adm_delay_stat[port_idx][copp_idx],
@@ -3993,7 +3998,12 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 					pr_debug("%s: cma_alloc %d\n",
 						 __func__, cal_block->cma_mem);
 				}
-				if (result) {
+				if (app_type == 0) {
+					audproc_cal_info = cal_block->cal_info;
+					app_type = audproc_cal_info->app_type;
+				}
+
+				if (result && this_adm.fnn_app_type == app_type) {
 					pr_debug("%s: use hyp assigned %d, use buffer %d\n",
 						 __func__, this_adm.hyp_assigned,
 						cal_block->buffer_number);
@@ -4078,8 +4088,12 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 			pr_debug("%s: cma_alloc %d\n",
 				 __func__, cal_block->cma_mem);
 		}
+		if (app_type == 0) {
+			audproc_cal_info = cal_block->cal_info;
+			app_type = audproc_cal_info->app_type;
+		}
 
-		if (result) {
+		if (result && this_adm.fnn_app_type == app_type) {
 			pr_debug("%s: use hyp assigned %d, use buffer %d\n",
 				  __func__, this_adm.hyp_assigned,
 				  cal_block->buffer_number);
@@ -5687,6 +5701,7 @@ int __init adm_init(void)
 	this_adm.ffecns_port_id = -1;
 	this_adm.tx_port_id = -1;
 	this_adm.hyp_assigned = false;
+	this_adm.fnn_app_type = -1;
 	init_waitqueue_head(&this_adm.matrix_map_wait);
 	init_waitqueue_head(&this_adm.adm_wait);
 
