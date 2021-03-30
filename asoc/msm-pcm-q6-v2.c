@@ -61,7 +61,7 @@ struct snd_msm {
 
 struct msm_pcm_channel_map {
 	bool set_channel_map;
-	char channel_map[PCM_FORMAT_MAX_NUM_CHANNEL];
+	char channel_map[PCM_FORMAT_MAX_NUM_CHANNEL_V8];
 };
 
 #define CMD_EOS_MIN_TIMEOUT_LENGTH  50
