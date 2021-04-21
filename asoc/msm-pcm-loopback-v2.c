@@ -198,8 +198,8 @@ static struct snd_kcontrol_new msm_loopback_controls[] = {
 
 static int msm_pcm_loopback_probe(struct snd_soc_component *component)
 {
-	if (of_property_read_bool(component->dev->of_node,
-				  "qcom,msm-pcm-loopback")) {
+	if (!of_property_read_bool(component->dev->of_node,
+				   "qcom,msm-pcm-loopback-low-latency")) {
 		snd_soc_add_component_controls(component, msm_loopback_controls,
 					       ARRAY_SIZE(msm_loopback_controls));
 	}
@@ -343,8 +343,11 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 			mutex_unlock(&pcm->lock);
 			return -ENOMEM;
 		}
+
+		pcm->audio_client->fedai_id = rtd->dai_link->id;
 		pcm->session_id = pcm->audio_client->session;
 		pcm->audio_client->perf_mode = pdata->perf_mode;
+		pcm->audio_client->stream_type = substream->stream;
 		ret = q6asm_open_loopback_v2(pcm->audio_client,
 					     bits_per_sample);
 		if (ret < 0) {
@@ -521,6 +524,11 @@ static int msm_pcm_prepare(struct snd_pcm_substream *substream)
 			pr_err("%s: audio client freed\n", __func__);
 			return -EINVAL;
 		}
+
+		ret = q6asm_send_cal(pcm->audio_client);
+		if (ret < 0)
+			pr_err("%s : Send audio cal failed : %d", __func__, ret);
+
 		msm_pcm_routing_reg_phy_stream(soc_pcm_tx->dai_link->id,
 			pcm->audio_client->perf_mode,
 			pcm->session_id, pcm->capture_substream->stream);
