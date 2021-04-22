@@ -63,14 +63,6 @@ struct msm_ec_ref_port_cfg {
 	int sampling_rate;
 };
 
-struct msm_ec_ref_port_cfg {
-	int rx;
-	int port_id;
-	int ch;
-	int bit_width;
-	int sampling_rate;
-};
-
 /* multiple copp per stream. */
 struct route_payload {
 	unsigned int copp_idx[MAX_COPPS_PER_PORT];
