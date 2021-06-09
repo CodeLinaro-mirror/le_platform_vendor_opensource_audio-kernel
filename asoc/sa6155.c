@@ -5893,6 +5893,13 @@ static struct snd_soc_dai_link msm_auto_fe_dai_links[] = {
 		SND_SOC_DAILINK_REG(multimedia25),
 	},
 	{
+		.name = "MSM AFE-PCM TX1",
+		.stream_name = "AFE-PROXY TX1",
+		.dpcm_capture = 1,
+		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(afepcm_tx1),
+	},
+	{
 		.name = MSM_DAILINK_NAME(Media31),
 		.stream_name = "MultiMedia31",
 		.dynamic = 1,
@@ -5955,13 +5962,6 @@ static struct snd_soc_dai_link msm_auto_fe_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA34,
 		SND_SOC_DAILINK_REG(multimedia34),
-	},
-	{
-		.name = "MSM AFE-PCM TX1",
-		.stream_name = "AFE-PROXY TX1",
-		.dpcm_capture = 1,
-		.ignore_suspend = 1,
-		SND_SOC_DAILINK_REG(afepcm_tx1),
 	},
 };
 
@@ -7448,6 +7448,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	if (ret)
 		pr_err("%s: Registration with SND event FWK failed ret = %d\n",
 			__func__, ret);
+
+	tdm_rx_cfg[TDM_TERT][TDM_0].channels = 2; //mixer 'TERT_TDM_RX_0 Channels' Two
 
 	place_marker("M - DRIVER Audio Ready");
 	return 0;
