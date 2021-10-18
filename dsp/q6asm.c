@@ -44,6 +44,7 @@
 #include "adsp_err.h"
 
 #define TIMEOUT_MS  1000
+#define OW_TIMEOUT_MS 1000
 #define TRUE        0x01
 #define FALSE       0x00
 #define SESSION_MAX 8
@@ -3831,7 +3832,7 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
 			(atomic_read(&ac->cmd_state) >= 0),
-			msecs_to_jiffies(TIMEOUT_MS));
+			msecs_to_jiffies(TIMEOUT_MS + OW_TIMEOUT_MS));
 	if (!rc) {
 		pr_err("%s: timeout. waited for open write\n", __func__);
 		rc = -ETIMEDOUT;
