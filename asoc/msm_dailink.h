@@ -189,7 +189,7 @@ SND_SOC_DAILINK_DEFS(wsa_cdcdma0_capture_stub,
 SND_SOC_DAILINK_DEFS(multimedia6,
 	DAILINK_COMP_ARRAY(COMP_CPU("MultiMedia6")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback")));
+	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback.1")));
 
 SND_SOC_DAILINK_DEFS(usbaudio_hostless,
 	DAILINK_COMP_ARRAY(COMP_CPU("USBAUDIO_HOSTLESS")),
@@ -241,7 +241,7 @@ SND_SOC_DAILINK_DEFS(multimedia20,
 SND_SOC_DAILINK_DEFS(multimedia21,
 	DAILINK_COMP_ARRAY(COMP_CPU("MultiMedia21")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback")));
+	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback.1")));
 
 SND_SOC_DAILINK_DEFS(pri_tdm_rx_0_hostless,
 	DAILINK_COMP_ARRAY(COMP_CPU("PRI_TDM_RX_0_HOSTLESS")),
