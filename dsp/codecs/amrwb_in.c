@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2011-2012, 2014, 2016-2017, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/dma-mapping.h>
@@ -16,6 +17,7 @@
 #include <linux/atomic.h>
 #include <asm/ioctls.h>
 #include "audio_utils.h"
+#include "audio_utils_statement.h"
 
 /* Buffer with meta*/
 #define PCM_BUF_SIZE		(4096 + sizeof(struct meta_in))
@@ -151,7 +153,7 @@ static long amrwb_in_ioctl(struct file *file,
 		break;
 	}
 	case AUDIO_GET_AMRWB_ENC_CONFIG: {
-		if (copy_to_user((void *)arg, audio->enc_cfg,
+		if (copy_to_user((void __user *)arg, audio->enc_cfg,
 				sizeof(struct msm_audio_amrwb_enc_config)))
 			pr_err("%s: copy_to_user for AUDIO_GET_AMRWB_ENC_CONFIG failed\n",
 				__func__);
@@ -161,7 +163,7 @@ static long amrwb_in_ioctl(struct file *file,
 	case AUDIO_SET_AMRWB_ENC_CONFIG: {
 		struct msm_audio_amrwb_enc_config cfg;
 
-		if (copy_from_user(&cfg, (void *) arg,
+		if (copy_from_user(&cfg, (void __user *) arg,
 				sizeof(cfg))) {
 			pr_err("%s: copy_from_user for AUDIO_SET_AMRWB_ENC_CONFIG failed\n",
 				__func__);
@@ -221,7 +223,7 @@ static long amrwb_in_compat_ioctl(struct file *file,
 		amrwb_config_32.dtx_enable = amrwb_config->dtx_enable;
 		amrwb_config_32.frame_format = amrwb_config->frame_format;
 
-		if (copy_to_user((void *)arg, &amrwb_config_32,
+		if (copy_to_user((void __user *)arg, &amrwb_config_32,
 			sizeof(struct msm_audio_amrwb_enc_config_32))) {
 			pr_err("%s: copy_to_user for AUDIO_GET_AMRWB_ENC_CONFIG_32 failed\n",
 				__func__);
@@ -232,7 +234,7 @@ static long amrwb_in_compat_ioctl(struct file *file,
 	case AUDIO_SET_AMRWB_ENC_CONFIG_32: {
 		struct msm_audio_amrwb_enc_config cfg_32;
 
-		if (copy_from_user(&cfg_32, (void *) arg,
+		if (copy_from_user(&cfg_32, (void __user *) arg,
 				sizeof(cfg_32))) {
 			pr_err("%s: copy_from_user for AUDIO_SET_AMRWB_ENC_CONFIG_32 failed\n",
 				__func__);
@@ -378,7 +380,7 @@ static const struct file_operations audio_in_fops = {
 	.compat_ioctl   = audio_in_compat_ioctl
 };
 
-struct miscdevice audio_amrwb_in_misc = {
+static struct miscdevice audio_amrwb_in_misc = {
 	.minor	= MISC_DYNAMIC_MINOR,
 	.name	= "msm_amrwb_in",
 	.fops	= &audio_in_fops,

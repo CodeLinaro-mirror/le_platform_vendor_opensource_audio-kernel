@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -22,6 +23,7 @@
 
 #include "msm-pcm-q6-v2.h"
 #include "msm-pcm-routing-v2.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-voip-v2"
 
@@ -1050,20 +1052,21 @@ static int voip_config_vocoder(struct snd_pcm_substream *substream)
 		 __func__, prtd->mode, prtd->play_samp_rate,
 		 prtd->cap_samp_rate);
 
-	if ((runtime->format != FORMAT_S16_LE &&
-	     runtime->format != FORMAT_SPECIAL) &&
+	if ((runtime->format != (__force snd_pcm_format_t)FORMAT_S16_LE &&
+	     runtime->format != (__force snd_pcm_format_t)FORMAT_SPECIAL) &&
 	    ((prtd->mode == MODE_AMR) || (prtd->mode == MODE_AMR_WB) ||
 	    (prtd->mode == MODE_IS127) || (prtd->mode == MODE_4GV_NB) ||
 	    (prtd->mode == MODE_4GV_WB) || (prtd->mode == MODE_4GV_NW) ||
 	    (prtd->mode == MODE_G711) || (prtd->mode == MODE_G711A))) {
 		pr_err("%s(): mode:%d and format:%u are not matched\n",
-			__func__, prtd->mode, (uint32_t)runtime->format);
+			__func__, prtd->mode, (__force uint32_t)runtime->format);
 
 		ret =  -EINVAL;
 		goto done;
 	}
 
-	if (runtime->format != FORMAT_S16_LE && (prtd->mode == MODE_PCM)) {
+	if (runtime->format !=
+		(__force snd_pcm_format_t)FORMAT_S16_LE && (prtd->mode == MODE_PCM)) {
 		pr_err("%s(): mode:%d and format:%u are not matched\n",
 		       __func__, prtd->mode, runtime->format);
 

@@ -20,6 +20,7 @@
 #include <dsp/sp_params.h>
 #include <dsp/q6core.h>
 #include "msm-dai-q6-v2.h"
+#include "platform_init.h"
 #include <asoc/core.h>
 
 #define MSM_DAI_PRI_AUXPCM_DT_DEV_ID 1
@@ -569,7 +570,7 @@ static int msm_dai_q6_get_tdm_clk_ref(u16 id)
 	}
 }
 
-int msm_dai_q6_get_group_idx(u16 id)
+static int msm_dai_q6_get_group_idx(u16 id)
 {
 	switch (id) {
 	case AFE_GROUP_DEVICE_ID_PRIMARY_TDM_RX:
@@ -776,7 +777,7 @@ int msm_dai_q6_get_group_idx(u16 id)
 	}
 }
 
-int msm_dai_q6_get_port_idx(u16 id)
+static int msm_dai_q6_get_port_idx(u16 id)
 {
 	switch (id) {
 	case AFE_PORT_ID_PRIMARY_TDM_RX:
@@ -2679,13 +2680,13 @@ static int msm_dai_q6_prepare(struct snd_pcm_substream *substream,
 			int bitwidth = 0;
 
 			switch (dai_data->afe_rx_in_bitformat) {
-			case SNDRV_PCM_FORMAT_S32_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 				bitwidth = 32;
 				break;
-			case SNDRV_PCM_FORMAT_S24_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 				bitwidth = 24;
 				break;
-			case SNDRV_PCM_FORMAT_S16_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 			default:
 				bitwidth = 16;
 				break;
@@ -2709,13 +2710,13 @@ static int msm_dai_q6_prepare(struct snd_pcm_substream *substream,
 			 * bit width value in afe decoder config.
 			 */
 			switch (dai_data->afe_tx_out_bitformat) {
-			case SNDRV_PCM_FORMAT_S32_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 				bitwidth = 32;
 				break;
-			case SNDRV_PCM_FORMAT_S24_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 				bitwidth = 24;
 				break;
-			case SNDRV_PCM_FORMAT_S16_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 				bitwidth = 16;
 				break;
 			default:
@@ -3828,13 +3829,13 @@ static int msm_dai_q6_afe_input_bit_format_get(
 	}
 
 	switch (dai_data->afe_rx_in_bitformat) {
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 		ucontrol->value.integer.value[0] = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 		ucontrol->value.integer.value[0] = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		ucontrol->value.integer.value[0] = 0;
 		break;
@@ -3857,14 +3858,14 @@ static int msm_dai_q6_afe_input_bit_format_put(
 	}
 	switch (ucontrol->value.integer.value[0]) {
 	case 2:
-		dai_data->afe_rx_in_bitformat = SNDRV_PCM_FORMAT_S32_LE;
+		dai_data->afe_rx_in_bitformat = (__force unsigned short)SNDRV_PCM_FORMAT_S32_LE;
 		break;
 	case 1:
-		dai_data->afe_rx_in_bitformat = SNDRV_PCM_FORMAT_S24_LE;
+		dai_data->afe_rx_in_bitformat = (__force unsigned short)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 0:
 	default:
-		dai_data->afe_rx_in_bitformat = SNDRV_PCM_FORMAT_S16_LE;
+		dai_data->afe_rx_in_bitformat = (__force unsigned short)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	pr_debug("%s: updating afe input bit format : %d\n",
@@ -3885,13 +3886,13 @@ static int msm_dai_q6_afe_output_bit_format_get(
 	}
 
 	switch (dai_data->afe_tx_out_bitformat) {
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 		ucontrol->value.integer.value[0] = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 		ucontrol->value.integer.value[0] = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		ucontrol->value.integer.value[0] = 0;
 		break;
@@ -3914,14 +3915,14 @@ static int msm_dai_q6_afe_output_bit_format_put(
 	}
 	switch (ucontrol->value.integer.value[0]) {
 	case 2:
-		dai_data->afe_tx_out_bitformat = SNDRV_PCM_FORMAT_S32_LE;
+		dai_data->afe_tx_out_bitformat = (__force unsigned short)SNDRV_PCM_FORMAT_S32_LE;
 		break;
 	case 1:
-		dai_data->afe_tx_out_bitformat = SNDRV_PCM_FORMAT_S24_LE;
+		dai_data->afe_tx_out_bitformat = (__force unsigned short)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 0:
 	default:
-		dai_data->afe_tx_out_bitformat = SNDRV_PCM_FORMAT_S16_LE;
+		dai_data->afe_tx_out_bitformat = (__force unsigned short)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	pr_debug("%s: updating afe output bit format : %d\n",
@@ -5156,7 +5157,7 @@ static int msm_auxpcm_dev_probe(struct platform_device *pdev)
 	    msm_dai_q6_max_num_slot(auxpcm_pdata->mode_16k.frame)) {
 		dev_err(&pdev->dev, "%s Max slots %d greater than DT node %d\n",
 			__func__,
-			msm_dai_q6_max_num_slot(auxpcm_pdata->mode_16k.frame),
+			(__force __be32)msm_dai_q6_max_num_slot(auxpcm_pdata->mode_16k.frame),
 			auxpcm_pdata->mode_16k.num_slots);
 		rc = -EINVAL;
 		goto fail_invalid_dt;
@@ -5195,7 +5196,7 @@ static int msm_auxpcm_dev_probe(struct platform_device *pdev)
 
 	for (i = 0; i < auxpcm_pdata->mode_8k.num_slots; i++)
 		auxpcm_pdata->mode_8k.slot_mapping[i] =
-				(u16)be32_to_cpu(slot_mapping_array[i]);
+				be32_to_cpu((__force __be32)(__u32)slot_mapping_array[i]);
 
 	auxpcm_pdata->mode_16k.slot_mapping =
 					kzalloc(sizeof(uint16_t) *
@@ -5211,8 +5212,8 @@ static int msm_auxpcm_dev_probe(struct platform_device *pdev)
 
 	for (i = 0; i < auxpcm_pdata->mode_16k.num_slots; i++)
 		auxpcm_pdata->mode_16k.slot_mapping[i] =
-			(u16)be32_to_cpu(slot_mapping_array[i +
-					auxpcm_pdata->mode_8k.num_slots]);
+			be32_to_cpu((__force __be32)(__u32)(slot_mapping_array[i +
+					auxpcm_pdata->mode_8k.num_slots]));
 
 	rc = of_property_read_u32_array(pdev->dev.of_node,
 			"qcom,msm-cpudai-auxpcm-data",
@@ -8440,7 +8441,7 @@ static int msm_dai_tdm_q6_probe(struct platform_device *pdev)
 
 	for (i = 0; i < num_tdm_group_ports; i++)
 		tdm_group_cfg.port_id[i] =
-			(u16)be32_to_cpu(port_id_array[i]);
+			be32_to_cpu((__force __be32)(__u32)port_id_array[i]);
 	/* Unused index should be filled with 0 or AFE_PORT_INVALID */
 	for (i = num_tdm_group_ports; i < AFE_GROUP_DEVICE_NUM_PORTS; i++)
 		tdm_group_cfg.port_id[i] =

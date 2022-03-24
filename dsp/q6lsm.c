@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -26,6 +27,7 @@
 #include <dsp/q6common.h>
 #include <dsp/audio_cal_utils.h>
 #include "adsp_err.h"
+#include "q6_init.h"
 
 #define APR_TIMEOUT	(HZ)
 #define LSM_SAMPLE_RATE 16000

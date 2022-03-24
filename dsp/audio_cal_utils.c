@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/fs.h>
@@ -10,7 +11,7 @@
 #include <linux/mutex.h>
 #include <dsp/audio_cal_utils.h>
 
-struct mutex cal_lock;
+static struct mutex cal_lock;
 
 static int unmap_memory(struct cal_type_data *cal_type,
 			struct cal_block_data *cal_block);

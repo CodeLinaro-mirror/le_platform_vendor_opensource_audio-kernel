@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -32,6 +33,7 @@
 
 #include "msm-pcm-routing-v2.h"
 #include "msm-qti-pp-config.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-transcode-loopback-v2"
 
@@ -456,16 +458,16 @@ static int msm_transcode_loopback_set_params(struct snd_compr_stream *cstream,
 			trans->sink.codec_format =
 				FORMAT_LINEAR_PCM;
 			switch (codec_param->codec.format) {
-			case SNDRV_PCM_FORMAT_S32_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 				bit_width = 32;
 				break;
-			case SNDRV_PCM_FORMAT_S24_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 				bit_width = 24;
 				break;
-			case SNDRV_PCM_FORMAT_S24_3LE:
+			case (__force int)SNDRV_PCM_FORMAT_S24_3LE:
 				bit_width = 24;
 				break;
-			case SNDRV_PCM_FORMAT_S16_LE:
+			case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 			default:
 				bit_width = 16;
 				break;

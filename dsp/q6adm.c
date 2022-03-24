@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -20,6 +21,7 @@
 #include <ipc/apr.h>
 #include "adsp_err.h"
 #include <soc/qcom/secure_buffer.h>
+#include "q6_init.h"
 
 #define TIMEOUT_MS 1000
 
@@ -2558,7 +2560,7 @@ fail_cmd:
 }
 EXPORT_SYMBOL(adm_connect_afe_port);
 
-int adm_arrange_mch_map(struct adm_cmd_device_open_v5 *open, int path,
+static int adm_arrange_mch_map(struct adm_cmd_device_open_v5 *open, int path,
 			 int channel_mode, int port_idx)
 {
 	int rc = 0, idx;
@@ -2647,7 +2649,7 @@ inval_ch_mod:
 	return rc;
 }
 
-int adm_arrange_mch_ep2_map(struct adm_cmd_device_open_v6 *open_v6,
+static int adm_arrange_mch_ep2_map(struct adm_cmd_device_open_v6 *open_v6,
 			 int channel_mode)
 {
 	int rc = 0;
@@ -4309,7 +4311,7 @@ fail:
 }
 EXPORT_SYMBOL(adm_close);
 
-int send_rtac_audvol_cal(void)
+static int send_rtac_audvol_cal(void)
 {
 	int ret = 0;
 	int i = 0;

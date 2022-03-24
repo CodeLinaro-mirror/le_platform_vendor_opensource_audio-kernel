@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -22,6 +23,8 @@
 #include <soc/snd_event.h>
 #include <ipc/apr.h>
 #include "adsp_err.h"
+#include "q6_init.h"
+#include "../asoc/platform_init.h"
 
 #define TIMEOUT_MS 1000
 /*
@@ -499,7 +502,7 @@ static int32_t aprv2_core_fn_q(struct apr_client_data *data, void *priv)
 	return 0;
 }
 
-void ocm_core_open(void)
+static void ocm_core_open(void)
 {
 	if (q6core_lcl.core_handle_q == NULL)
 		q6core_lcl.core_handle_q = apr_register("ADSP", "CORE",
@@ -509,7 +512,7 @@ void ocm_core_open(void)
 		pr_err_ratelimited("%s: Unable to register CORE\n", __func__);
 }
 
-struct cal_block_data *cal_utils_get_cal_block_by_key(
+static struct cal_block_data *cal_utils_get_cal_block_by_key(
 		struct cal_type_data *cal_type, uint32_t key)
 {
 	struct list_head                *ptr, *next;

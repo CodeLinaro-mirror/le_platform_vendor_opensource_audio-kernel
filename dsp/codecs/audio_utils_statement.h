@@ -1,0 +1,53 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+/* Copyright (c) 2010-2015, 2017, 2020 The Linux Foundation. All rights reserved. */
+/* Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved. */
+
+#ifndef __Q6_AUDIO_UTILS_STATEMENT_H__
+#define __Q6_AUDIO_UTILS_STATEMENT_H__
+
+int audio_aac_init(void);
+int audio_alac_init(void);
+int audio_amrwb_init(void);
+int audio_evrc_init(void);
+int audio_g711mlaw_init(void);
+int audio_multiaac_init(void);
+int audio_qcelp_init(void);
+int audio_wma_init(void);
+int audio_wmapro_init(void);
+int aac_in_init(void);
+int amrnb_in_init(void);
+int amrwb_in_init(void);
+int audio_amrnb_init(void);
+int audio_amrwbplus_init(void);
+int audio_ape_init(void);
+int audio_g711alaw_init(void);
+int audio_effects_init(void);
+int audio_mp3_init(void);
+int evrc_in_init(void);
+int g711alaw_in_init(void);
+int g711mlaw_in_init(void);
+int qcelp_in_init(void);
+void aac_in_exit(void);
+void amrnb_in_exit(void);
+void amrwb_in_exit(void);
+void audio_amrnb_exit(void);
+void audio_amrwbplus_exit(void);
+void audio_ape_exit(void);
+void audio_g711alaw_exit(void);
+void audio_effects_exit(void);
+void audio_mp3_exit(void);
+void evrc_in_exit(void);
+void g711alaw_in_exit(void);
+void g711mlaw_in_exit(void);
+void qcelp_in_exit(void);
+void audio_aac_exit(void);
+void audio_alac_exit(void);
+void audio_amrwb_exit(void);
+void audio_evrc_exit(void);
+void audio_g711mlaw_exit(void);
+void audio_multiaac_exit(void);
+void audio_qcelp_exit(void);
+void audio_wma_exit(void);
+void audio_wmapro_exit(void);
+
+#endif

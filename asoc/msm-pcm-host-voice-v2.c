@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -19,6 +20,7 @@
 #include <asm/dma.h>
 #include <dsp/msm_audio_ion.h>
 #include <dsp/q6voice.h>
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-host-voice-v2"
 
@@ -450,19 +452,19 @@ static void hpcm_free_allocated_mem(struct hpcm_drv *prtd)
 		msm_audio_ion_free(sess->tp_mem_table.dma_buf);
 		sess->tp_mem_table.dma_buf = NULL;
 		sess->sess_paddr = 0;
-		sess->sess_kvaddr = 0;
+		sess->sess_kvaddr = NULL;
 
 		txtp->capture_dai_data.vocpcm_ion_buffer.paddr = 0;
-		txtp->capture_dai_data.vocpcm_ion_buffer.kvaddr = 0;
+		txtp->capture_dai_data.vocpcm_ion_buffer.kvaddr = NULL;
 
 		txtp->playback_dai_data.vocpcm_ion_buffer.paddr = 0;
-		txtp->playback_dai_data.vocpcm_ion_buffer.kvaddr = 0;
+		txtp->playback_dai_data.vocpcm_ion_buffer.kvaddr = NULL;
 
 		rxtp->capture_dai_data.vocpcm_ion_buffer.paddr = 0;
-		rxtp->capture_dai_data.vocpcm_ion_buffer.kvaddr = 0;
+		rxtp->capture_dai_data.vocpcm_ion_buffer.kvaddr = NULL;
 
 		rxtp->playback_dai_data.vocpcm_ion_buffer.paddr = 0;
-		rxtp->playback_dai_data.vocpcm_ion_buffer.kvaddr = 0;
+		rxtp->playback_dai_data.vocpcm_ion_buffer.kvaddr = NULL;
 	} else {
 		pr_debug("%s, paddr = 0, nothing to free\n", __func__);
 	}
@@ -526,7 +528,7 @@ static int hpcm_allocate_shared_memory(struct hpcm_drv *prtd)
 		pr_err("%s: msm_audio_ion_alloc error, rc = %d\n",
 			__func__, result);
 		sess->sess_paddr = 0;
-		sess->sess_kvaddr = 0;
+		sess->sess_kvaddr = NULL;
 		ret = -ENOMEM;
 		goto done;
 	}
@@ -545,7 +547,7 @@ static int hpcm_allocate_shared_memory(struct hpcm_drv *prtd)
 		msm_audio_ion_free(sess->dma_buf);
 		sess->dma_buf = NULL;
 		sess->sess_paddr = 0;
-		sess->sess_kvaddr = 0;
+		sess->sess_kvaddr = NULL;
 		ret = -ENOMEM;
 		goto done;
 	}
@@ -706,7 +708,7 @@ static void hpcm_copy_capture_data_to_queue(struct dai_data *dai_data,
 	wake_up(&dai_data->queue_wait);
 }
 
-void hpcm_notify_evt_processing(uint8_t *data, char *session,
+static void hpcm_notify_evt_processing(uint8_t *data, char *session,
 				void *private_data)
 {
 	struct hpcm_drv *prtd = (struct hpcm_drv *)private_data;

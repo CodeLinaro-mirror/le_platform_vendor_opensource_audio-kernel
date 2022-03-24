@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -21,6 +22,7 @@
 
 #include "msm-pcm-routing-v2.h"
 #include "msm-qti-pp-config.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-loopback-v2"
 

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -33,6 +34,7 @@
 
 #include "msm-pcm-q6-v2.h"
 #include "msm-pcm-routing-v2.h"
+#include "platform_init.h"
 
 
 #define DRV_NAME "msm-pcm-q6-noirq"
@@ -543,10 +545,10 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 
 #if IS_ENABLED(CONFIG_COMPAT) && IS_ENABLED(CONFIG_AUDIO_QGKI)
 static int msm_pcm_compat_ioctl(struct snd_pcm_substream *substream,
-				unsigned int cmd, void *arg)
+				unsigned int cmd, void __user *arg)
 {
 	/* we only handle RESET which is common for both modes */
-	return msm_pcm_ioctl(substream, cmd, arg);
+	return msm_pcm_ioctl(substream, cmd, (void __force *)arg);
 }
 #endif
 
