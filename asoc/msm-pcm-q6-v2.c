@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -38,6 +39,7 @@
 #include "msm-pcm-q6-v2.h"
 #include "msm-pcm-routing-v2.h"
 #include "msm-qti-pp-config.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-q6-v2"
 #define TIMEOUT_MS	1000
@@ -128,7 +130,7 @@ static struct snd_pcm_hw_constraint_list constraints_sample_rates = {
 	.mask = 0,
 };
 
-struct msm_pcm_channel_map *chmap_pspd[MSM_FRONTEND_DAI_MM_SIZE][2];
+static struct msm_pcm_channel_map *chmap_pspd[MSM_FRONTEND_DAI_MM_SIZE][2];
 
 static void msm_pcm_route_event_handler(enum msm_pcm_routing_event event,
 					void *priv_data)
@@ -1260,7 +1262,7 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 }
 
 static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
-			 unsigned int cmd, void __user *arg)
+			 unsigned int cmd, void *arg)
 {
 	struct msm_audio *prtd = NULL;
 	struct snd_soc_pcm_runtime *rtd = NULL;
@@ -1299,7 +1301,7 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 			goto done;
 		}
 		memset(&userarg, 0, sizeof(userarg));
-		if (copy_from_user(&userarg, arg, sizeof(userarg))) {
+		if (copy_from_user(&userarg, (void __user *)arg, sizeof(userarg))) {
 			dev_err(rtd->dev, "%s: err copyuser DSP_POSITION\n",
 				__func__);
 			rc = -EFAULT;
@@ -1324,7 +1326,7 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 		}
 
 		userarg.timestamp = abs_time + av_offset;
-		if (copy_to_user(arg, &userarg, sizeof(userarg))) {
+		if (copy_to_user((void __user *)arg, &userarg, sizeof(userarg))) {
 			dev_err(rtd->dev, "%s: err copy to user DSP_POSITION\n",
 				__func__);
 			rc = -EFAULT;
@@ -1335,7 +1337,7 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 			 av_offset, abs_time, ses_time, prtd->samp_rate);
 		break;
 	default:
-		rc = snd_pcm_lib_ioctl(substream, cmd, arg);
+		rc = snd_pcm_lib_ioctl(substream, cmd, (void *)arg);
 		break;
 	}
 done:
@@ -1347,7 +1349,7 @@ done:
 static int msm_pcm_compat_ioctl(struct snd_pcm_substream *substream,
 			 unsigned int cmd, void __user *arg)
 {
-	return msm_pcm_ioctl(substream, cmd, arg);
+	return msm_pcm_ioctl(substream, cmd, (void __force *)arg);
 }
 #endif /* CONFIG_AUDIO_QGKI */
 #else

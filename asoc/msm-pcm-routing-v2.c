@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -36,6 +37,7 @@
 #include "msm-qti-pp-config.h"
 #include "msm-dolby-dap-config.h"
 #include "msm-ds2-dap-config.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-routing-v2"
 
@@ -77,7 +79,7 @@ static int slim0_rx_aanc_fb_port;
 static int msm_route_ec_ref_rx;
 static int msm_ec_ref_ch = 4;
 static int msm_ec_ref_ch_downmixed = 4;
-static int msm_ec_ref_bit_format = SNDRV_PCM_FORMAT_S16_LE;
+static int msm_ec_ref_bit_format = (__force int)SNDRV_PCM_FORMAT_S16_LE;
 static int msm_ec_ref_sampling_rate = 48000;
 static uint16_t msm_ec_ref_ch_weights[PCM_FORMAT_MAX_NUM_CHANNEL_V8]
 				[PCM_FORMAT_MAX_NUM_CHANNEL_V8];
@@ -367,14 +369,14 @@ static int msm_routing_get_bit_width(unsigned int format)
 	int bit_width;
 
 	switch (format) {
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 		bit_width = 32;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
-	case SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_3LE:
 		bit_width = 24;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		bit_width = 16;
 	}
@@ -507,7 +509,7 @@ static void msm_pcm_routng_cfg_matrix_map_pp(struct route_payload payload,
 }
 
 #define SLIMBUS_EXTPROC_RX AFE_PORT_INVALID
-struct msm_pcm_routing_bdai_data msm_bedais[MSM_BACKEND_DAI_MAX] = {
+static struct msm_pcm_routing_bdai_data msm_bedais[MSM_BACKEND_DAI_MAX] = {
 	{ PRIMARY_I2S_RX, 0, {0}, {0}, 0, 0, 0, 0, LPASS_BE_PRI_I2S_RX},
 	{ PRIMARY_I2S_TX, 0, {0}, {0}, 0, 0, 0, 0, LPASS_BE_PRI_I2S_TX},
 	{ SLIMBUS_0_RX, 0, {0}, {0}, 0, 0, 0, 0, LPASS_BE_SLIMBUS_0_RX},
@@ -2017,7 +2019,7 @@ int msm_pcm_routing_reg_phy_compr_stream(int fe_id, int perf_mode,
 				== 384000 || msm_bedais[i].sample_rate ==
 				352800) && be_bit_width == 32)
 				bit_width = msm_routing_get_bit_width(
-						SNDRV_PCM_FORMAT_S32_LE);
+						(__force unsigned int)SNDRV_PCM_FORMAT_S32_LE);
 			copp_idx =
 				adm_open(port_id, path_type, sample_rate,
 					 channels, topology, perf_mode,
@@ -2385,7 +2387,7 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
                                 384000 ||msm_bedais[i].sample_rate == 352800)
 				&& be_bit_width == 32)
 				bits_per_sample = msm_routing_get_bit_width(
-							SNDRV_PCM_FORMAT_S32_LE);
+						(__force unsigned int)SNDRV_PCM_FORMAT_S32_LE);
 			if ((session_type == SESSION_TYPE_TX) &&
 				 (ec_ref_chmix_cfg[fedai_id].output_channel)) {
 				/* per-session ec_ref configuration */
@@ -2395,10 +2397,10 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 				ec_ref_port_cfg.sampling_rate =
 						msm_ec_ref_sampling_rate;
 				if (msm_ec_ref_bit_format ==
-						SNDRV_PCM_FORMAT_S16_LE)
+						(__force int)SNDRV_PCM_FORMAT_S16_LE)
 					ec_ref_port_cfg.bit_width = 16;
 				else if (msm_ec_ref_bit_format ==
-						SNDRV_PCM_FORMAT_S24_LE)
+						(__force int)SNDRV_PCM_FORMAT_S24_LE)
 					ec_ref_port_cfg.bit_width = 24;
 
 				copp_idx = adm_open_v2(port_id, path_type,
@@ -2698,7 +2700,7 @@ static void msm_pcm_routing_process_audio(u16 reg, u16 val, int set)
 				== 384000 ||msm_bedais[reg].sample_rate ==
 				352800) && be_bit_width == 32)
 				bits_per_sample = msm_routing_get_bit_width(
-							SNDRV_PCM_FORMAT_S32_LE);
+						(__force unsigned int)SNDRV_PCM_FORMAT_S32_LE);
 			copp_idx = adm_open(port_id, path_type,
 					    sample_rate, channels, topology,
 					    fdai->perf_mode, bits_per_sample,
@@ -3044,7 +3046,7 @@ static int msm_routing_put_voice_stub_mixer(struct snd_kcontrol *kcontrol,
  * Return the mapping between port ID and backend ID to enable the AFE callback
  * to determine the acdb_dev_id from the port id
  */
-int msm_pcm_get_be_id_from_port_id(int port_id)
+static int msm_pcm_get_be_id_from_port_id(int port_id)
 {
 	int i;
 	int be_id = -EINVAL;
@@ -5852,10 +5854,10 @@ static int msm_ec_ref_bit_format_get(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
 	switch (msm_ec_ref_bit_format) {
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 		ucontrol->value.integer.value[0] = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 		ucontrol->value.integer.value[0] = 1;
 		break;
 	default:
@@ -5874,19 +5876,19 @@ static int msm_ec_ref_bit_format_put(struct snd_kcontrol *kcontrol,
 
 	switch (ucontrol->value.integer.value[0]) {
 	case 2:
-		msm_ec_ref_bit_format = SNDRV_PCM_FORMAT_S24_LE;
+		msm_ec_ref_bit_format = (__force int)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 1:
-		msm_ec_ref_bit_format = SNDRV_PCM_FORMAT_S16_LE;
+		msm_ec_ref_bit_format = (__force int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	default:
 		msm_ec_ref_bit_format = 0;
 		break;
 	}
 
-	if (msm_ec_ref_bit_format == SNDRV_PCM_FORMAT_S16_LE)
+	if (msm_ec_ref_bit_format == (__force int)SNDRV_PCM_FORMAT_S16_LE)
 		bit_width = 16;
-	else if (msm_ec_ref_bit_format == SNDRV_PCM_FORMAT_S24_LE)
+	else if (msm_ec_ref_bit_format == (__force int)SNDRV_PCM_FORMAT_S24_LE)
 		bit_width = 24;
 
 	pr_debug("%s: msm_ec_ref_bit_format = %d\n",
@@ -31819,45 +31821,6 @@ static const struct snd_kcontrol_new use_ffecns_freeze_event_controls[] = {
 	msm_routing_put_ffecns_freeze_event_control),
 };
 
-int msm_routing_get_rms_value_control(struct snd_kcontrol *kcontrol,
-				struct snd_ctl_elem_value *ucontrol) {
-	int rc = 0;
-	int be_idx = 0;
-	char *param_value;
-	int *update_param_value;
-	uint32_t param_size = (RMS_PAYLOAD_LEN + 1) * sizeof(uint32_t);
-	struct param_hdr_v3 param_hdr;
-
-	param_value = kzalloc(param_size, GFP_KERNEL);
-	if (!param_value)
-		return -ENOMEM;
-
-	memset(&param_hdr, 0, sizeof(param_hdr));
-	for (be_idx = 0; be_idx < MSM_BACKEND_DAI_MAX; be_idx++)
-		if (msm_bedais[be_idx].port_id == SLIMBUS_0_TX)
-			break;
-	if ((be_idx < MSM_BACKEND_DAI_MAX) && msm_bedais[be_idx].active) {
-		param_hdr.module_id = RMS_MODULEID_APPI_PASSTHRU;
-		param_hdr.instance_id = INSTANCE_ID_0;
-		param_hdr.param_id = RMS_PARAM_FIRST_SAMPLE;
-		param_hdr.param_size = param_size;
-		rc = adm_get_pp_params(SLIMBUS_0_TX, 0, ADM_CLIENT_ID_DEFAULT,
-				       NULL, &param_hdr, (u8 *) param_value);
-		if (rc) {
-			pr_err("%s: get parameters failed:%d\n", __func__, rc);
-			kfree(param_value);
-			return -EINVAL;
-		}
-		update_param_value = (int *)param_value;
-		ucontrol->value.integer.value[0] = update_param_value[0];
-
-		pr_debug("%s: FROM DSP value[0] 0x%x\n",
-			  __func__, update_param_value[0]);
-	}
-	kfree(param_value);
-	return 0;
-}
-
 static int msm_voc_session_id_put(struct snd_kcontrol *kcontrol,
 				  struct snd_ctl_elem_value *ucontrol)
 {
@@ -41314,7 +41277,7 @@ static int msm_pcm_routing_hw_params(struct snd_pcm_substream *substream,
 	mutex_lock(&routing_lock);
 	msm_bedais[be_id].sample_rate = params_rate(params);
 	msm_bedais[be_id].channel = params_channels(params);
-	msm_bedais[be_id].format = params_format(params);
+	msm_bedais[be_id].format = (__force unsigned int)params_format(params);
 	pr_debug("%s: BE Sample Rate (%d) format (%d) BE id %d\n",
 		__func__, msm_bedais[be_id].sample_rate,
 		msm_bedais[be_id].format, be_id);
@@ -41520,7 +41483,7 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 				|| bedai->sample_rate == 352800) &&
 				be_bit_width == 32)
 				bits_per_sample = msm_routing_get_bit_width(
-							SNDRV_PCM_FORMAT_S32_LE);
+						(__force unsigned int)SNDRV_PCM_FORMAT_S32_LE);
 			copp_idx = adm_open(port_id, path_type,
 					    sample_rate, channels, topology,
 					    fdai->perf_mode, bits_per_sample,
@@ -42958,7 +42921,7 @@ void msm_routing_add_doa_control(struct snd_soc_component *component)
 				ARRAY_SIZE(msm_source_doa_tracking_controls));
 }
 #else
-void msm_routing_add_doa_control(struct snd_soc_component *component)
+static void msm_routing_add_doa_control(struct snd_soc_component *component)
 {
 	return;
 }
@@ -43073,12 +43036,12 @@ static int msm_routing_probe(struct snd_soc_component *component)
 	return 0;
 }
 
-int msm_routing_pcm_new(struct snd_soc_pcm_runtime *runtime)
+static int msm_routing_pcm_new(struct snd_soc_pcm_runtime *runtime)
 {
 	return msm_pcm_routing_hwdep_new(runtime, msm_bedais);
 }
 
-void msm_routing_pcm_free(struct snd_pcm *pcm)
+static void msm_routing_pcm_free(struct snd_pcm *pcm)
 {
 	msm_pcm_routing_hwdep_free(pcm);
 }

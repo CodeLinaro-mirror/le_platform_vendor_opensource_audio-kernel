@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -21,6 +22,7 @@
 #include <dsp/q6voice.h>
 
 #include "msm-pcm-voice-v2.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-voice-v2"
 
@@ -346,7 +348,7 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 
 	switch (cmd) {
 	case SNDRV_VOICE_IOCTL_LCH:
-		if (copy_from_user(&lch_mode, (void *)arg,
+		if (copy_from_user(&lch_mode, (void __user *)arg,
 				   sizeof(enum voice_lch_mode))) {
 			pr_err("%s: Copy from user failed, size %zd\n",
 				__func__, sizeof(enum voice_lch_mode));
@@ -386,6 +388,14 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 
 	return ret;
 }
+
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
+static int msm_pcm_compat_ioctl(struct snd_pcm_substream *substream,
+			 unsigned int cmd, void __user *arg)
+{
+	return msm_pcm_ioctl(substream, cmd, (__force void *)arg);
+}
+#endif
 
 static int msm_voice_sidetone_put(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
@@ -743,7 +753,7 @@ static const struct snd_pcm_ops msm_pcm_ops = {
 	.trigger		= msm_pcm_trigger,
 	.ioctl			= msm_pcm_ioctl,
 #if IS_ENABLED(CONFIG_AUDIO_QGKI)
-	.compat_ioctl		= msm_pcm_ioctl,
+	.compat_ioctl		= msm_pcm_compat_ioctl,
 #endif /* CONFIG_AUDIO_QGKI */
 };
 

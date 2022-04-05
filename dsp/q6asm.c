@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  * Author: Brian Swetland <swetland@google.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -42,6 +43,7 @@
 #include <dsp/q6common.h>
 #include <dsp/q6core.h>
 #include "adsp_err.h"
+#include "q6_init.h"
 
 #define TIMEOUT_MS  1000
 #define TRUE        0x01
@@ -554,7 +556,7 @@ static void config_debug_fs_init(void)
 
 #endif /*CONFIG_DEBUG_FS*/
 
-int q6asm_mmap_apr_dereg(void)
+static int q6asm_mmap_apr_dereg(void)
 {
 	int c;
 
@@ -943,25 +945,7 @@ static struct cal_block_data *q6asm_find_cal_by_buf_number(int cal_index,
 	return NULL;
 }
 
-int q6asm_unmap_cal_data(int cal_type, struct cal_block_data *cal_block)
-{
-	int ret = 0;
-
-	if ((cal_block->map_data.map_size > 0) &&
-		(cal_block->map_data.q6map_handle != 0)) {
-
-		ret = q6asm_unmap_cal_memory(cal_type, cal_block);
-		if (ret < 0) {
-			pr_err("%s: unmap did not work! size = %zd ret %d\n",
-				__func__, cal_block->map_data.map_size, ret);
-			goto done;
-		}
-	}
-done:
-	return ret;
-}
-
-int send_asm_custom_topology(struct audio_client *ac)
+static int send_asm_custom_topology(struct audio_client *ac)
 {
 	struct cal_block_data		*cal_block = NULL;
 	struct cmd_set_topologies	asm_top;
@@ -1173,7 +1157,7 @@ done:
 	return result;
 }
 
-int q6asm_audio_client_buf_free(unsigned int dir,
+static int q6asm_audio_client_buf_free(unsigned int dir,
 			struct audio_client *ac)
 {
 	struct audio_port_data *port;
@@ -10901,7 +10885,7 @@ int q6asm_stream_cmd_nowait(struct audio_client *ac, int cmd,
 }
 EXPORT_SYMBOL(q6asm_stream_cmd_nowait);
 
-int __q6asm_send_meta_data(struct audio_client *ac, uint32_t stream_id,
+static int __q6asm_send_meta_data(struct audio_client *ac, uint32_t stream_id,
 			  uint32_t initial_samples, uint32_t trailing_samples)
 {
 	struct asm_data_cmd_remove_silence silence;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 /*
  * Copyright 2011, The Android Open Source Project
@@ -198,237 +199,237 @@ struct tdm_conf {
 /* TDM default config */
 static struct dev_config tdm_rx_cfg[TDM_INTERFACE_MAX][TDM_PORT_MAX] = {
 	{ /* PRI TDM */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_0 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_0 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
 	},
 	{ /* SEC TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
 	},
 	{ /* TERT TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 6}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 6}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
 	},
 	{ /* QUAT TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 8}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 8}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 8}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 8}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
 	},
 	{ /* QUIN TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 16}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 16}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_7 */
 	},
 	{ /* SEN TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
 	},
 	{ /* SEP TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
 	},
 	{ /* HSIF0 TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
 	},
 	{ /* HSIF1 TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
 	},
 	{ /* HSIF2 TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* RX_7 */
 	}
 };
 
 /* TDM default config */
 static struct dev_config tdm_tx_cfg[TDM_INTERFACE_MAX][TDM_PORT_MAX] = {
 	{ /* PRI TDM */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_0 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
-		{SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_0 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
+		{SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
 	},
 	{ /* SEC TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 6}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 6}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
 	},
 	{ /* TERT TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 4}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 4}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
 	},
 	{ /* QUAT TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 8}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 8}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
 	},
 	{ /* QUIN TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 8}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 8}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_7 */
 	},
 	{ /* SEN TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
 	},
 	{ /* SEP TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
 	},
 	{ /* HSIF0 TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
 	},
 	{ /* HSIF1 TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
 	},
 	{ /* HSIF2 TDM */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
-		{SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_0 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_1 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_2 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_3 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_4 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_5 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_6 */
+		{SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2}, /* TX_7 */
 	}
 };
 
 /* Default configuration of external display BE */
 static struct dev_config ext_disp_rx_cfg[] = {
-	[DP_RX_IDX] =   {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
+	[DP_RX_IDX] =   {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2},
 };
 
 static struct dev_config usb_rx_cfg = {
 	.sample_rate = SAMPLING_RATE_48KHZ,
-	.bit_format = SNDRV_PCM_FORMAT_S16_LE,
+	.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE,
 	.channels = 2,
 };
 
 static struct dev_config usb_tx_cfg = {
 	.sample_rate = SAMPLING_RATE_48KHZ,
-	.bit_format = SNDRV_PCM_FORMAT_S16_LE,
+	.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE,
 	.channels = 1,
 };
 
 static struct dev_config proxy_rx_cfg[] = {
 	{
 		.sample_rate = SAMPLING_RATE_48KHZ,
-		.bit_format = SNDRV_PCM_FORMAT_S16_LE,
+		.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE,
 		.channels = 2,
 	},
 	{
 		.sample_rate = SAMPLING_RATE_48KHZ,
-		.bit_format = SNDRV_PCM_FORMAT_S16_LE,
+		.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE,
 		.channels = 2,
 	}
 };
@@ -437,42 +438,42 @@ static struct dev_config proxy_rx_cfg[] = {
 static struct dev_config proxy_tx_cfg[] = {
 	{
 		.sample_rate = SAMPLING_RATE_48KHZ,
-		.bit_format = SNDRV_PCM_FORMAT_S16_LE,
+		.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE,
 		.channels = 2,
 	},
 };
 
 /* Default configuration of MI2S channels */
 static struct dev_config mi2s_rx_cfg[] = {
-	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
-	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
-	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
-	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
-	[QUIN_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
+	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2},
+	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2},
+	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2},
+	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2},
+	[QUIN_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 2},
 };
 
 static struct dev_config mi2s_tx_cfg[] = {
-	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[QUIN_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[QUIN_MI2S] = {SAMPLING_RATE_48KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
 };
 
 static struct dev_config aux_pcm_rx_cfg[] = {
-	[PRIM_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[SEC_AUX_PCM]  = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[TERT_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[QUAT_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[QUIN_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[PRIM_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[SEC_AUX_PCM]  = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[TERT_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[QUAT_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[QUIN_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
 };
 
 static struct dev_config aux_pcm_tx_cfg[] = {
-	[PRIM_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[SEC_AUX_PCM]  = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[TERT_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[QUAT_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	[QUIN_AUX_PCM] = {SAMPLING_RATE_8KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+	[PRIM_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[SEC_AUX_PCM]  = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[TERT_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[QUAT_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
+	[QUIN_AUX_PCM] = {SAMPLING_RATE_8KHZ, (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE, 1},
 };
 
 /* TDM default slot config */
@@ -1138,16 +1139,16 @@ static int usb_audio_rx_format_get(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
 	switch (usb_rx_cfg.bit_format) {
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S32_LE:
 		ucontrol->value.integer.value[0] = 3;
 		break;
-	case SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE:
 		ucontrol->value.integer.value[0] = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE:
 		ucontrol->value.integer.value[0] = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		ucontrol->value.integer.value[0] = 0;
 		break;
@@ -1166,17 +1167,17 @@ static int usb_audio_rx_format_put(struct snd_kcontrol *kcontrol,
 
 	switch (ucontrol->value.integer.value[0]) {
 	case 3:
-		usb_rx_cfg.bit_format = SNDRV_PCM_FORMAT_S32_LE;
+		usb_rx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S32_LE;
 		break;
 	case 2:
-		usb_rx_cfg.bit_format = SNDRV_PCM_FORMAT_S24_3LE;
+		usb_rx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE;
 		break;
 	case 1:
-		usb_rx_cfg.bit_format = SNDRV_PCM_FORMAT_S24_LE;
+		usb_rx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 0:
 	default:
-		usb_rx_cfg.bit_format = SNDRV_PCM_FORMAT_S16_LE;
+		usb_rx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	pr_debug("%s: usb_audio_rx_format = %d, ucontrol value = %ld\n",
@@ -1318,16 +1319,16 @@ static int usb_audio_tx_format_get(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
 	switch (usb_tx_cfg.bit_format) {
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S32_LE:
 		ucontrol->value.integer.value[0] = 3;
 		break;
-	case SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE:
 		ucontrol->value.integer.value[0] = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE:
 		ucontrol->value.integer.value[0] = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		ucontrol->value.integer.value[0] = 0;
 		break;
@@ -1346,17 +1347,17 @@ static int usb_audio_tx_format_put(struct snd_kcontrol *kcontrol,
 
 	switch (ucontrol->value.integer.value[0]) {
 	case 3:
-		usb_tx_cfg.bit_format = SNDRV_PCM_FORMAT_S32_LE;
+		usb_tx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S32_LE;
 		break;
 	case 2:
-		usb_tx_cfg.bit_format = SNDRV_PCM_FORMAT_S24_3LE;
+		usb_tx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE;
 		break;
 	case 1:
-		usb_tx_cfg.bit_format = SNDRV_PCM_FORMAT_S24_LE;
+		usb_tx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 0:
 	default:
-		usb_tx_cfg.bit_format = SNDRV_PCM_FORMAT_S16_LE;
+		usb_tx_cfg.bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	pr_debug("%s: usb_audio_tx_format = %d, ucontrol value = %ld\n",
@@ -1391,13 +1392,13 @@ static int ext_disp_rx_format_get(struct snd_kcontrol *kcontrol,
 		return idx;
 
 	switch (ext_disp_rx_cfg[idx].bit_format) {
-	case SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE:
 		ucontrol->value.integer.value[0] = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE:
 		ucontrol->value.integer.value[0] = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		ucontrol->value.integer.value[0] = 0;
 		break;
@@ -1419,14 +1420,14 @@ static int ext_disp_rx_format_put(struct snd_kcontrol *kcontrol,
 
 	switch (ucontrol->value.integer.value[0]) {
 	case 2:
-		ext_disp_rx_cfg[idx].bit_format = SNDRV_PCM_FORMAT_S24_3LE;
+		ext_disp_rx_cfg[idx].bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE;
 		break;
 	case 1:
-		ext_disp_rx_cfg[idx].bit_format = SNDRV_PCM_FORMAT_S24_LE;
+		ext_disp_rx_cfg[idx].bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 0:
 	default:
-		ext_disp_rx_cfg[idx].bit_format = SNDRV_PCM_FORMAT_S16_LE;
+		ext_disp_rx_cfg[idx].bit_format = (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	pr_debug("%s: ext_disp_rx[%d].format = %d, ucontrol value = %ld\n",
@@ -1912,16 +1913,16 @@ static int tdm_get_format(int value)
 
 	switch (value) {
 	case 0:
-		format = SNDRV_PCM_FORMAT_S16_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	case 1:
-		format = SNDRV_PCM_FORMAT_S24_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 2:
-		format = SNDRV_PCM_FORMAT_S32_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S32_LE;
 		break;
 	default:
-		format = SNDRV_PCM_FORMAT_S16_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	return format;
@@ -1932,13 +1933,13 @@ static int tdm_get_format_val(int format)
 	int value = 0;
 
 	switch (format) {
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 		value = 0;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 		value = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 		value = 2;
 		break;
 	default:
@@ -2618,19 +2619,19 @@ static int mi2s_auxpcm_get_format(int value)
 
 	switch (value) {
 	case 0:
-		format = SNDRV_PCM_FORMAT_S16_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	case 1:
-		format = SNDRV_PCM_FORMAT_S24_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S24_LE;
 		break;
 	case 2:
-		format = SNDRV_PCM_FORMAT_S24_3LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S24_3LE;
 		break;
 	case 3:
-		format = SNDRV_PCM_FORMAT_S32_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S32_LE;
 		break;
 	default:
-		format = SNDRV_PCM_FORMAT_S16_LE;
+		format = (__force int)SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
 	return format;
@@ -2641,16 +2642,16 @@ static int mi2s_auxpcm_get_format_value(int format)
 	int value;
 
 	switch (format) {
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 		value = 0;
 		break;
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 		value = 1;
 		break;
-	case SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_3LE:
 		value = 2;
 		break;
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 		value = 3;
 		break;
 	default:
@@ -4992,12 +4993,12 @@ static u32 get_mi2s_bits_per_sample(u32 bit_format)
 	u32 bit_per_sample;
 
 	switch (bit_format) {
-	case SNDRV_PCM_FORMAT_S32_LE:
-	case SNDRV_PCM_FORMAT_S24_3LE:
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S32_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S24_LE:
 		bit_per_sample = 32;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force unsigned int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		bit_per_sample = 16;
 		break;
@@ -6562,10 +6563,10 @@ static int sa8155_tdm_snd_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
-	format = params_format(params);
-	if (format != SNDRV_PCM_FORMAT_S32_LE &&
-		format != SNDRV_PCM_FORMAT_S24_LE &&
-		format != SNDRV_PCM_FORMAT_S16_LE) {
+	format = (__force int)params_format(params);
+	if (format != (__force int)SNDRV_PCM_FORMAT_S32_LE &&
+		format != (__force int)SNDRV_PCM_FORMAT_S24_LE &&
+		format != (__force int)SNDRV_PCM_FORMAT_S16_LE) {
 		/*
 		 * Up to 8 channel HW configuration should
 		 * use 32 bit slot width for max support of
@@ -10291,19 +10292,19 @@ static struct snd_soc_dai_link msm_auto_custom_dai_links[
 			 ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 			 ARRAY_SIZE(sa8295_msm_common_be_dai_links)];
 
-struct snd_soc_card sa8155_snd_soc_card_auto_msm = {
+static struct snd_soc_card sa8155_snd_soc_card_auto_msm = {
 	.name = "sa8155-adp-star-snd-card",
 };
 
-struct snd_soc_card sa8155_snd_soc_card_auto_custom_msm = {
+static struct snd_soc_card sa8155_snd_soc_card_auto_custom_msm = {
 	.name = "sa8155-custom-snd-card",
 };
 
-struct snd_soc_card sa8295_snd_soc_card_auto_msm = {
+static struct snd_soc_card sa8295_snd_soc_card_auto_msm = {
 	.name = "sa8295-adp-star-snd-card",
 };
 
-struct snd_soc_card sa8295_snd_soc_card_auto_custom_msm = {
+static struct snd_soc_card sa8295_snd_soc_card_auto_custom_msm = {
 	.name = "sa8295-custom-snd-card",
 };
 
@@ -10901,13 +10902,13 @@ static struct platform_driver sa8155_asoc_machine_driver = {
 	.remove = msm_asoc_machine_remove,
 };
 
-int __init sa8155_init(void)
+static int __init sa8155_init(void)
 {
 	pr_debug("%s\n", __func__);
 	return platform_driver_register(&sa8155_asoc_machine_driver);
 }
 
-void sa8155_exit(void)
+static void sa8155_exit(void)
 {
 	pr_debug("%s\n", __func__);
 	platform_driver_unregister(&sa8155_asoc_machine_driver);

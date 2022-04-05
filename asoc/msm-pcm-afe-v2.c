@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -23,6 +24,7 @@
 #include <dsp/msm_audio_ion.h>
 #include <dsp/q6adm-v2.h>
 #include "msm-pcm-afe-v2.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-afe-v2"
 

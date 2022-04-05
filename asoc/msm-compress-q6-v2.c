@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -39,6 +40,8 @@
 #include <dsp/msm-audio-effects-q6-v2.h>
 #include "msm-pcm-routing-v2.h"
 #include "msm-qti-pp-config.h"
+#include "msm-compress-q6-v2.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-compress-q6-v2"
 
@@ -1223,19 +1226,19 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 		}
 
 		switch (prtd->codec_param.codec.format) {
-		case SNDRV_PCM_FORMAT_S32_LE:
+		case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 			bit_width = 32;
 			sample_word_size = 32;
 			break;
-		case SNDRV_PCM_FORMAT_S24_LE:
+		case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 			bit_width = 24;
 			sample_word_size = 32;
 			break;
-		case SNDRV_PCM_FORMAT_S24_3LE:
+		case (__force int)SNDRV_PCM_FORMAT_S24_3LE:
 			bit_width = 24;
 			sample_word_size = 24;
 			break;
-		case SNDRV_PCM_FORMAT_S16_LE:
+		case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 		default:
 			bit_width = 16;
 			sample_word_size = 16;
@@ -1603,10 +1606,10 @@ static int msm_compr_configure_dsp_for_playback
 			__func__, DSP_BIT_WIDTH_MIXER_CTL);
 	}
 
-	if ((prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE) ||
-		(prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_3LE))
+	if ((prtd->codec_param.codec.format == (__force int)SNDRV_PCM_FORMAT_S24_LE) ||
+		(prtd->codec_param.codec.format == (__force int)SNDRV_PCM_FORMAT_S24_3LE))
 		bits_per_sample = 24;
-	else if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S32_LE)
+	else if (prtd->codec_param.codec.format == (__force int)SNDRV_PCM_FORMAT_S32_LE)
 		bits_per_sample = 32;
 
 	ac->fedai_id = soc_prtd->dai_link->id;
@@ -1745,19 +1748,19 @@ static int msm_compr_configure_dsp_for_capture(struct snd_compr_stream *cstream)
 	bool compress_ts = false;
 
 	switch (prtd->codec_param.codec.format) {
-	case SNDRV_PCM_FORMAT_S24_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_LE:
 		bits_per_sample = 24;
 		sample_word_size = 32;
 		break;
-	case SNDRV_PCM_FORMAT_S24_3LE:
+	case (__force int)SNDRV_PCM_FORMAT_S24_3LE:
 		bits_per_sample = 24;
 		sample_word_size = 24;
 		break;
-	case SNDRV_PCM_FORMAT_S32_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S32_LE:
 		bits_per_sample = 32;
 		sample_word_size = 32;
 		break;
-	case SNDRV_PCM_FORMAT_S16_LE:
+	case (__force int)SNDRV_PCM_FORMAT_S16_LE:
 	default:
 		bits_per_sample = 16;
 		sample_word_size = 16;
@@ -3027,10 +3030,10 @@ static int msm_compr_trigger(struct snd_compr_stream *cstream, int cmd)
 			break;
 		}
 
-		if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE)
+		if (prtd->codec_param.codec.format == (__force int) SNDRV_PCM_FORMAT_S24_LE)
 			bits_per_sample = 24;
 		else if (prtd->codec_param.codec.format ==
-			 SNDRV_PCM_FORMAT_S32_LE)
+			 (__force int)SNDRV_PCM_FORMAT_S32_LE)
 			bits_per_sample = 32;
 
 		pr_debug("%s: open_write stream_id %d bits_per_sample %d",

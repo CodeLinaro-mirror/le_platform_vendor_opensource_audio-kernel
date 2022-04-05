@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -13,6 +14,7 @@
 #include <sound/soc.h>
 
 #include "msm-compress-q6-v2.h"
+#include "platform_init.h"
 
 static struct snd_soc_dai_ops msm_fe_dai_ops = {};
 

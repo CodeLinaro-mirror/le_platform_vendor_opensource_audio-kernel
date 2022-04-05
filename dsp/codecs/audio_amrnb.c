@@ -4,6 +4,7 @@
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2008 HTC Corporation
  * Copyright (c) 2011-2017, 2019, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -19,6 +20,7 @@
 #include <linux/types.h>
 #include <linux/compat.h>
 #include "audio_utils_aio.h"
+#include "audio_utils_statement.h"
 
 static struct miscdevice audio_amrnb_misc;
 static struct ws_mgr audio_amrnb_ws_mgr;

@@ -25,6 +25,7 @@
 #include <dsp/msm_audio_ion.h>
 #include <dsp/q6lsm.h>
 #include "msm-pcm-routing-v2.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-lsm-client"
 
@@ -520,7 +521,7 @@ static int msm_lsm_get_conf_levels(struct lsm_client *client,
 		}
 
 		if (copy_from_user((u8 *)client->multi_snd_model_confidence_levels,
-				   conf_levels_ptr,
+				   (void __user *)conf_levels_ptr,
 				   sizeof(uint32_t) * client->num_keywords)) {
 			pr_err("%s: copy from user failed, number of keywords = %d\n",
 			       __func__, client->num_keywords);
@@ -547,7 +548,7 @@ static int msm_lsm_get_conf_levels(struct lsm_client *client,
 		}
 
 		if (copy_from_user(client->confidence_levels,
-				   conf_levels_ptr,
+				   (void __user *)conf_levels_ptr,
 				   client->num_confidence_levels)) {
 			pr_err("%s: copy from user failed, size = %d\n",
 			       __func__, client->num_confidence_levels);
@@ -659,7 +660,7 @@ static int msm_lsm_set_gain(struct snd_pcm_substream *substream,
 		goto done;
 	}
 
-	if (copy_from_user(&gain, p_info->param_data,
+	if (copy_from_user(&gain, (void __user *)p_info->param_data,
 			   sizeof(gain))) {
 		dev_err(rtd->dev,
 			"%s: copy_from_user failed, size = %zd\n",
@@ -696,7 +697,7 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 
 		prtd->lsm_client->num_keywords = p_info->param_size;
 		rc = msm_lsm_get_conf_levels(prtd->lsm_client,
-					     p_info->param_data);
+					     (__force u8 *)p_info->param_data);
 		if (rc) {
 			dev_err(rtd->dev,
 				"%s: get_conf_levels failed for snd_model %d, err = %d\n",
@@ -727,7 +728,7 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 		prtd->lsm_client->num_confidence_levels =
 				p_info->param_size;
 		rc = msm_lsm_get_conf_levels(prtd->lsm_client,
-					     p_info->param_data);
+					     (__force unsigned char *)p_info->param_data);
 		if (rc) {
 			dev_err(rtd->dev,
 				"%s: get_conf_levels failed, err = %d\n",
@@ -1272,6 +1273,7 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 	struct lsm_priv *prtd;
 	struct snd_lsm_detection_params det_params;
 	uint32_t max_detection_stages_supported = LSM_MAX_STAGES_PER_SESSION;
+	unsigned char *ptr = NULL;
 
 	if (!substream || !substream->private_data) {
 		pr_err("%s: Invalid %s\n", __func__,
@@ -1290,14 +1292,15 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 
 		if (cmd == SNDRV_LSM_SET_SESSION_DATA) {
 			dev_dbg(rtd->dev, "%s: set session data\n", __func__);
-			rc = copy_from_user(&session_data, arg, sizeof(session_data));
+			rc = copy_from_user(&session_data, (void __user *)arg,
+				sizeof(session_data));
 			if (!rc) {
 				ses_data_v2.app_id = session_data.app_id;
 				ses_data_v2.num_stages = 1;
 			}
 		} else {
 			dev_dbg(rtd->dev, "%s: set session data_v2\n", __func__);
-			rc = copy_from_user(&ses_data_v2, arg, sizeof(ses_data_v2));
+			rc = copy_from_user(&ses_data_v2, (void __user *)arg, sizeof(ses_data_v2));
 		}
 		if (rc) {
 			dev_err(rtd->dev, "%s: %s: copy_from_user failed\n",
@@ -1406,10 +1409,11 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 			break;
 		}
 
+		ptr = (__force unsigned char *)snd_model_v2.data;
 		dev_dbg(rtd->dev, "SND Model Magic no byte[0] %x,\n"
-			 "byte[1] %x, byte[2] %x byte[3] %x\n",
-			 snd_model_v2.data[0], snd_model_v2.data[1],
-			 snd_model_v2.data[2], snd_model_v2.data[3]);
+			"byte[1] %x, byte[2] %x byte[3] %x\n",
+			ptr[0], ptr[1], ptr[2], ptr[3]);
+
 		prtd->lsm_client->num_confidence_levels =
 			snd_model_v2.num_confidence_levels;
 
@@ -1703,7 +1707,7 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 			return -EINVAL;
 		}
 
-		if (copy_from_user(&enable, arg, sizeof(enable))) {
+		if (copy_from_user(&enable, (void __user *)arg, sizeof(enable))) {
 			dev_err(rtd->dev, "%s: %s: copy_frm_user failed\n",
 				__func__, "LSM_LAB_CONTROL");
 			__pm_relax(prtd->ws);
@@ -1758,7 +1762,7 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 	case SNDRV_LSM_SET_FWK_MODE_CONFIG: {
 		u32 mode;
 
-		if (copy_from_user(&mode, arg, sizeof(mode))) {
+		if (copy_from_user(&mode, (void __user *)arg, sizeof(mode))) {
 			dev_err(rtd->dev, "%s: %s: copy_frm_user failed\n",
 				__func__, "LSM_SET_FWK_MODE_CONFIG");
 			__pm_relax(prtd->ws);
@@ -1789,7 +1793,7 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 		struct lsm_hw_params *in_params;
 		struct snd_lsm_input_hw_params params;
 
-		if (copy_from_user(&params, arg, sizeof(params))) {
+		if (copy_from_user(&params, (void __user *)arg, sizeof(params))) {
 			dev_err(rtd->dev, "%s: %s: copy_from_user failed\n",
 				__func__, "LSM_SET_INPUT_HW_PARAMS");
 			__pm_relax(prtd->ws);
@@ -2137,7 +2141,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 				"SNDRV_LSM_REG_SND_MODEL_V2_32");
 		} else {
 			snd_modelv2.confidence_level =
-			compat_ptr(snd_modelv232.confidence_level);
+			(__force unsigned char *)compat_ptr(snd_modelv232.confidence_level);
 			snd_modelv2.data = compat_ptr(snd_modelv232.data);
 			snd_modelv2.data_size = snd_modelv232.data_size;
 			snd_modelv2.detect_failure =
@@ -2177,7 +2181,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 				sizeof(det_params32));
 		} else {
 			det_params.conf_level =
-				compat_ptr(det_params32.conf_level);
+				(__force unsigned char *)compat_ptr(det_params32.conf_level);
 			det_params.detect_mode =
 				det_params32.detect_mode;
 			det_params.num_confidence_levels =
@@ -2418,7 +2422,7 @@ free:
 		err = -EINVAL;
 		break;
 	default:
-		err = msm_lsm_ioctl_shared(substream, cmd, arg);
+		err = msm_lsm_ioctl_shared(substream, cmd, (__force void *)arg);
 		break;
 	}
 done:
@@ -2431,7 +2435,7 @@ done:
 #endif
 
 static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
-			 unsigned int cmd, void __user *arg)
+			 unsigned int cmd, void *arg)
 {
 	int err = 0;
 	u32 size = 0;
@@ -2461,7 +2465,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 			goto done;
 		}
 
-		if (copy_from_user(&snd_model_v2, arg, sizeof(snd_model_v2))) {
+		if (copy_from_user(&snd_model_v2, (void __user *)arg, sizeof(snd_model_v2))) {
 			err = -EFAULT;
 			dev_err(rtd->dev,
 				"%s: copy from user failed, size %zd\n",
@@ -2491,7 +2495,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 
 		pr_debug("%s: SNDRV_LSM_SET_PARAMS\n", __func__);
 
-		if (copy_from_user(&det_params, arg,
+		if (copy_from_user(&det_params, (void __user *)arg,
 				   sizeof(det_params))) {
 			dev_err(rtd->dev,
 				"%s: %s: copy_from_user failed, size %zd\n",
@@ -2530,7 +2534,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 			goto done;
 		}
 
-		if (copy_from_user(&p_data, arg,
+		if (copy_from_user(&p_data, (void __user *)arg,
 				   sizeof(p_data))) {
 			dev_err(rtd->dev,
 				"%s: %s: copy_from_user failed, size = %zd\n",
@@ -2637,7 +2641,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 			goto done;
 		}
 
-		if (copy_from_user(&temp_p_info, arg, sizeof(temp_p_info))) {
+		if (copy_from_user(&temp_p_info, (void __user *)arg, sizeof(temp_p_info))) {
 			dev_err(rtd->dev,
 				"%s: %s: copy_from_user failed, size = %zd\n",
 				__func__, "GET_MODULE_PARAMS_32",
@@ -2678,7 +2682,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 			goto free;
 		}
 
-		if (!access_ok(arg, size)) {
+		if (!access_ok((void __user *)arg, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
@@ -2689,7 +2693,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 		memcpy(p_info->payload, prtd->lsm_client->get_param_payload,
 			temp_p_info.param_size);
 
-		if (copy_to_user(arg, p_info, sizeof(struct lsm_params_get_info) +
+		if (copy_to_user((void __user *)arg, p_info, sizeof(struct lsm_params_get_info) +
 				 p_info->param_size)) {
 			dev_err(rtd->dev, "%s: Failed to copy payload to user, size = %d\n",
 				__func__, size);
@@ -2715,7 +2719,7 @@ free:
 		if (err)
 			goto done;
 
-		if (copy_from_user(&userarg, arg, sizeof(userarg))) {
+		if (copy_from_user(&userarg, (void __user *)arg, sizeof(userarg))) {
 			dev_err(rtd->dev,
 				"%s: %s: Copy from user failed\n", __func__,
 				(cmd == SNDRV_LSM_EVENT_STATUS) ?
@@ -2755,13 +2759,13 @@ free:
 
 		/* Update size with actual payload size */
 		size = sizeof(*user) + user->payload_size;
-		if (!access_ok(arg, size)) {
+		if (!access_ok((void __user *)arg, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
 			err = -EFAULT;
 		}
-		if (!err && copy_to_user(arg, user, size)) {
+		if (!err && copy_to_user((void __user *)arg, user, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to copy payload to user, size = %d\n",
 				__func__, size);
@@ -2795,7 +2799,7 @@ free:
 			err = -EINVAL;
 			goto done;
 		}
-		if (copy_from_user(&userarg, arg, sizeof(userarg))) {
+		if (copy_from_user(&userarg, (void __user *)arg, sizeof(userarg))) {
 			dev_err(rtd->dev,
 				"%s: err copyuser event_status_v3\n",
 				__func__);
@@ -2827,13 +2831,13 @@ free:
 
 		/* Update size with actual payload size */
 		size = sizeof(*user) + user->payload_size;
-		if (!err && !access_ok(arg, size)) {
+		if (!err && !access_ok((void __user *)arg, size)) {
 			dev_err(rtd->dev,
 				"%s: write verify failed size %d\n",
 				__func__, size);
 			err = -EFAULT;
 		}
-		if (!err && (copy_to_user(arg, user, size))) {
+		if (!err && (copy_to_user((void __user *)arg, user, size))) {
 			dev_err(rtd->dev,
 				"%s: failed to copy payload %d",
 				__func__, size);
@@ -2847,7 +2851,7 @@ free:
 	}
 
 	default:
-		err = msm_lsm_ioctl_shared(substream, cmd, arg);
+		err = msm_lsm_ioctl_shared(substream, cmd, (void *)arg);
 	break;
 	}
 done:

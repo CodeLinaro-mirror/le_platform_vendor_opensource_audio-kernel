@@ -25,6 +25,8 @@
 #include "adsp_err.h"
 #include <dsp/voice_mhi.h>
 #include <soc/qcom/secure_buffer.h>
+#include "../asoc/platform_init.h"
+#include "q6_init.h"
 
 #define TIMEOUT_MS 1000
 
@@ -47,7 +49,7 @@ enum {
 	VOC_SOURCE_TRACKING_MEM_MAP_TOKEN
 };
 
-struct cvd_version_table cvd_version_table_mapping[CVD_INT_VERSION_MAX] = {
+static struct cvd_version_table cvd_version_table_mapping[CVD_INT_VERSION_MAX] = {
 		{CVD_VERSION_DEFAULT, CVD_INT_VERSION_DEFAULT},
 		{CVD_VERSION_0_0, CVD_INT_VERSION_0_0},
 		{CVD_VERSION_2_1, CVD_INT_VERSION_2_1},
@@ -282,7 +284,7 @@ static void voice_set_cvp_handle(struct voice_data *v, u16 cvp_handle)
 	v->cvp_handle = cvp_handle;
 }
 
-char *voc_get_session_name(u32 session_id)
+static char *voc_get_session_name(u32 session_id)
 {
 	char *session_name = NULL;
 

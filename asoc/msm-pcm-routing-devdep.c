@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2014, 2016-2017, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -40,11 +41,11 @@ static int msm_pcm_routing_hwdep_ioctl(struct snd_hwdep *hw, struct file *file,
 	case SNDRV_DEVDEP_DAP_IOCTL_DAP_COMMAND:
 	case SNDRV_DEVDEP_DAP_IOCTL_DAP_LICENSE:
 		msm_pcm_routing_acquire_lock();
-		ret = msm_ds2_dap_ioctl(hw, file, cmd, argp);
+		ret = msm_ds2_dap_ioctl(hw, file, cmd, (void __force *)argp);
 		msm_pcm_routing_release_lock();
 		break;
 	case SNDRV_DEVDEP_DAP_IOCTL_GET_VISUALIZER:
-		ret = msm_ds2_dap_ioctl(hw, file, cmd, argp);
+		ret = msm_ds2_dap_ioctl(hw, file, cmd, (void __force *)argp);
 		break;
 	default:
 		pr_err("%s called with invalid control 0x%X\n", __func__, cmd);
@@ -75,11 +76,11 @@ static int msm_pcm_routing_hwdep_compat_ioctl(struct snd_hwdep *hw,
 	case SNDRV_DEVDEP_DAP_IOCTL_DAP_COMMAND32:
 	case SNDRV_DEVDEP_DAP_IOCTL_DAP_LICENSE32:
 		msm_pcm_routing_acquire_lock();
-		ret = msm_ds2_dap_compat_ioctl(hw, file, cmd, argp);
+		ret = msm_ds2_dap_compat_ioctl(hw, file, cmd, (void __force *)argp);
 		msm_pcm_routing_release_lock();
 		break;
 	case SNDRV_DEVDEP_DAP_IOCTL_GET_VISUALIZER32:
-		ret = msm_ds2_dap_compat_ioctl(hw, file, cmd, argp);
+		ret = msm_ds2_dap_compat_ioctl(hw, file, cmd, (void __force *)argp);
 		break;
 	default:
 		pr_err("%s called with invalid control 0x%X\n", __func__, cmd);

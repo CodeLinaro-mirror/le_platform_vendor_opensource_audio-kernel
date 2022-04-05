@@ -4,6 +4,7 @@
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2008 HTC Corporation
  * Copyright (c) 2009-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -20,6 +21,7 @@
 #include <audio/linux/msm_audio_wmapro.h>
 #include <linux/compat.h>
 #include "audio_utils_aio.h"
+#include "audio_utils_statement.h"
 
 static struct miscdevice audio_wmapro_misc;
 static struct ws_mgr audio_wmapro_ws_mgr;
@@ -152,7 +154,7 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case AUDIO_GET_WMAPRO_CONFIG: {
-		if (copy_to_user((void *)arg, audio->codec_cfg,
+		if (copy_to_user((void __user *)arg, audio->codec_cfg,
 			 sizeof(struct msm_audio_wmapro_config))) {
 			pr_err("%s: copy_to_user for AUDIO_GET_WMAPRO_CONFIG failed\n",
 				__func__);
@@ -161,7 +163,7 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		break;
 	}
 	case AUDIO_SET_WMAPRO_CONFIG: {
-		if (copy_from_user(audio->codec_cfg, (void *)arg,
+		if (copy_from_user(audio->codec_cfg, (void __user *)arg,
 			sizeof(struct msm_audio_wmapro_config))) {
 			pr_err("%s: copy_from_user for AUDIO_SET_WMAPRO_CONFIG_V2 failed\n",
 				__func__);
@@ -240,7 +242,7 @@ static long audio_compat_ioctl(struct file *file, unsigned int cmd,
 		wmapro_config_32.advancedencodeopt2 =
 					wmapro_config->advancedencodeopt2;
 
-		if (copy_to_user((void *)arg, &wmapro_config_32,
+		if (copy_to_user((void __user *)arg, &wmapro_config_32,
 			 sizeof(struct msm_audio_wmapro_config32))) {
 			pr_err("%s: copy_to_user for AUDIO_GET_WMAPRO_CONFIG_V2_32 failed\n",
 				__func__);
@@ -252,7 +254,7 @@ static long audio_compat_ioctl(struct file *file, unsigned int cmd,
 		struct msm_audio_wmapro_config *wmapro_config;
 		struct msm_audio_wmapro_config32 wmapro_config_32;
 
-		if (copy_from_user(&wmapro_config_32, (void *)arg,
+		if (copy_from_user(&wmapro_config_32, (void __user *)arg,
 			sizeof(struct msm_audio_wmapro_config32))) {
 			pr_err(
 				"%s: copy_from_user for AUDIO_SET_WMAPRO_CONFG_V2_32 failed\n",

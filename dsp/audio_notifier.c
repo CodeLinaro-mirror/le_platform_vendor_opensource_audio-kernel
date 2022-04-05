@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -99,8 +100,8 @@ static struct service_info service_data[AUDIO_NOTIFIER_MAX_SERVICES]
 };
 
 /* Master list of all audio notifier clients */
-struct list_head   client_list;
-struct mutex       notifier_mutex;
+static struct list_head   client_list;
+static struct mutex       notifier_mutex;
 
 static int audio_notifier_get_default_service(int domain)
 {

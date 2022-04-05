@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2014, 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -17,6 +18,7 @@
 
 #include "msm-pcm-q6-v2.h"
 #include "msm-pcm-routing-v2.h"
+#include "platform_init.h"
 
 #define DRV_NAME "msm-pcm-dtmf-v2"
 
@@ -459,9 +461,9 @@ static int msm_pcm_prepare(struct snd_pcm_substream *substream)
 
 		msm_pcm_capture_prepare(substream);
 
-		if (runtime->format != FORMAT_S16_LE) {
+		if ((__force int)runtime->format != (__force int)FORMAT_S16_LE) {
 			pr_err("format:%u doesn't match %d\n",
-			       (uint32_t)runtime->format, FORMAT_S16_LE);
+			       (__force uint32_t)runtime->format, (__force int)FORMAT_S16_LE);
 			mutex_unlock(&prtd->lock);
 			return -EINVAL;
 		}

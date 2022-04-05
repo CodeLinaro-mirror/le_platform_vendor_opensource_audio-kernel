@@ -4,11 +4,13 @@
  * Copyright (C) 2008 Google, Inc.
  * Copyright (C) 2008 HTC Corporation
  * Copyright (c) 2011-2017, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/compat.h>
 #include <linux/types.h>
 #include "audio_utils_aio.h"
+#include "audio_utils_statement.h"
 
 static struct miscdevice audio_amrwb_misc;
 static struct ws_mgr audio_amrwb_ws_mgr;
