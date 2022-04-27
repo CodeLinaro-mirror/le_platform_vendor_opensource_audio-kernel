@@ -750,6 +750,19 @@ struct msm_pcm_stream_app_type_cfg {
 	int copp_perf_mode;
 };
 
+struct msm_asm_config {
+	u8 fe_id;
+	u8 mode; /* playback=0, capture=1,loopback=2 */
+	u8 bit_format;
+};
+
+enum {
+	MSM_ASM_PLAYBACK_MODE = 0,
+	MSM_ASM_CAPTURE_MODE,
+	MSM_ASM_LOOPBACK_MODE,
+	MSM_ASM_MAX_MODE
+};
+
 struct msm_pcm_channel_mixer_v2 {
 	struct msm_pcm_channel_mixer mixer_cfg;
 	int fedai_id;
@@ -807,7 +820,6 @@ int msm_pcm_routing_set_channel_mixer_runtime(
 
 int msm_pcm_routing_set_stream_ec_ref_chmix_cfg(
 	int fedai_id, struct msm_pcm_channel_mixer *cfg_data);
-
 
 /* array element of usr elem */
 struct snd_pcm_soft_vol_usr_elem {
@@ -878,4 +890,7 @@ int snd_pcm_add_usr_ctls(struct snd_pcm *pcm, int stream,
     unsigned long private_value,
     struct snd_pcm_usr **info_ret);
 #endif
+
+uint16_t msm_pcm_asm_cfg_get(int fe_id, int mode);
+
 #endif /*_MSM_PCM_H*/
