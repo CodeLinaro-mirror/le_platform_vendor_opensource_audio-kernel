@@ -3483,6 +3483,21 @@ static int msm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 		rate->min = rate->max = tdm_tx_cfg[TDM_QUIN][TDM_0].sample_rate;
 		break;
 
+	case MSM_BACKEND_DAI_QUIN_TDM_RX_1:
+		channels->min = channels->max =
+				tdm_rx_cfg[TDM_QUIN][TDM_1].channels;
+		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
+			       tdm_rx_cfg[TDM_QUIN][TDM_1].bit_format);
+		rate->min = rate->max = tdm_rx_cfg[TDM_QUIN][TDM_1].sample_rate;
+		break;
+
+	case MSM_BACKEND_DAI_QUIN_TDM_TX_1:
+		channels->min = channels->max =
+				tdm_tx_cfg[TDM_QUIN][TDM_1].channels;
+		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
+			       tdm_tx_cfg[TDM_QUIN][TDM_1].bit_format);
+		rate->min = rate->max = tdm_tx_cfg[TDM_QUIN][TDM_1].sample_rate;
+		break;
 
 	case MSM_BACKEND_DAI_AUXPCM_RX:
 		param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
@@ -6571,6 +6586,29 @@ static struct snd_soc_dai_link msm_auto_be_dai_links[] = {
 		.ops = &sa8155_tdm_be_ops,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(quat_tdm_tx_7),
+	},
+	{
+		.name = LPASS_BE_QUIN_TDM_RX_1,
+		.stream_name = "Quinary TDM1 Playback",
+		.no_pcm = 1,
+		.dpcm_playback = 1,
+		.id = MSM_BACKEND_DAI_QUIN_TDM_RX_1,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &sa8155_tdm_be_ops,
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		SND_SOC_DAILINK_REG(quin_tdm_rx_1),
+	},
+	{
+		.name = LPASS_BE_QUIN_TDM_TX_1,
+		.stream_name = "Quinary TDM1 Capture",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_QUIN_TDM_TX_1,
+		.be_hw_params_fixup = msm_tdm_be_hw_params_fixup,
+		.ops = &sa8155_tdm_be_ops,
+		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(quin_tdm_tx_1),
 	},
 	{
 		.name = LPASS_BE_QUIN_TDM_RX_7,
