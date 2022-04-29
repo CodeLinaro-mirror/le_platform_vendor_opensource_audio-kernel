@@ -1807,7 +1807,7 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 						      app_type,
 						      acdb_dev_id,
 						      ADM_TOPOLOGY_CAL_TYPE_IDX,
-						      false /*exact*/);
+						      true /*exact*/);
 		if (topology < 0)
 			topology = NULL_COPP_TOPOLOGY;
 	}
