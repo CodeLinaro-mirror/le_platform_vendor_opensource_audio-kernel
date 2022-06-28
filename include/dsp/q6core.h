@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __Q6CORE_H__
@@ -8,13 +9,15 @@
 #include <ipc/apr.h>
 #include <dsp/apr_audio-v2.h>
 
-
-
 #define AVCS_CMD_ADSP_EVENT_GET_STATE		0x0001290C
 #define AVCS_CMDRSP_ADSP_EVENT_GET_STATE	0x0001290D
 #define AVCS_API_VERSION_V4		4
 #define AVCS_API_VERSION_V5		5
 #define APRV2_IDS_SERVICE_ID_ADSP_CORE_V (0x3)
+
+#define APSS_QTMR0_F0V1_QTMR_V1_SIZE		0x00001000
+#define APSS_QTMR0_F0V1_QTMR_V1				0x17C21000
+uint64_t q6core_timer_read(void);
 
 bool q6core_is_adsp_ready(void);
 

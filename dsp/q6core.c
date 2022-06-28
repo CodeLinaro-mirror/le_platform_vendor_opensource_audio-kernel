@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -89,6 +90,13 @@ struct q6core_str {
 	struct q6core_avcs_ver_info q6core_avcs_ver_info;
 };
 
+struct q6core_timer {
+	void __iomem *timer_base;
+	struct mutex timer_lock;
+	bool is_init;
+};
+static struct q6core_timer qtimer;
+
 static struct q6core_str q6core_lcl;
 
 /* Global payload used for AVCS_CMD_RSP_MODULES command */
@@ -103,6 +111,34 @@ static struct generic_get_data_ *generic_get_data;
 
 static DEFINE_MUTEX(kset_lock);
 static struct kset *audio_uevent_kset;
+
+static int32_t qtimer_init(void)
+{
+	qtimer.timer_base = ioremap(APSS_QTMR0_F0V1_QTMR_V1, APSS_QTMR0_F0V1_QTMR_V1_SIZE);
+	if (!qtimer.timer_base) {
+		pr_err("%s: Timer ioremap(APSS_QTMR0_F0V1_QTMR_V1) failed\n", __func__);
+		return -EINVAL;
+	}
+	mutex_init(&qtimer.timer_lock);
+	qtimer.is_init = true;
+	return 0;
+}
+
+/**
+ * q6core_timer_read - get timer cnt
+ *
+ * Returns Timer cnt
+ */
+uint64_t q6core_timer_read(void)
+{
+	uint64_t timer_cnt = 0;
+	mutex_lock(&qtimer.timer_lock);
+	if(qtimer.is_init)
+		timer_cnt = (((uint64_t)(readl(qtimer.timer_base + 0x4)) << 32) | (readl(qtimer.timer_base)));
+	mutex_unlock(&qtimer.timer_lock);
+	return timer_cnt;
+}
+EXPORT_SYMBOL(q6core_timer_read);
 
 static int q6core_init_uevent_kset(void)
 {
@@ -253,15 +289,16 @@ static int32_t aprv2_core_fn_q(struct apr_client_data *data, void *priv)
 {
 	uint32_t *payload1;
 	int ret = 0;
+	uint64_t qtimer_cnt = 0;
+	qtimer_cnt = q6core_timer_read();
 
 	if (data == NULL) {
 		pr_err("%s: data argument is null\n", __func__);
 		return -EINVAL;
 	}
 
-	pr_debug("%s: core msg: payload len = %u, apr resp opcode = 0x%x\n",
-		__func__,
-		data->payload_size, data->opcode);
+	pr_debug("%s: core msg: qtimer_cnt = %lu, payload len = %u, apr resp opcode = 0x%x\n",
+		__func__, qtimer_cnt, data->payload_size, data->opcode);
 
 	switch (data->opcode) {
 
@@ -538,6 +575,8 @@ static int q6core_send_get_avcs_fwk_ver_cmd(void)
 {
 	struct apr_hdr avcs_ver_cmd;
 	int ret;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	mutex_lock(&q6core_lcl.cmd_lock);
 	avcs_ver_cmd.hdr_field =
@@ -552,6 +591,7 @@ static int q6core_send_get_avcs_fwk_ver_cmd(void)
 	q6core_lcl.adsp_status = 0;
 	q6core_lcl.avcs_fwk_ver_resp_received = 0;
 
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(q6core_lcl.core_handle_q,
 			   (uint32_t *) &avcs_ver_cmd);
 	if (ret < 0) {
@@ -563,9 +603,10 @@ static int q6core_send_get_avcs_fwk_ver_cmd(void)
 	ret = wait_event_timeout(q6core_lcl.avcs_fwk_ver_req_wait,
 				 (q6core_lcl.avcs_fwk_ver_resp_received == 1),
 				 msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!ret) {
-		pr_err("%s: wait_event timeout for AVCS fwk version info\n",
-		       __func__);
+		pr_err("%s: timeout for AVCS fwk version info, qtimer_start %lu, qtimer_end %lu\n",
+		       __func__, qtimer_start, qtimer_end);
 		ret = -ETIMEDOUT;
 		goto done;
 	}
@@ -976,6 +1017,8 @@ int32_t q6core_avcs_load_unload_modules(struct avcs_load_unload_modules_payload
 	struct avcs_cmd_dynamic_modules *mod = NULL;
 	int num_modules;
 	unsigned long timeout;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	if (payload == NULL) {
 		pr_err("%s: payload is null\n", __func__);
@@ -1059,6 +1102,8 @@ int32_t q6core_avcs_load_unload_modules(struct avcs_load_unload_modules_payload
 
 	q6core_lcl.adsp_status = 0;
 	q6core_lcl.avcs_module_resp_received = 0;
+
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(q6core_lcl.core_handle_q,
 		(uint32_t *)mod);
 
@@ -1071,9 +1116,10 @@ int32_t q6core_avcs_load_unload_modules(struct avcs_load_unload_modules_payload
 	ret = wait_event_timeout(q6core_lcl.avcs_module_load_unload_wait,
 				(q6core_lcl.avcs_module_resp_received == 1),
 				msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!ret) {
-		pr_err("%s wait event timeout for avcs load/unload module\n",
-			__func__);
+		pr_err("%s timeout for avcs load/unload module, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		ret = -ETIMEDOUT;
 		goto done;
 	}
@@ -1152,6 +1198,8 @@ bool q6core_is_adsp_ready(void)
 	int rc = 0;
 	bool ret = false;
 	struct apr_hdr hdr;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	pr_debug("%s: enter\n", __func__);
 	memset(&hdr, 0, sizeof(hdr));
@@ -1164,6 +1212,8 @@ bool q6core_is_adsp_ready(void)
 	ocm_core_open();
 	if (q6core_lcl.core_handle_q) {
 		q6core_lcl.bus_bw_resp_received = 0;
+
+		qtimer_start = q6core_timer_read();
 		rc = apr_send_pkt(q6core_lcl.core_handle_q, (uint32_t *)&hdr);
 		if (rc < 0) {
 			pr_err_ratelimited("%s: Get ADSP state APR packet send event %d\n",
@@ -1174,6 +1224,10 @@ bool q6core_is_adsp_ready(void)
 		rc = wait_event_timeout(q6core_lcl.bus_bw_req_wait,
 					(q6core_lcl.bus_bw_resp_received == 1),
 					msecs_to_jiffies(Q6_READY_TIMEOUT_MS));
+		qtimer_end = q6core_timer_read();
+		if (!rc)
+			pr_err("%s timeout for adsp ready, qtimer_start %lu, qtimer_end %lu\n",
+				__func__, qtimer_start, qtimer_end);
 		if (rc > 0 && q6core_lcl.bus_bw_resp_received) {
 			/* ensure to read updated param by callback thread */
 			rmb();
@@ -1392,6 +1446,8 @@ int q6core_map_memory_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 	int ret = 0;
 	int i = 0;
 	int cmd_size = 0;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	cmd_size = sizeof(struct avs_cmd_shared_mem_map_regions)
 			+ sizeof(struct avs_shared_map_region_payload)
@@ -1432,6 +1488,7 @@ int q6core_map_memory_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 	*map_handle = 0;
 	q6core_lcl.adsp_status = 0;
 	q6core_lcl.bus_bw_resp_received = 0;
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(q6core_lcl.core_handle_q, (uint32_t *)
 		mmap_regions);
 	if (ret < 0) {
@@ -1444,8 +1501,10 @@ int q6core_map_memory_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 	ret = wait_event_timeout(q6core_lcl.bus_bw_req_wait,
 				(q6core_lcl.bus_bw_resp_received == 1),
 				msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!ret) {
-		pr_err("%s: timeout. waited for memory map\n", __func__);
+		pr_err("%s: timeout. waited for memory map, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		ret = -ETIME;
 		goto done;
 	} else {
@@ -1567,6 +1626,8 @@ int q6core_memory_unmap_regions(uint32_t mem_map_handle)
 {
 	struct avs_cmd_shared_mem_unmap_regions unmap_regions;
 	int ret = 0;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	memset(&unmap_regions, 0, sizeof(unmap_regions));
 	unmap_regions.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -1588,6 +1649,7 @@ int q6core_memory_unmap_regions(uint32_t mem_map_handle)
 	pr_debug("%s: unmap regions map handle %d\n",
 		__func__, mem_map_handle);
 
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(q6core_lcl.core_handle_q, (uint32_t *)
 		&unmap_regions);
 	if (ret < 0) {
@@ -1600,9 +1662,10 @@ int q6core_memory_unmap_regions(uint32_t mem_map_handle)
 	ret = wait_event_timeout(q6core_lcl.bus_bw_req_wait,
 				(q6core_lcl.bus_bw_resp_received == 1),
 				msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!ret) {
-		pr_err("%s: timeout. waited for memory_unmap\n",
-		       __func__);
+		pr_err("%s: timeout. waited for memory_unmap, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		ret = -ETIME;
 		goto done;
 	} else {
@@ -1715,6 +1778,8 @@ static int q6core_dereg_all_custom_topologies(void)
 {
 	int ret = 0;
 	struct avcs_cmd_deregister_topologies dereg_top;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	memset(&dereg_top, 0, sizeof(dereg_top));
 	dereg_top.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -1739,6 +1804,7 @@ static int q6core_dereg_all_custom_topologies(void)
 	pr_debug("%s: Deregister topologies mode %d\n",
 		__func__, dereg_top.mode);
 
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(q6core_lcl.core_handle_q, (uint32_t *) &dereg_top);
 	if (ret < 0) {
 		pr_err("%s: Deregister topologies failed %d\n",
@@ -1749,9 +1815,10 @@ static int q6core_dereg_all_custom_topologies(void)
 	ret = wait_event_timeout(q6core_lcl.bus_bw_req_wait,
 				(q6core_lcl.bus_bw_resp_received == 1),
 				msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!ret) {
-		pr_err("%s: wait_event timeout for Deregister topologies\n",
-			__func__);
+		pr_err("%s: timeout for Deregister topologies, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		goto done;
 	}
 done:
@@ -1766,6 +1833,8 @@ static int q6core_send_custom_topologies(void)
 	unsigned long timeout;
 	struct cal_block_data *cal_block = NULL;
 	struct avcs_cmd_register_topologies reg_top;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	/*  If ADSP is down, retry till ADSP is up */
 	if (!q6core_is_adsp_ready()) {
@@ -1843,6 +1912,7 @@ static int q6core_send_custom_topologies(void)
 		__func__, &cal_block->cal_data.paddr, cal_block->cal_data.size,
 		cal_block->map_data.q6map_handle);
 
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(q6core_lcl.core_handle_q, (uint32_t *) &reg_top);
 	if (ret < 0) {
 		pr_err("%s: Register topologies failed %d\n",
@@ -1853,9 +1923,10 @@ static int q6core_send_custom_topologies(void)
 	ret = wait_event_timeout(q6core_lcl.bus_bw_req_wait,
 				(q6core_lcl.bus_bw_resp_received == 1),
 				msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!ret) {
-		pr_err("%s: wait_event timeout for Register topologies\n",
-			__func__);
+		pr_err("%s: timeout for Register topologies, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		goto unmap;
 	}
 
@@ -2152,6 +2223,7 @@ int __init core_init(void)
 	mutex_init(&q6core_lcl.cmd_lock);
 	mutex_init(&q6core_lcl.ver_lock);
 
+	qtimer_init();
 	q6core_init_cal_data();
 	q6core_init_uevent_kset();
 

@@ -2054,6 +2054,8 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 	uint32_t payload_size = 0;
 	unsigned long flags = 0;
 	int session_id;
+	uint64_t qtimer_cnt = 0;
+	qtimer_cnt = q6core_timer_read();
 
 	if (ac == NULL) {
 		pr_err("%s: ac NULL\n", __func__);
@@ -2063,7 +2065,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		pr_err("%s: data NULL\n", __func__);
 		return -EINVAL;
 	}
-
 	session_id = q6asm_get_session_id_from_audio_client(ac);
 	if (session_id <= 0 || session_id > ASM_ACTIVE_STREAMS_ALLOWED) {
 		pr_err("%s: Session ID is invalid, session = %d\n", __func__,
@@ -2088,6 +2089,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		wakeup_flag = 0;
 	}
 
+	pr_debug("%s: qtimer_cnt = %lu\n", __func__, qtimer_cnt);
 	if (data->opcode == RESET_EVENTS) {
 		atomic_set(&ac->reset, 1);
 		if (ac->apr == NULL) {
@@ -3336,6 +3338,8 @@ static int __q6asm_open_read(struct audio_client *ac,
 	int rc = 0x00;
 	struct asm_stream_cmd_open_read_v3 open;
 	struct q6asm_cal_info cal_info;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	config_debug_fs_reset_index();
 
@@ -3419,6 +3423,7 @@ static int __q6asm_open_read(struct audio_client *ac,
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
+	qtimer_start = q6core_timer_read();
 	rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 	if (rc < 0) {
 		pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -3429,9 +3434,10 @@ static int __q6asm_open_read(struct audio_client *ac,
 	rc = wait_event_timeout(ac->cmd_wait,
 			(atomic_read(&ac->cmd_state) >= 0),
 			msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!rc) {
-		pr_err("%s: timeout. waited for open read\n",
-				__func__);
+		pr_err("%s: timeout. waited for open read, qtimer_start %lu, qtimer_end %lu\n",
+				__func__, qtimer_start, qtimer_end);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
@@ -3593,6 +3599,8 @@ int q6asm_open_write_compressed(struct audio_client *ac, uint32_t format,
 {
 	int rc = 0;
 	struct asm_stream_cmd_open_write_compressed open;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	if (ac == NULL) {
 		pr_err("%s: ac[%pK] NULL\n",  __func__, ac);
@@ -3661,6 +3669,7 @@ int q6asm_open_write_compressed(struct audio_client *ac, uint32_t format,
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
+	qtimer_start = q6core_timer_read();
 	rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 	if (rc < 0) {
 		pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -3671,9 +3680,10 @@ int q6asm_open_write_compressed(struct audio_client *ac, uint32_t format,
 	rc = wait_event_timeout(ac->cmd_wait,
 		(atomic_read(&ac->cmd_state) >= 0),
 		msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!rc) {
-		pr_err("%s: timeout. waited for OPEN_WRITE_COMPR rc[%d]\n",
-			__func__, rc);
+		pr_err("%s: timeout. waited for OPEN_WRITE_COMPR , qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
@@ -3702,6 +3712,8 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 	int rc = 0x00;
 	struct asm_stream_cmd_open_write_v3 open;
 	struct q6asm_cal_info cal_info;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	if (ac == NULL) {
 		pr_err("%s: APR handle NULL\n", __func__);
@@ -3830,6 +3842,7 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
+	qtimer_start = q6core_timer_read();
 	rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 	if (rc < 0) {
 		pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -3840,8 +3853,10 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 	rc = wait_event_timeout(ac->cmd_wait,
 			(atomic_read(&ac->cmd_state) >= 0),
 			msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!rc) {
-		pr_err("%s: timeout. waited for open write\n", __func__);
+		pr_err("%s: timeout. waited for open write, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
@@ -4046,6 +4061,8 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 	int rc = 0x00;
 	struct asm_stream_cmd_open_readwrite_v2 open;
 	struct q6asm_cal_info cal_info;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	if (ac == NULL) {
 		pr_err("%s: APR handle NULL\n", __func__);
@@ -4180,6 +4197,7 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 	dev_vdbg(ac->dev, "%s: rdformat[0x%x]wrformat[0x%x]\n", __func__,
 			open.enc_cfg_id, open.dec_fmt_id);
 
+	qtimer_start = q6core_timer_read();
 	rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 	if (rc < 0) {
 		pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -4190,9 +4208,10 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 	rc = wait_event_timeout(ac->cmd_wait,
 			(atomic_read(&ac->cmd_state) >= 0),
 			msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!rc) {
-		pr_err("%s: timeout. waited for open read-write\n",
-				__func__);
+		pr_err("%s: timeout. waited for open read-write, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
@@ -4269,6 +4288,8 @@ int q6asm_open_loopback_v2(struct audio_client *ac, uint16_t bits_per_sample)
 {
 	int rc = 0x00;
 	struct q6asm_cal_info cal_info;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	if (ac == NULL) {
 		pr_err("%s: APR handle NULL\n", __func__);
@@ -4307,6 +4328,7 @@ int q6asm_open_loopback_v2(struct audio_client *ac, uint16_t bits_per_sample)
 		pr_debug("%s: opening a transcode_loopback with mode_flags =[%d] session[%d]\n",
 				__func__, open.mode_flags, ac->session);
 
+		qtimer_start = q6core_timer_read();
 		rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 		if (rc < 0) {
 			pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -4335,6 +4357,7 @@ int q6asm_open_loopback_v2(struct audio_client *ac, uint16_t bits_per_sample)
 		pr_debug("%s: opening a loopback_v2 with mode_flags =[%d] session[%d]\n",
 				__func__, open.mode_flags, ac->session);
 
+		qtimer_start = q6core_timer_read();
 		rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 		if (rc < 0) {
 			pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -4346,9 +4369,10 @@ int q6asm_open_loopback_v2(struct audio_client *ac, uint16_t bits_per_sample)
 	rc = wait_event_timeout(ac->cmd_wait,
 			(atomic_read(&ac->cmd_state) >= 0),
 			msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!rc) {
-		pr_err("%s: timeout. waited for open_loopback\n",
-				__func__);
+		pr_err("%s: timeout. waited for open_loopback, qtimer_start %lu, qtimer_end %lu\n",
+				__func__, qtimer_start, qtimer_end);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
@@ -4416,6 +4440,8 @@ int q6asm_open_transcode_loopback(struct audio_client *ac,
 	int rc = 0x00;
 	struct asm_stream_cmd_open_transcode_loopback_t open;
 	struct q6asm_cal_info cal_info;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 
 	if (ac == NULL) {
 		pr_err("%s: APR handle NULL\n", __func__);
@@ -4478,6 +4504,7 @@ int q6asm_open_transcode_loopback(struct audio_client *ac,
 	pr_debug("%s: opening a transcode_loopback with mode_flags =[%d] session[%d]\n",
 		__func__, open.mode_flags, ac->session);
 
+	qtimer_start = q6core_timer_read();
 	rc = apr_send_pkt(ac->apr, (uint32_t *) &open);
 	if (rc < 0) {
 		pr_err("%s: open failed op[0x%x]rc[%d]\n",
@@ -4488,9 +4515,10 @@ int q6asm_open_transcode_loopback(struct audio_client *ac,
 	rc = wait_event_timeout(ac->cmd_wait,
 			(atomic_read(&ac->cmd_state) >= 0),
 			msecs_to_jiffies(TIMEOUT_MS));
+	qtimer_end = q6core_timer_read();
 	if (!rc) {
-		pr_err("%s: timeout. waited for open_transcode_loopback\n",
-			__func__);
+		pr_err("%s: timeout. waited for open_transcode_loopback, qtimer_start %lu, qtimer_end %lu\n",
+			__func__, qtimer_start, qtimer_end);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}

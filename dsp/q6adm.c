@@ -903,6 +903,8 @@ int adm_apr_send_pkt(void *data, wait_queue_head_t *wait,
 			int port_idx, int copp_idx, int opcode)
 {
 	int ret = 0;
+	uint64_t qtimer_start = 0;
+	uint64_t qtimer_end = 0;
 	atomic_t *copp_stat = NULL;
 	int32_t time_out = msecs_to_jiffies(TIMEOUT_MS);
 	wait = &this_adm.copp.wait[port_idx][copp_idx];
@@ -935,18 +937,20 @@ int adm_apr_send_pkt(void *data, wait_queue_head_t *wait,
 		time_out = msecs_to_jiffies(2 * TIMEOUT_MS);
 	}
 
+	qtimer_start = q6core_timer_read();
 	ret = apr_send_pkt(this_adm.apr, data);
 	if (ret > 0) {
 		ret = wait_event_timeout(*wait,
 			atomic_read(copp_stat) >= 0,
 			time_out);
+		qtimer_end = q6core_timer_read();
 		if (atomic_read(copp_stat) > 0) {
 			pr_err("%s: DSP returned error[%s]\n", __func__,
 				adsp_err_get_err_str(atomic_read(copp_stat)));
 			ret = adsp_err_get_lnx_err_code(atomic_read(copp_stat));
 		} else	if (!ret) {
-			pr_err_ratelimited("%s: request timedout\n",
-				__func__);
+			pr_err("%s: Request timeout,opcode %d, qtimer_start %lu, qtimer_end %lu\n",
+				__func__, qtimer_start, qtimer_end);
 			ret = -ETIMEDOUT;
 		} else {
 			ret = 0;
@@ -1578,7 +1582,8 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 	int port_idx, copp_idx, idx, client_id;
 	int num_modules;
 	int ret;
-
+	uint64_t qtimer_cnt = 0;
+	qtimer_cnt = q6core_timer_read();
 	if (data == NULL) {
 		pr_err("%s: data parameter is null\n", __func__);
 		return -EINVAL;
@@ -1586,6 +1591,7 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 
 	payload = data->payload;
 
+	pr_debug("%s: qtimer_cnt = %lu\n", __func__, qtimer_cnt);
 	if (data->opcode == RESET_EVENTS) {
 		pr_debug("%s: Reset event is received: %d %d apr[%pK]\n",
 			__func__,
