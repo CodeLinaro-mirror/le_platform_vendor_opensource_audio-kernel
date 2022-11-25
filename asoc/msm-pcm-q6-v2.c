@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -49,6 +49,8 @@ enum stream_state {
 };
 
 static struct audio_locks the_locks;
+
+static int msm_pcm_set_volume(struct msm_audio *prtd, uint32_t volume);
 
 #define PCM_MASTER_VOL_MAX_STEPS	0x2000
 static const DECLARE_TLV_DB_LINEAR(msm_pcm_vol_gain, 0,
@@ -662,6 +664,9 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 			prtd->audio_client = NULL;
 			return -ENOMEM;
 		}
+		ret = msm_pcm_set_volume(prtd, 0);
+		if (ret < 0)
+			pr_err("%s : Set Volume failed : %d\n", __func__, ret);
 
 		ret = q6asm_send_cal(prtd->audio_client);
 		if (ret < 0)
