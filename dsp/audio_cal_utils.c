@@ -459,6 +459,7 @@ static void delete_cal_block(struct cal_block_data *cal_block)
 		cal_block->map_data.mem_handle = NULL;
 	}
 	kfree(cal_block);
+	cal_block = NULL;
 done:
 	return;
 }
@@ -495,6 +496,7 @@ static void destroy_cal_type_data(struct cal_type_data *cal_type)
 	destroy_all_cal_blocks(cal_type);
 	list_del(&cal_type->cal_blocks);
 	kfree(cal_type);
+	cal_type = NULL;
 done:
 	return;
 }
