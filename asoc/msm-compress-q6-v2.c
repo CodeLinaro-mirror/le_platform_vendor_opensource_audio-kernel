@@ -9,7 +9,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -447,6 +447,18 @@ static int msm_compr_set_volume(struct snd_compr_stream *cstream,
 		gain_list[0] = volume_l;
 		gain_list[1] = volume_r;
 		gain_list[2] = volume_l;
+
+		switch (prtd->codec) {
+		case FORMAT_AMRNB:
+		case FORMAT_AMRWB:
+		case FORMAT_AMR_WB_PLUS:
+			use_default = true; // For AMR formats using default format as there is no format data
+			break;
+
+		default:
+			break;
+		}
+
 		if (use_default)
 			num_channels = 3;
 		rc = q6asm_set_multich_gain(prtd->audio_client, num_channels,
