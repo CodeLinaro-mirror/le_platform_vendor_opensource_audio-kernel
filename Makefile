@@ -1,5 +1,9 @@
 # auto-detect subdirs
+ifeq ($(QTI_TECHPACK), true)
+LEGACY_PATH=$(PWD)/../vendor/qcom/opensource/audio-kernel
+else
 LEGACY_PATH=$(PWD)/../vendor/qcom/opensource/audio-kernel/legacy
+endif
 ifneq ($(CONFIG_ARCH_QTI_VM), y)
 ifeq ($(CONFIG_QTI_QUIN_GVM), y)
 include $(LEGACY_PATH)/config/gvmauto.conf
@@ -97,7 +101,7 @@ AUDIO_ROOT=$(KERNEL_SRC)/$(M)
 
 KBUILD_OPTIONS+=  AUDIO_ROOT=$(AUDIO_ROOT)
 
-all: modules
+all: clean modules
 
 clean:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) clean

@@ -11,7 +11,17 @@ endif
 KDIR := $(TOP)/kernel/msm-5.4
 
 ifeq ($(KERNEL_BUILD), 1)
-	AUDIO_ROOT := $(KDIR)/techpack/audio
+	ifeq  ($(TARGET_SUPPORT), sa410m)
+		AUDIO_ROOT := $(shell pwd)/../../../../vendor/qcom/opensource/audio-kernel
+	else
+		AUDIO_ROOT := $(KDIR)/techpack/audio
+	endif
+endif
+
+ifeq ($(TARGET_SUPPORT), sa410m)
+	include $(AUDIO_ROOT)/config/sa410mauto.conf
+	export
+	INCS    +=  -include $(AUDIO_ROOT)/config/sa410mautoconf.h
 endif
 
 ifeq ($(CONFIG_SND_SOC_AUTO), y)
@@ -35,6 +45,12 @@ ifeq ($(CONFIG_SND_SOC_AUTO), y)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/sa8295gvmautoconf.h
 	endif
+	ifdef CONFIG_ARCH_SA410M
+		include $(AUDIO_ROOT)/config/sa410mauto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sa410mautoconf.h
+	endif
+
 else
 	ifeq ($(KERNEL_BUILD), 0)
 			ifeq ($(CONFIG_ARCH_SM6150), y)

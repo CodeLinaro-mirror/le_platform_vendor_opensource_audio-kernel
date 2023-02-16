@@ -980,7 +980,7 @@ int send_asm_custom_topology(struct audio_client *ac)
 	set_custom_topology = 0;
 
 	cal_block = cal_utils_get_only_cal_block(cal_data[ASM_CUSTOM_TOP_CAL]);
-	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block, cal_data[ASM_CUSTOM_TOP_CAL]))
+	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block))
 		goto unlock;
 
 	if (cal_block->cal_data.size == 0) {
@@ -3365,7 +3365,12 @@ static int __q6asm_open_read(struct audio_client *ac,
 	if (ac->perf_mode == LOW_LATENCY_PCM_MODE) {
 		open.mode_flags |= ASM_LOW_LATENCY_TX_STREAM_SESSION <<
 			ASM_SHIFT_STREAM_PERF_MODE_FLAG_IN_OPEN_READ;
-	} else {
+	} 
+	else if (ac->perf_mode == LOW_LATENCY_PCM_NOPROC_MODE) {
+		open.mode_flags |= ASM_LOW_LATENCY_NPROC_TX_STREAM_SESSION <<
+			ASM_SHIFT_STREAM_PERF_MODE_FLAG_IN_OPEN_READ;
+	}
+	else {
 		open.mode_flags |= ASM_LEGACY_STREAM_SESSION <<
 			ASM_SHIFT_STREAM_PERF_MODE_FLAG_IN_OPEN_READ;
 	}
@@ -3737,6 +3742,8 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		open.mode_flags |= ASM_ULTRA_LOW_LATENCY_STREAM_SESSION;
 	else if (ac->perf_mode == LOW_LATENCY_PCM_MODE)
 		open.mode_flags |= ASM_LOW_LATENCY_STREAM_SESSION;
+	else if (ac->perf_mode == LOW_LATENCY_PCM_NOPROC_MODE)
+		open.mode_flags |= ASM_ULTRA_LOW_LATENCY_NPROC_STREAM_SESSION;
 	else {
 		open.mode_flags |= ASM_LEGACY_STREAM_SESSION;
 		if (is_gapless_mode)
@@ -11356,7 +11363,7 @@ static int q6asm_get_asm_topology_apptype(struct q6asm_cal_info *cal_info, struc
 				"search using CAL type only\n", __func__);
 			cal_block = cal_utils_get_only_cal_block(cal_data[ASM_TOPOLOGY_CAL]);
 		}
-		if (cal_block == NULL || cal_utils_is_cal_stale(cal_block, cal_data[ASM_CUSTOM_TOP_CAL]))
+		if (cal_block == NULL || cal_utils_is_cal_stale(cal_block))
 			goto unlock;
 	}
 	cal_info->topology_id = ((struct audio_cal_info_asm_top *)
@@ -11427,7 +11434,7 @@ int q6asm_send_cal(struct audio_client *ac)
 			goto unlock;
 		}
 	}
-	if (cal_utils_is_cal_stale(cal_block, cal_data[ASM_AUDSTRM_CAL])) {
+	if (cal_utils_is_cal_stale(cal_block)) {
 		rc = 0; /* not error case */
 		pr_debug("%s: cal_block is stale\n",
 			__func__);

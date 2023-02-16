@@ -2232,7 +2232,7 @@ static void afe_send_custom_topology(void)
 		goto unlock;
 	this_afe.set_custom_topology = 0;
 	cal_block = cal_utils_get_only_cal_block(this_afe.cal_data[cal_index]);
-	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block, this_afe.cal_data[cal_index])) {
+	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block)) {
 		pr_err("%s cal_block not found!!\n", __func__);
 		goto unlock;
 	}
@@ -3080,7 +3080,7 @@ static struct cal_block_data *afe_find_cal_topo_id_by_port(
 		cal_block = list_entry(ptr,
 			struct cal_block_data, list);
 		/* Skip cal_block if it is already marked stale */
-		if (cal_utils_is_cal_stale(cal_block, cal_type))
+		if (cal_utils_is_cal_stale(cal_block))
 			continue;
 		pr_debug("%s: port id: 0x%x, dev_acdb_id: %d\n", __func__,
 			 port_id, this_afe.dev_acdb_id[afe_port_index]);
@@ -3660,7 +3660,7 @@ static int send_afe_cal_type(int cal_index, int port_id)
 		cal_block = cal_utils_get_only_cal_block(
 				this_afe.cal_data[cal_index]);
 
-	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block, this_afe.cal_data[cal_index])) {
+	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block)) {
 		pr_err_ratelimited("%s cal_block not found!!\n", __func__);
 		ret = -EINVAL;
 		goto unlock;
@@ -4875,6 +4875,31 @@ int afe_port_send_logging_cfg(u16 port_id,
 	return ret;
 }
 EXPORT_SYMBOL(afe_port_send_logging_cfg);
+
+int afe_port_send_afe_limiter_param(u16 port_id,
+	struct afe_param_id_port_afe_limiter_disable_t *disable_limiter)
+{
+	struct param_hdr_v3 param_hdr;
+	int ret = -EINVAL;
+
+	pr_debug("%s: enter, port: 0x%x logging flag: %x\n", __func__, port_id,
+		disable_limiter->disable_afe_limiter);
+	memset(&param_hdr, 0, sizeof(param_hdr));
+
+	param_hdr.module_id = AFE_MODULE_LIMITER;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = AFE_PARAM_ID_ENABLE;
+	param_hdr.param_size = sizeof(struct afe_param_id_port_afe_limiter_disable_t);
+
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+		q6audio_get_port_index(port_id), param_hdr, (u8*)disable_limiter);
+	if (ret)
+		pr_err("%s: AFE port logging setting for port 0x%x failed %d\n",
+			__func__, port_id, ret);
+
+	return ret;
+}
+EXPORT_SYMBOL(afe_port_send_afe_limiter_param);
 
 int afe_port_send_usb_dev_param(u16 port_id, union afe_port_config *afe_config)
 {
@@ -8599,7 +8624,7 @@ static int afe_sidetone_iir(u16 tx_port_id)
 	}
 	mutex_lock(&this_afe.cal_data[cal_index]->lock);
 	cal_block = cal_utils_get_only_cal_block(this_afe.cal_data[cal_index]);
-	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block, this_afe.cal_data[cal_index])) {
+	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block)) {
 		pr_err("%s: cal_block not found\n ", __func__);
 		mutex_unlock(&this_afe.cal_data[cal_index]->lock);
 		ret = -EINVAL;
@@ -8726,7 +8751,7 @@ static int afe_sidetone(u16 tx_port_id, u16 rx_port_id, bool enable)
 
 	mutex_lock(&this_afe.cal_data[cal_index]->lock);
 	cal_block = cal_utils_get_only_cal_block(this_afe.cal_data[cal_index]);
-	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block, this_afe.cal_data[cal_index])) {
+	if (cal_block == NULL || cal_utils_is_cal_stale(cal_block)) {
 		pr_err("%s: cal_block not found\n", __func__);
 		mutex_unlock(&this_afe.cal_data[cal_index]->lock);
 		ret = -EINVAL;
@@ -9999,6 +10024,7 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 		return -EINVAL;
 	}
 
+#ifndef CONFIG_SA410M_CLK_FRACT_INTEGRAL
 	if (cfg->clk_freq_in_hz % AFE_SAMPLING_RATE_8KHZ) {
 		if (clk_src_name[CLK_SRC_FRACT] != NULL)
 			ret = afe_set_source_clk(port_id,
@@ -10007,6 +10033,8 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 		ret = afe_set_source_clk(port_id,
 				clk_src_name[CLK_SRC_INTEGRAL]);
 	}
+#endif
+
 	if (ret < 0)
 		pr_err("%s: afe_set_source_clk fail %d\n", __func__, ret);
 
@@ -11031,7 +11059,7 @@ static struct cal_block_data *afe_find_hw_delay_by_path(
 		cal_block = list_entry(ptr,
 			struct cal_block_data, list);
 
-		if (cal_utils_is_cal_stale(cal_block, cal_type))
+		if (cal_utils_is_cal_stale(cal_block))
 			continue;
 
 		if (((struct audio_cal_info_hw_delay *)cal_block->cal_info)
