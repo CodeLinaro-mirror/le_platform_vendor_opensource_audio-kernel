@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -52,7 +52,8 @@
 
 #define SAMPLE_RATE_8KHZ 8000
 #define SAMPLE_RATE_16KHZ 16000
-#define SAMPLING_RATE_32KHZ 32000
+#define SAMPLE_RATE_24KHZ 24000
+#define SAMPLE_RATE_32KHZ 32000
 #define SAMPLE_RATE_48KHZ 48000
 #define SAMPLING_RATE_176P4KHZ 176400
 #define SAMPLING_RATE_352P8KHZ  352800
@@ -708,6 +709,12 @@ static int sdx_mi2s_rate_put(struct snd_kcontrol *kcontrol,
 	case 1:
 		sdx_mi2s_rate = SAMPLE_RATE_16KHZ;
 		break;
+	case 3:
+		sdx_mi2s_rate = SAMPLE_RATE_32KHZ;
+		break;
+	case 4:
+		sdx_mi2s_rate = SAMPLE_RATE_24KHZ;
+		break;
 	case 2:
 	default:
 		sdx_mi2s_rate = SAMPLE_RATE_48KHZ;
@@ -728,6 +735,12 @@ static int sdx_sec_mi2s_rate_put(struct snd_kcontrol *kcontrol,
 		break;
 	case 1:
 		sdx_sec_mi2s_rate = SAMPLE_RATE_16KHZ;
+		break;
+	case 3:
+		sdx_sec_mi2s_rate = SAMPLE_RATE_32KHZ;
+		break;
+	case 4:
+		sdx_sec_mi2s_rate = SAMPLE_RATE_24KHZ;
 		break;
 	case 2:
 	default:
@@ -1334,7 +1347,7 @@ static int proxy_tx_sample_rate_put(struct snd_kcontrol *kcontrol,
 		proxy_tx_cfg.sample_rate = SAMPLE_RATE_48KHZ;
 		break;
 	case 2:
-		proxy_tx_cfg.sample_rate = SAMPLING_RATE_32KHZ;
+		proxy_tx_cfg.sample_rate = SAMPLE_RATE_32KHZ;
 		break;
 	case 1:
 		proxy_tx_cfg.sample_rate = SAMPLE_RATE_16KHZ;
@@ -1386,7 +1399,7 @@ static int tdm_get_sample_rate(int value)
 		sample_rate = SAMPLE_RATE_16KHZ;
 		break;
 	case 2:
-		sample_rate = SAMPLING_RATE_32KHZ;
+		sample_rate = SAMPLE_RATE_32KHZ;
 		break;
 	case 3:
 		sample_rate = SAMPLE_RATE_48KHZ;
@@ -1415,7 +1428,7 @@ static int tdm_get_sample_rate_val(int sample_rate)
 	case SAMPLE_RATE_16KHZ:
 		sample_rate_val = 1;
 		break;
-	case SAMPLING_RATE_32KHZ:
+	case SAMPLE_RATE_32KHZ:
 		sample_rate_val = 2;
 		break;
 	case SAMPLE_RATE_48KHZ:
@@ -2151,7 +2164,7 @@ static const char *const mi2s_tx_ch_text[] = {"One", "Two"};
 static const char *const auxpcm_rate_text[] = {"rate_8000", "rate_16000"};
 
 static const char *const mi2s_rate_text[] = {"rate_8000",
-						"rate_16000", "rate_48000"};
+						"rate_16000", "rate_48000", "rate_32000", "rate_24000"};
 static const char *const mode_text[] = {"master", "slave"};
 
 static char const *proxy_ch_text[] = {"One", "Two", "Three", "Four", "Five",
@@ -2173,7 +2186,7 @@ static const struct soc_enum sdx_enum[] = {
 	SOC_ENUM_SINGLE_EXT(2, mi2s_rx_ch_text),
 	SOC_ENUM_SINGLE_EXT(2, mi2s_tx_ch_text),
 	SOC_ENUM_SINGLE_EXT(2, auxpcm_rate_text),
-	SOC_ENUM_SINGLE_EXT(3, mi2s_rate_text),
+	SOC_ENUM_SINGLE_EXT(5, mi2s_rate_text),
 	SOC_ENUM_SINGLE_EXT(2, hifi_function),
 	SOC_ENUM_SINGLE_EXT(2, mode_text),
 	SOC_ENUM_SINGLE_EXT(3, mi2s_bit_format_text),
@@ -3199,6 +3212,29 @@ static struct snd_soc_dai_link sdx_auto_dai[] = {
 		SND_SOC_DAILINK_REG(pri_mi2s_auto_tx),
 	},
 
+	{
+		.name = LPASS_BE_SEC_MI2S_RX,
+		.stream_name = "Secondary MI2S Playback",
+		.no_pcm = 1,
+		.dpcm_playback = 1,
+		.id = MSM_BACKEND_DAI_SECONDARY_MI2S_RX,
+		.be_hw_params_fixup = &sdx_sec_mi2s_rx_be_hw_params_fixup,
+		.ops = &sdx_sec_mi2s_be_ops,
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(sec_mi2s_rx),
+	},
+	{
+		.name = LPASS_BE_SEC_MI2S_TX,
+		.stream_name = "Secondary MI2S Capture",
+		.no_pcm = 1,
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_SECONDARY_MI2S_TX,
+		.be_hw_params_fixup = &sdx_sec_mi2s_tx_be_hw_params_fixup,
+		.ops = &sdx_sec_mi2s_be_ops,
+		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(sec_mi2s_tx),
+	},
 };
 
 static struct snd_soc_dai_link sdx_tavil_snd_card_dai_links[
