@@ -1111,6 +1111,7 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 				if (rtac_make_afe_callback(payload,
 							   data->payload_size))
 					return 0;
+				fallthrough;
 			case AFE_PORT_CMD_DEVICE_STOP:
 			case AFE_PORT_CMD_DEVICE_START:
 			case AFE_PSEUDOPORT_CMD_START:
@@ -5130,6 +5131,7 @@ static int q6afe_send_dec_config(u16 port_id,
 			}
 			break;
 		}
+		fallthrough;
 		/* fall through for abr enabled case */
 	default:
 		pr_debug("%s:sending AFE_ENCDEC_PARAM_ID_DEC_TO_ENC_COMMUNICATION to DSP payload\n",
@@ -5173,6 +5175,7 @@ static int q6afe_send_dec_config(u16 port_id,
 				AFE_PORT_SAMPLE_RATE_48K;
 			break;
 		}
+		fallthrough;
 		/* fall through for abr enabled case */
 	case ASM_MEDIA_FMT_APTX_AD_SPEECH:
 		media_type.sample_rate = AFE_PORT_SAMPLE_RATE_32K;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -940,6 +940,7 @@ static void compr_event_handler(uint32_t opcode,
 			prtd->sample_rate = sample_rate;
 		}
 	}
+	fallthrough;
 		/* Fallthrough here */
 	case APR_BASIC_RSP_RESULT: {
 		switch (payload[0]) {
@@ -2730,6 +2731,7 @@ static int msm_compr_trigger(struct snd_soc_component *component,
 #if !IS_ENABLED(CONFIG_AUDIO_QGKI)
 		spin_unlock_irqrestore(&prtd->lock, flags);
 #endif
+		fallthrough;
 	case SND_COMPR_TRIGGER_DRAIN:
 		pr_debug("%s: SNDRV_COMPRESS_DRAIN\n", __func__);
 		/* Make sure all the data is sent to DSP before sending EOS */

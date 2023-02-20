@@ -89,6 +89,7 @@ static void msm_pcm_route_event_handler(enum msm_pcm_routing_event event,
 		q6asm_cmd(pcm->audio_client, CMD_PAUSE);
 		q6asm_cmd(pcm->audio_client, CMD_FLUSH);
 		q6asm_run(pcm->audio_client, 0, 0, 0);
+		fallthrough;
 		/* fallthrough */
 	default:
 		pr_err("%s: default event 0x%x\n", __func__, event);
