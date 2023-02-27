@@ -7465,6 +7465,7 @@ rtn:
 
 static const struct snd_soc_component_driver msm_q6_mi2s_dai_component = {
 	.name		= "msm-dai-q6-mi2s",
+	.legacy_dai_naming	= 1,
 };
 static int msm_dai_q6_mi2s_dev_probe(struct platform_device *pdev)
 {
@@ -8213,6 +8214,7 @@ static int msm_dai_q6_meta_mi2s_dev_remove(struct platform_device *pdev)
 
 static const struct snd_soc_component_driver msm_dai_q6_component = {
 	.name		= "msm-dai-q6-dev",
+	.legacy_dai_naming	= 1,
 };
 
 static int msm_dai_q6_dev_probe(struct platform_device *pdev)

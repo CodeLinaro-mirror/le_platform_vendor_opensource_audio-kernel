@@ -2356,6 +2356,7 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.prepare        	= msm_pcm_prepare,
 	.trigger        	= msm_pcm_trigger,
 	.probe          	= msm_pcm_loopback_probe,
+	.legacy_dai_naming	= 1,
 };
 
 static int msm_pcm_probe(struct platform_device *pdev)
