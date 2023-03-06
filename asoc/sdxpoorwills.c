@@ -1321,7 +1321,7 @@ static int proxy_tx_sample_rate_get(struct snd_kcontrol *kcontrol,
 	case SAMPLE_RATE_48KHZ:
 		sample_rate_val = 3;
 		break;
-	case SAMPLING_RATE_32KHZ:
+	case SAMPLE_RATE_32KHZ:
 		sample_rate_val = 2;
 		break;
 	case SAMPLE_RATE_16KHZ:
