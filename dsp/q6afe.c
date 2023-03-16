@@ -4876,6 +4876,31 @@ int afe_port_send_logging_cfg(u16 port_id,
 }
 EXPORT_SYMBOL(afe_port_send_logging_cfg);
 
+int afe_port_send_afe_limiter_param(u16 port_id,
+	struct afe_param_id_port_afe_limiter_disable_t *disable_limiter)
+{
+	struct param_hdr_v3 param_hdr;
+	int ret = -EINVAL;
+
+	pr_debug("%s: enter, port: 0x%x logging flag: %x\n", __func__, port_id,
+		disable_limiter->disable_afe_limiter);
+	memset(&param_hdr, 0, sizeof(param_hdr));
+
+	param_hdr.module_id = AFE_MODULE_LIMITER;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = AFE_PARAM_ID_ENABLE;
+	param_hdr.param_size = sizeof(struct afe_param_id_port_afe_limiter_disable_t);
+
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+		q6audio_get_port_index(port_id), param_hdr, (u8*)disable_limiter);
+	if (ret)
+		pr_err("%s: AFE port logging setting for port 0x%x failed %d\n",
+			__func__, port_id, ret);
+
+	return ret;
+}
+EXPORT_SYMBOL(afe_port_send_afe_limiter_param);
+
 int afe_port_send_usb_dev_param(u16 port_id, union afe_port_config *afe_config)
 {
 	struct afe_param_id_usb_audio_dev_params usb_dev;
@@ -9999,6 +10024,7 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 		return -EINVAL;
 	}
 
+#ifndef CONFIG_SA410M_CLK_FRACT_INTEGRAL
 	if (cfg->clk_freq_in_hz % AFE_SAMPLING_RATE_8KHZ) {
 		if (clk_src_name[CLK_SRC_FRACT] != NULL)
 			ret = afe_set_source_clk(port_id,
@@ -10007,6 +10033,8 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 		ret = afe_set_source_clk(port_id,
 				clk_src_name[CLK_SRC_INTEGRAL]);
 	}
+#endif
+
 	if (ret < 0)
 		pr_err("%s: afe_set_source_clk fail %d\n", __func__, ret);
 
