@@ -3772,6 +3772,7 @@ static void route_set_opcode_matrix_id(
 			route->matrix_id = ADM_MATRIX_ID_LISTEN_TX;
 			break;
 		}
+		fallthrough;
 		/* fall through to set matrix id for non-listen case */
 	case ADM_PATH_NONLIVE_REC:
 		route->hdr.opcode = ADM_CMD_MATRIX_MAP_ROUTINGS_V5;

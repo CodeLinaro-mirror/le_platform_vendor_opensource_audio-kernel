@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -10854,7 +10854,7 @@ static int msm_pcm_afe_dyn_mclk_ctl_put(struct snd_kcontrol *kcontrol,
 		ucontrol->value.integer.value[2], ucontrol->value.integer.value[3],
 		ucontrol->value.integer.value[4], ucontrol->value.integer.value[5],
 		ucontrol->value.integer.value[6], ucontrol->value.integer.value[7],
-		ucontrol->value.integer.value[8], ucontrol->value.integer.value[9]);
+		ucontrol->value.integer.value[8], ucontrol->value.integer.value[9], ucontrol->value.integer.value[9]);
 
 	ret = afe_set_lpass_clk_cfg_ext_mclk_v2(global_dyn_mclk_cfg_portid,
 		&global_dyn_mclk_cfg, 0);

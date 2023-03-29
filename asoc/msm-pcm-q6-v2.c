@@ -145,6 +145,7 @@ static void msm_pcm_route_event_handler(enum msm_pcm_routing_event event,
 		q6asm_cmd(prtd->audio_client, CMD_PAUSE);
 		q6asm_cmd(prtd->audio_client, CMD_FLUSH);
 		q6asm_run(prtd->audio_client, 0, 0, 0);
+		fallthrough;
 		/* fallthrough */
 	default:
 		break;

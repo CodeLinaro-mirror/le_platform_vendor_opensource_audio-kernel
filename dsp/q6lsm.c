@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -2167,6 +2167,7 @@ static int q6lsm_mmapcallback(struct apr_client_data *data, void *priv)
 			pr_warn("%s: Unexpected command 0x%x\n", __func__,
 				command);
 		}
+		fallthrough;
 		/* fallthrough */
 	default:
 		pr_debug("%s: command 0x%x return code 0x%x opcode 0x%x\n",
