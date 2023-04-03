@@ -1940,6 +1940,10 @@ static int msm_compr_playback_open(struct snd_compr_stream *cstream)
 	runtime->private_data = NULL;
 	prtd->cstream = cstream;
 	pdata->cstream[rtd->dai_link->id] = cstream;
+
+	pdata->volume[rtd->dai_link->id][0] = COMPRESSED_LR_VOL_MAX_STEPS;
+	pdata->volume[rtd->dai_link->id][1] = COMPRESSED_LR_VOL_MAX_STEPS;
+
 	pdata->audio_effects[rtd->dai_link->id] =
 		 kzalloc(sizeof(struct msm_compr_audio_effects), GFP_KERNEL);
 	if (pdata->audio_effects[rtd->dai_link->id] == NULL) {
