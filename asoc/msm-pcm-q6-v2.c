@@ -957,7 +957,7 @@ static int msm_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 		WARN_ON_ONCE(test_bit(CMD_EOS, &prtd->cmd_pending));
 		set_bit(CMD_EOS, &prtd->cmd_pending);
 		ret = q6asm_cmd_nowait(prtd->audio_client, CMD_EOS);
-		if (ret)
+		if (ret == 0)
 			clear_bit(CMD_EOS, &prtd->cmd_pending);
 		break;
 	case SNDRV_PCM_TRIGGER_SUSPEND:
