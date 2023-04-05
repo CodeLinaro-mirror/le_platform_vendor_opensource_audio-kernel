@@ -48,11 +48,9 @@ obj-m += asoc/codecs/wcd937x/
 endif
 
 ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), qrb5165))
-obj-m := ipc/
-obj-m += dsp/
-obj-m += asoc/
-obj-m += asoc/codecs/
-obj-m += soc/
+obj-m += asoc/codecs/bolero/
+obj-m += asoc/codecs/wcd938x/
+obj-m += asoc/codecs/wsa883x/
 KBUILD_CFLAGS += -Wno-error
 endif
 
