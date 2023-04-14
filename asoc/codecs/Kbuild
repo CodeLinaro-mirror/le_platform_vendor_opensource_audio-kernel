@@ -157,7 +157,6 @@ ifdef CONFIG_WCD9XXX_CODEC_CORE
 	WCD9XXX_OBJS += wcd9xxx-resmgr-v2.o
 	ifndef CONFIG_ARCH_SA410M
 	WCD9XXX_OBJS += wcd-dsp-utils.o
-	WCD9XXX_OBJS += wcd-dsp-mgr.o
 	endif
 	WCD9XXX_OBJS += wcd-clsh.o
 else
