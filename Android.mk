@@ -11,7 +11,7 @@ AUDIO_SELECT  := CONFIG_SND_SOC_KONA=m
 endif
 
 # Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,msmnile kona), true)
+ifeq ($(call is-board-platform-in-list,msmnile kona $(MSMSTEPPE)), true)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -36,11 +36,15 @@ KBUILD_OPTIONS += AUDIO_ROOT=$(AUDIO_BLD_DIR)
 KBUILD_OPTIONS += MODNAME=audio_dlkm
 KBUILD_OPTIONS += BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 KBUILD_OPTIONS += $(AUDIO_SELECT)
-ifeq ($(call is-board-platform-in-list, msmnile),true)
+ifeq ($(call is-board-platform-in-list, msmnile $(MSMSTEPPE)),true)
 KBUILD_OPTIONS += CONFIG_SND_SOC_AUTO=y
 ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_gvmq))
 KBUILD_OPTIONS += CONFIG_SND_SOC_GVM=m
-else
+endif
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), $(MSMSTEPPE)_au))
+KBUILD_OPTIONS += CONFIG_SND_SOC_SA6155=m
+endif
+ifneq (,$(filter $(TARGET_BOARD_PLATFORM)$(TARGET_BOARD_SUFFIX), msmnile_au))
 KBUILD_OPTIONS += CONFIG_SND_SOC_SA8155=m
 endif
 endif
@@ -53,7 +57,7 @@ AUDIO_SRC_FILES := \
 
 ########################### dsp ################################
 
-ifeq ($(call is-board-platform-in-list,msmnile), true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE)), true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := q6_notifier_dlkm_legacy.ko
@@ -73,7 +77,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
 ###########################################################
-ifeq ($(call is-board-platform-in-list,msmnile), true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE)), true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := q6_dlkm_legacy.ko
@@ -93,7 +97,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
 ###########################################################
-ifeq ($(call is-board-platform-in-list,msmnile), true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE)), true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := adsp_loader_dlkm_legacy.ko
@@ -133,7 +137,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 
 ############################ soc ###############################
-ifeq ($(call is-board-platform-in-list,msmnile), true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE)), true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := snd_event_dlkm_legacy.ko
@@ -153,7 +157,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
 ###########################  ASOC CODEC ################################
-ifeq ($(call is-board-platform-in-list,msmnile), true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE)), true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := stub_dlkm_legacy.ko
@@ -173,7 +177,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
 ########################### ASOC ################################
-ifeq ($(call is-board-platform-in-list,msmnile), true)
+ifeq ($(call is-board-platform-in-list,msmnile $(MSMSTEPPE)), true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := machine_dlkm_legacy.ko
