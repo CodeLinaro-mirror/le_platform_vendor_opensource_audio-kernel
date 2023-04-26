@@ -3951,6 +3951,108 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int msm_lsm_module_params_get_64(struct snd_kcontrol *kcontrol,
+		unsigned int __user *bytes, unsigned int size)
+{
+	return 0;
+}
+
+static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
+		const unsigned int __user *bytes, unsigned int size)
+{
+	int err;
+	u8 *params;
+	struct lsm_priv *prtd;
+	size_t p_size = 0, count;
+	struct snd_pcm_runtime *runtime;
+	struct snd_soc_pcm_runtime *rtd;
+	struct snd_lsm_module_params p_data;
+	struct snd_pcm_substream *substream = NULL;
+	struct lsm_params_info_v2 info_v2;
+	struct lsm_params_info_v2 *ptr_info_v2 = NULL, *temp_ptr_info_v2 = NULL;
+
+	get_substream_info(kcontrol, &substream);
+	pr_err("%s: Debug### enter\n", __func__);
+
+	runtime = substream->runtime;
+	prtd = runtime->private_data;
+	rtd = substream->private_data;
+
+	if (size > sizeof(struct snd_lsm_module_params))
+		return -EFAULT;
+
+	if (!prtd->lsm_client->use_topology) {
+		dev_err(rtd->dev,
+			"%s: %s: not supported if not using topology\n",
+			__func__, "SET_MODULE_PARAMS(_V2)");
+		err = -EINVAL;
+	}
+
+
+	if (copy_from_user(&p_data, bytes, size))
+		pr_err("%s: Error copying from user", __func__);
+
+	if (p_data.num_params > LSM_PARAMS_MAX) {
+		dev_err(rtd->dev, "%s: %s: Invalid num_params %d\n",
+				__func__, "SET_MODULE_PARAMS(_V2)",
+				p_data.num_params);
+		return -EINVAL;
+	}
+
+	p_size = p_data.num_params * sizeof(struct lsm_params_info_v2);
+
+	if (p_data.data_size != p_size) {
+		dev_err(rtd->dev,
+			"%s: %s: Invalid data_size(%u) against expected(%zd)\n",
+				__func__, "SET_MODULE_PARAMS(_V2)",
+				p_data.data_size, p_size);
+		return -EFAULT;
+	}
+
+	params = kzalloc(p_size, GFP_KERNEL);
+	if (!params)
+		return -ENOMEM;
+
+	if (copy_from_user(params, p_data.params,
+				p_data.data_size)) {
+		dev_err(rtd->dev,
+				"%s: %s: copy_from_user failed, size = %d\n",
+				__func__, "set module params", p_data.data_size);
+		kfree(params);
+		return -EFAULT;
+	}
+
+	memset(&info_v2, 0, sizeof(info_v2));
+
+	temp_ptr_info_v2 = (struct lsm_params_info_v2 *)params;
+
+	for (count = 0; count < p_data.num_params; count++) {
+		if (LSM_REG_MULTI_SND_MODEL != temp_ptr_info_v2->param_type ||
+		    LSM_DEREG_MULTI_SND_MODEL !=
+						temp_ptr_info_v2->param_type ||
+		    LSM_MULTI_SND_MODEL_CONFIDENCE_LEVELS !=
+						temp_ptr_info_v2->param_type) {
+			/* set sound model id to 0 for backward compatibility */
+			temp_ptr_info_v2->model_id = 0;
+		}
+		/*
+		 * Just copy the pointer as user
+		 * already provided sound model id
+		 */
+		ptr_info_v2 = temp_ptr_info_v2;
+		temp_ptr_info_v2++;
+
+		err = msm_lsm_process_params(substream, ptr_info_v2);
+		if (err)
+			dev_err(rtd->dev,
+				"%s: Failed to process param, type=%d stage=%d err=%d\n",
+					__func__, ptr_info_v2->param_type,
+					ptr_info_v2->stage_idx, err);
+	}
+	kfree(params);
+	return 0;
+}
+
 /*place holder for control get function*/
 static int msm_lsm_fwk_mode_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
@@ -4409,6 +4511,18 @@ static int msm_va_sess_data_ctl_info(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int msm_va_module_params_ctl_info_64(struct snd_kcontrol *kcontrol,
+		struct snd_ctl_elem_info *uinfo)
+{
+	struct soc_bytes_ext *params = (void *)kcontrol->private_value;
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_BYTES;
+	uinfo->count = sizeof(struct snd_lsm_module_params);
+	params->get = msm_lsm_module_params_get_64;
+	params->put = msm_lsm_module_params_put_64;
+	params->max = uinfo->count;
+	return 0;
+}
+
 static int msm_va_module_params_ctl_info(struct snd_kcontrol *kcontrol,
 		struct snd_ctl_elem_info *uinfo)
 {
@@ -4502,6 +4616,15 @@ struct snd_kcontrol_new va_mixer_ctl[] = {
 		.tlv.c	= snd_soc_bytes_tlv_callback,
 		.info = msm_va_sess_data_ctl_info,
 	},
+	{
+		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+		.access = SNDRV_CTL_ELEM_ACCESS_TLV_READWRITE |
+			SNDRV_CTL_ELEM_ACCESS_TLV_CALLBACK,
+		.name	= "LSM MODULE_PARAMS SET 64",
+		.tlv.c	= snd_soc_bytes_tlv_callback,
+		.info = msm_va_module_params_ctl_info_64,
+	},
+
 	{
 		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
 		.access = SNDRV_CTL_ELEM_ACCESS_TLV_READWRITE |
