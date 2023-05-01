@@ -10,6 +10,7 @@
 #include <linux/jiffies.h>
 #include <linux/uaccess.h>
 #include <linux/atomic.h>
+#include <linux/qcom_scm.h>
 #include <dsp/msm-dts-srs-tm-config.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/q6adm-v2.h>
@@ -2382,9 +2383,9 @@ static void send_adm_cal_type(int fedai_id, int cal_index, int path, int port_id
 {
 	struct cal_block_data		*cal_block = NULL;
 	int ret;
-	int dest_perms[2] = {PERM_READ | PERM_WRITE, PERM_READ | PERM_WRITE};
-	int source_vm[1] = {VMID_HLOS};
-	int dest_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+		PERM_READ | PERM_WRITE | PERM_EXEC}};
 
 	pr_debug("%s: cal index %d\n", __func__, cal_index);
 
@@ -2407,11 +2408,11 @@ static void send_adm_cal_type(int fedai_id, int cal_index, int path, int port_id
 			ret = -EINVAL;
 			goto unlock;
 		}
-		ret = hyp_assign_phys(cal_block->cal_data.paddr,
+                ret = qcom_scm_assign_mem(cal_block->cal_data.paddr,
 				      cal_block->map_data.map_size,
-				      source_vm, 1, dest_vm, dest_perms, 2);
+				      &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (ret < 0) {
-			pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom assign unmap failed result = %d addr = 0x%pK size = %d\n",
 				__func__, ret, cal_block->cal_data.paddr,
 				cal_block->map_data.map_size);
 			ret = -EINVAL;
@@ -2420,7 +2421,7 @@ static void send_adm_cal_type(int fedai_id, int cal_index, int path, int port_id
 		this_adm.tx_port_id = port_id;
 		this_adm.hyp_assigned = true;
 		this_adm.fnn_app_type = app_type;
-		pr_debug("%s: hyp_assign_phys success in tx_port_id 0x%x\n",
+		pr_debug("%s: qcom_scm_assign_mem success in tx_port_id 0x%x\n",
 			 __func__, this_adm.tx_port_id);
 	}
 	ret = adm_remap_and_send_cal_block(cal_index, port_id, copp_idx,
@@ -4068,9 +4069,10 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 	int ret = 0, port_idx, app_type;
 	int copp_id = RESET_COPP_ID;
 	bool result = false;
-	int dest_perms[1] = {PERM_READ | PERM_WRITE | PERM_EXEC};
-	int source_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
-	int dest_vm[1] = {VMID_HLOS};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+        struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+                PERM_READ | PERM_WRITE | PERM_EXEC}};
+
 	struct cal_block_data *cal_block = NULL;
 	struct audio_cal_info_audproc *audproc_cal_info = NULL;
 	int cal_index = ADM_AUDPROC_PERSISTENT_CAL;
@@ -4216,19 +4218,17 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 										__func__, cal_index, ret);
 							cal_block->map_data.q6map_handle = 0;
 						}
-						ret = hyp_assign_phys(
-							cal_block->cal_data.paddr,
+						ret = qcom_scm_assign_mem(cal_block->cal_data.paddr,
 							cal_block->map_data.map_size,
-							source_vm, 2, dest_vm,
-							dest_perms, 1);
+							&src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 						if (ret < 0) {
-							pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+							pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
 								__func__, ret,
 								cal_block->cal_data.paddr,
 								cal_block->map_data.map_size);
 							goto fail;
 						} else {
-							pr_debug("%s: hyp_assign_phys success\n",
+							pr_debug("%s: qcom_scm_assign_mem success\n",
 								 __func__);
 							this_adm.hyp_assigned = false;
 						}
@@ -4283,18 +4283,17 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 								__func__, cal_index, ret);
 					cal_block->map_data.q6map_handle = 0;
 				}
-				ret = hyp_assign_phys(cal_block->cal_data.paddr,
-						cal_block->map_data.map_size,
-						source_vm, 2, dest_vm,
-						dest_perms, 1);
+				ret = qcom_scm_assign_mem(cal_block->cal_data.paddr,
+                                                cal_block->map_data.map_size,
+                                                &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 				if (ret < 0) {
-					pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+					pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
 						__func__, ret, cal_block->cal_data.paddr,
 						cal_block->map_data.map_size);
 					ret = -EINVAL;
 					goto fail;
 				} else {
-					pr_debug("%s: hyp_assign_phys success\n",
+					pr_debug("%s: qcom_scm_assign_mem success\n",
 						 __func__);
 					this_adm.hyp_assigned = false;
 				}
