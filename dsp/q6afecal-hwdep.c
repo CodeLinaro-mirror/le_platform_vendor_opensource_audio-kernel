@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015, 2017 - 2018, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
@@ -9,6 +9,8 @@
 #include <sound/hwdep.h>
 #include <sound/msmcal-hwdep.h>
 #include <sound/soc.h>
+#include <linux/compat.h>
+#include <audio/linux/msm_audio.h>
 #include "q6afecal-hwdep.h"
 
 const int cal_size_info[Q6AFE_MAX_CAL] = {

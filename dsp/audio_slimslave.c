@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2014, 2017-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -10,7 +11,7 @@
 #include <linux/mutex.h>
 #include <linux/miscdevice.h>
 #include <audio/sound/audio_slimslave.h>
-#include <linux/slimbus/slimbus.h>
+#include <linux/slimbus.h>
 #include <linux/pm_runtime.h>
 
 static struct slim_device *slim;

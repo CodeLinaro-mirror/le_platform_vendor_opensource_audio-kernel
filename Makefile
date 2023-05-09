@@ -23,6 +23,9 @@ endif
 ifeq ($(CONFIG_ARCH_KONA), y)
 include $(LEGACY_PATH)/config/konaauto.conf
 endif
+ifeq ($(CONFIG_ARCH_QCS405), y)
+include $(LEGACY_PATH)/config/qcs405auto.conf
+endif
 ifeq ($(CONFIG_ARCH_LAHAINA), y)
 include $(LEGACY_PATH)/config/lahainaauto.conf
 endif
@@ -70,6 +73,10 @@ endif
 ifeq ($(CONFIG_ARCH_KONA), y)
 LINUXINCLUDE    += \
                 -include $(LEGACY_PATH)/config/konaautoconf.h
+endif
+ifeq ($(CONFIG_ARCH_QCS405), y)
+LINUXINCLUDE    += \
+                -include $(LEGACY_PATH)/config/qcs405autoconf.h
 endif
 ifeq ($(CONFIG_ARCH_LAHAINA), y)
 LINUXINCLUDE    += \
