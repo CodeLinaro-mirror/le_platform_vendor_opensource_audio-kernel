@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -31,6 +31,10 @@
 #include <ipc/apr.h>
 #include <ipc/apr_tal.h>
 #include <soc/qcom/boot_stats.h>
+#include <linux/remoteproc.h>
+#include <linux/remoteproc/qcom_rproc.h>
+#include <trace/events/rproc_qcom.h>
+
 
 #define APR_PKT_IPC_LOG_PAGE_CNT 2
 
@@ -54,6 +58,7 @@ struct apr_reset_work {
 	struct work_struct work;
 };
 
+struct rproc *rproc_h = NULL;
 struct apr_chld_device {
 	struct platform_device *pdev;
 	struct list_head node;
@@ -314,16 +319,19 @@ static void apr_add_child_devices(struct work_struct *work)
 
 static void apr_adsp_up(void)
 {
-	pr_info("%s: Q6 is Up\n", __func__);
-	place_marker("M - ADSP Ready");
-	apr_set_q6_state(APR_SUBSYS_LOADED);
+	if (apr_get_q6_state() != APR_SUBSYS_LOADED)
+	{
+		pr_info("%s: Q6 is Up\n", __func__);
+		place_marker("M - ADSP Ready");
+		apr_set_q6_state(APR_SUBSYS_LOADED);
 
-	spin_lock(&apr_priv->apr_lock);
-	if (apr_priv->is_initial_boot)
-		schedule_work(&apr_priv->add_chld_dev_work);
-	spin_unlock(&apr_priv->apr_lock);
-	snd_event_notify(apr_priv->dev, SND_EVENT_UP);
-	cancel_work_sync(&apr_cb_work);
+		spin_lock(&apr_priv->apr_lock);
+		if (apr_priv->is_initial_boot)
+			schedule_work(&apr_priv->add_chld_dev_work);
+		spin_unlock(&apr_priv->apr_lock);
+		snd_event_notify(apr_priv->dev, SND_EVENT_UP);
+		cancel_work_sync(&apr_cb_work);
+	}
 }
 
 struct apr_client *apr_get_client(int dest_id, int client_id)
@@ -509,9 +517,19 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 	dest_id = apr_get_dest_id(dest);
 
 	if (dest_id == APR_DEST_QDSP6) {
-		if (apr_get_q6_state() != APR_SUBSYS_LOADED) {
-			pr_err_ratelimited("%s: adsp not up\n", __func__);
-			return NULL;
+		if (apr_get_q6_state() != APR_SUBSYS_LOADED ) {
+			int rt = rproc_boot(rproc_h);
+			if ( rt != 0) {
+				pr_err("%s: adsp not up rproc is NULL\n", __func__);
+				return NULL;
+			}
+			else {
+				apr_adsp_up();
+				pr_info("%s: adsp Up, updated adsp status using rproc boot status\n", __func__);
+				spin_lock(&apr_priv->apr_lock);
+				apr_priv->is_initial_boot = false;
+				spin_unlock(&apr_priv->apr_lock);
+			}
 		}
 		pr_debug("%s: adsp Up\n", __func__);
 	} else if (dest_id == APR_DEST_MODEM) {
@@ -1164,12 +1182,30 @@ static void apr_cleanup(void)
 static int apr_probe(struct platform_device *pdev)
 {
 	int i, j, k, ret = 0;
+	struct property *prop = NULL;
+	phandle rproc_phandle = 0;
+	int size = 0;
 
 	init_waitqueue_head(&modem_wait);
 
 	apr_priv = devm_kzalloc(&pdev->dev, sizeof(*apr_priv), GFP_KERNEL);
 	if (!apr_priv)
 		return -ENOMEM;
+
+	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle", &size);
+	if (!prop) {
+		dev_err(&pdev->dev, "Missing remotproc handle\n");
+		ret = -EINVAL;
+		return ret;
+	}
+	rproc_phandle = be32_to_cpup(prop->value);
+
+	rproc_h = rproc_get_by_phandle(rproc_phandle);
+	if (!rproc_h) {
+		dev_info_ratelimited(&pdev->dev, "remotproc handle NULL\n");
+		ret = -EPROBE_DEFER;
+		return ret;
+	}
 
 	apr_priv->dev = &pdev->dev;
 	spin_lock_init(&apr_priv->apr_lock);
