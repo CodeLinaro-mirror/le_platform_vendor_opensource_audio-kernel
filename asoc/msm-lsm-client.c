@@ -4406,8 +4406,6 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 		if (prtd->det_event) {
 			payload_size = prtd->det_event->payload_size;
 			status = prtd->det_event->status;
-			spin_unlock_irqrestore(&prtd->event_lock,
-					flags);
 		}
 		else {
 			spin_unlock_irqrestore(&prtd->event_lock,
@@ -4818,6 +4816,7 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 						__func__,
 						"SNDRV_LSM_GENERIC_DET_EVENT");
 				rc = -EINVAL;
+				mutex_unlock(&prtd->lsm_api_lock);
 				break;
 			}
 
