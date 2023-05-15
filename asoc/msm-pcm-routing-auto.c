@@ -53,6 +53,9 @@
 #define STRING_LENGTH_OF_INT 12
 #define MAX_USR_CTRL_CNT 128
 
+#define ASM_CFG_PARAM_MAX 4
+static int asm_cfg_params[ASM_CFG_PARAM_MAX];
+
 static struct mutex routing_lock;
 
 static struct cal_type_data *cal_data[MAX_ROUTING_CAL_TYPES];
@@ -1241,6 +1244,12 @@ static struct msm_pcm_routing_fdai_data
 	/* MULTIMEDIA34 */
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
+	/* MULTIMEDIA35 */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
+	/* MULTIMEDIA36 */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
 	/* VOIP */
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
@@ -2242,7 +2251,7 @@ static int msm_pcm_routing_channel_mixer_v2(int fe_id, bool perf_mode,
 	int j = 0, be_id = 0;
 	int ret = 0;
 
-	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
 		return 0;
 	}
@@ -2309,7 +2318,7 @@ static int msm_pcm_routing_channel_mixer(int fe_id, bool perf_mode,
 		return ret;
 	}
 
-	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
 		return 0;
 	}
@@ -4384,6 +4393,298 @@ static int msm_routing_afe_lb_tx_port_put(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+
+struct msm_asm_config loopback_cfg[] = {
+	[MSM_FRONTEND_DAI_MULTIMEDIA1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA3] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA4] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA5] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA6] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA7] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA8] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA9] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA10] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA11] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA12] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA13] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA14] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA15] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA16] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA17] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA18] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA19] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA20] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA21] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA22] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA23] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA24] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA25] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA26] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA27] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA28] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA29] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA30] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA31] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA32] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA33] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA34] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA35] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA36] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOIP] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_AFE_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_AFE_TX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICE_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_DTMF_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_QCHAT] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM3] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM4] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM5] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM6] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM7] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM8] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+};
+
+struct msm_asm_config playback_cfg[] = {
+	[MSM_FRONTEND_DAI_MULTIMEDIA1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA3] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA4] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA5] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA6] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA7] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA8] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA9] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA10] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA11] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA12] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA13] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA14] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA15] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA16] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA17] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA18] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA19] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA20] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA21] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA22] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA23] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA24] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA25] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA26] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA27] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA28] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA29] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA30] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA31] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA32] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA33] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA34] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA35] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA36] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOIP] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_AFE_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_AFE_TX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICE_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_DTMF_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_QCHAT] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM3] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM4] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM5] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM6] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM7] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM8] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+};
+
+struct msm_asm_config capture_cfg[] = {
+	[MSM_FRONTEND_DAI_MULTIMEDIA1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA3] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA4] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA5] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA6] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA7] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA8] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA9] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA10] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA11] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA12] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA13] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA14] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA15] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA16] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA17] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA18] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA19] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA20] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA21] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA22] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA23] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA24] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA25] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA26] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA27] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA28] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA29] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA30] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA31] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA32] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA33] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA34] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA35] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA36] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOIP] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_AFE_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_AFE_TX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICE_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_DTMF_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_QCHAT] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM3] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM4] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM5] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM6] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM7] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_LSM8] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+};
+
+int msm_pcm_asm_cfg_get(int fe_id, int mode)
+{
+	int format = 0;
+	if (mode == MSM_ASM_PLAYBACK_MODE) {
+		format = playback_cfg[fe_id].bit_format;
+	}
+	else if(mode == MSM_ASM_CAPTURE_MODE) {
+		format = capture_cfg[fe_id].bit_format;
+	}
+	else if (mode == MSM_ASM_LOOPBACK_MODE) {
+		format = loopback_cfg[fe_id].bit_format;
+	}
+	return format;
+}
+EXPORT_SYMBOL(msm_pcm_asm_cfg_get);
+
+static int msm_pcm_get_format(int value)
+{
+	int format = 0;
+	switch (value) {
+	case 16:
+		format = SNDRV_PCM_FORMAT_S16_LE;
+		break;
+	case 24:
+		format = SNDRV_PCM_FORMAT_S24_LE;
+		break;
+	case 32:
+		format = SNDRV_PCM_FORMAT_S32_LE;
+		break;
+	default:
+		break;
+	}
+	return format;
+}
+
+static int msm_pcm_asm_format_put(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	int ret = 0;
+	int fe_id = 0, mode = 0, format = 0, set = 0;
+
+	mutex_lock(&routing_lock);
+	asm_cfg_params[0] = ucontrol->value.integer.value[0];
+	asm_cfg_params[1] = ucontrol->value.integer.value[1];
+	asm_cfg_params[2] = ucontrol->value.integer.value[2];
+	set =  ucontrol->value.integer.value[3];
+	mutex_unlock(&routing_lock);
+
+	if(set) {
+		fe_id  = asm_cfg_params[0];
+		mode   = asm_cfg_params[1];
+		format = msm_pcm_get_format(asm_cfg_params[2]);
+
+		pr_debug("%s: fe_id:%d, mode:%d, format:%d, set:%d\n",
+				__func__,fe_id,mode,format,set);
+
+		if((fe_id < MSM_FRONTEND_DAI_MULTIMEDIA1) ||
+		(fe_id >= MSM_FRONTEND_DAI_MAX)) {
+			pr_err("%s: Received invalid fe_id %lu\n", __func__, fe_id);
+			ret = -EINVAL;
+			goto done;
+		}
+		if((mode < MSM_ASM_PLAYBACK_MODE) ||
+		(mode >= MSM_ASM_MAX_MODE)) {
+			pr_err("%s: Received invalid mode %lu\n", __func__, mode);
+			ret = -EINVAL;
+			goto done;
+		}
+		if((format == SNDRV_PCM_FORMAT_S16_LE) ||
+			(format == SNDRV_PCM_FORMAT_S24_LE) ||
+			(format == SNDRV_PCM_FORMAT_S32_LE)) {
+				if(mode == MSM_ASM_PLAYBACK_MODE) {
+					playback_cfg[fe_id].fe_id = fe_id;
+					playback_cfg[fe_id].mode = mode;
+					playback_cfg[fe_id].bit_format = format;
+				} else if(mode == MSM_ASM_CAPTURE_MODE) {
+					capture_cfg[fe_id].fe_id = fe_id;
+					capture_cfg[fe_id].mode = mode;
+					capture_cfg[fe_id].bit_format = format;
+				} else if(mode == MSM_ASM_LOOPBACK_MODE) {
+					loopback_cfg[fe_id].fe_id = fe_id;
+					loopback_cfg[fe_id].mode = mode;
+					loopback_cfg[fe_id].bit_format = format;
+			}
+		}else {
+			pr_err("%s: Received invalid format %lu\n", __func__,
+					asm_cfg_params[2]);
+			ret = -EINVAL;
+			goto done;
+		}
+	}
+	done:
+	return ret;
+}
+
+static int msm_pcm_asm_format_get(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	mutex_lock(&routing_lock);
+	ucontrol->value.integer.value[0] = asm_cfg_params[0];
+	ucontrol->value.integer.value[1] = asm_cfg_params[1];
+	ucontrol->value.integer.value[2] = asm_cfg_params[2];
+	ucontrol->value.integer.value[3] = 0;
+	mutex_unlock(&routing_lock);
+
+	pr_debug("%s: fe_id:%d, mode:%d, format:%d, set:%d\n",__func__,
+			ucontrol->value.integer.value[0],
+			ucontrol->value.integer.value[1],
+			ucontrol->value.integer.value[2],
+			ucontrol->value.integer.value[3]);
+	return 0;
+}
+
+static const struct snd_kcontrol_new msm_asm_format_controls[] = {
+		SOC_SINGLE_MULTI_EXT("ASM Format", SND_SOC_NOPM,
+		0, 0xFFFF, 0, 4,
+		msm_pcm_asm_format_get,
+		msm_pcm_asm_format_put),
+};
+
 
 static const char *const ec_ref_rate_text[] = {"0", "8000", "16000",
 	"24000", "32000", "44100", "48000", "96000", "192000", "384000"};
@@ -7221,6 +7522,14 @@ static const struct snd_kcontrol_new pri_tdm_rx_0_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_TDM_RX_0,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new pri_tdm_rx_1_mixer_controls[] = {
@@ -7323,6 +7632,14 @@ static const struct snd_kcontrol_new pri_tdm_rx_1_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_PRI_TDM_RX_1,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -7427,6 +7744,14 @@ static const struct snd_kcontrol_new pri_tdm_rx_2_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_TDM_RX_2,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new pri_tdm_rx_3_mixer_controls[] = {
@@ -7529,6 +7854,14 @@ static const struct snd_kcontrol_new pri_tdm_rx_3_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_PRI_TDM_RX_3,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -7633,6 +7966,14 @@ static const struct snd_kcontrol_new sec_tdm_rx_0_mixer_controls[] = {
 	MSM_BACKEND_DAI_SEC_TDM_RX_0,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new sec_tdm_rx_1_mixer_controls[] = {
@@ -7735,6 +8076,14 @@ static const struct snd_kcontrol_new sec_tdm_rx_1_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_SEC_TDM_RX_1,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -7839,6 +8188,14 @@ static const struct snd_kcontrol_new sec_tdm_rx_2_mixer_controls[] = {
 	MSM_BACKEND_DAI_SEC_TDM_RX_2,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new sec_tdm_rx_3_mixer_controls[] = {
@@ -7941,6 +8298,14 @@ static const struct snd_kcontrol_new sec_tdm_rx_3_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_SEC_TDM_RX_3,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -8045,6 +8410,14 @@ static const struct snd_kcontrol_new tert_tdm_rx_0_mixer_controls[] = {
 	MSM_BACKEND_DAI_TERT_TDM_RX_0,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new tert_tdm_rx_1_mixer_controls[] = {
@@ -8147,6 +8520,14 @@ static const struct snd_kcontrol_new tert_tdm_rx_1_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_TERT_TDM_RX_1,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -8251,6 +8632,14 @@ static const struct snd_kcontrol_new tert_tdm_rx_2_mixer_controls[] = {
 	MSM_BACKEND_DAI_TERT_TDM_RX_2,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new tert_tdm_rx_3_mixer_controls[] = {
@@ -8354,6 +8743,14 @@ static const struct snd_kcontrol_new tert_tdm_rx_3_mixer_controls[] = {
 	MSM_BACKEND_DAI_TERT_TDM_RX_3,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new tert_tdm_rx_4_mixer_controls[] = {
@@ -8456,6 +8853,14 @@ static const struct snd_kcontrol_new tert_tdm_rx_4_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_TERT_TDM_RX_4,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_4,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_TERT_TDM_RX_4,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -8580,6 +8985,14 @@ static const struct snd_kcontrol_new quat_tdm_rx_0_mixer_controls[] = {
 	MSM_BACKEND_DAI_QUAT_TDM_RX_0,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new quat_tdm_rx_1_mixer_controls[] = {
@@ -8702,6 +9115,14 @@ static const struct snd_kcontrol_new quat_tdm_rx_1_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_QUAT_TDM_RX_1,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -8826,6 +9247,14 @@ static const struct snd_kcontrol_new quat_tdm_rx_2_mixer_controls[] = {
 	MSM_BACKEND_DAI_QUAT_TDM_RX_2,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new quat_tdm_rx_3_mixer_controls[] = {
@@ -8949,6 +9378,14 @@ static const struct snd_kcontrol_new quat_tdm_rx_3_mixer_controls[] = {
 	MSM_BACKEND_DAI_QUAT_TDM_RX_3,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUAT_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new quin_tdm_rx_0_mixer_controls[] = {
@@ -9056,6 +9493,14 @@ static const struct snd_kcontrol_new quin_tdm_rx_0_mixer_controls[] = {
 	MSM_BACKEND_DAI_QUIN_TDM_RX_0,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_0,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new quin_tdm_rx_1_mixer_controls[] = {
@@ -9162,6 +9607,14 @@ static const struct snd_kcontrol_new quin_tdm_rx_1_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_QUIN_TDM_RX_1,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_1,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 
 };
@@ -9271,6 +9724,14 @@ static const struct snd_kcontrol_new quin_tdm_rx_2_mixer_controls[] = {
 	MSM_BACKEND_DAI_QUIN_TDM_RX_2,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_2,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new quin_tdm_rx_3_mixer_controls[] = {
@@ -9377,6 +9838,14 @@ static const struct snd_kcontrol_new quin_tdm_rx_3_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia34", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_QUIN_TDM_RX_3,
 	MSM_FRONTEND_DAI_MULTIMEDIA34, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia35", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia36", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_QUIN_TDM_RX_3,
+	MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -24403,6 +24872,175 @@ static const struct snd_kcontrol_new mmul34_mixer_controls[] = {
 #endif
 };
 
+static const struct snd_kcontrol_new mmul35_mixer_controls[] = {
+#ifndef CONFIG_TDM_DISABLE
+        SOC_DOUBLE_EXT("PRI_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("PRI_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("PRI_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("PRI_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA35, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+#endif
+};
+
+static const struct snd_kcontrol_new mmul36_mixer_controls[] = {
+#ifndef CONFIG_TDM_DISABLE
+        SOC_DOUBLE_EXT("PRI_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("PRI_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("PRI_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("PRI_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_PRI_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("SEC_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("TERT_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_TERT_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUAT_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUAT_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_0", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_0,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_1", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_1,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_2", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_2,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+        SOC_DOUBLE_EXT("QUIN_TDM_TX_3", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_QUIN_TDM_TX_3,
+        MSM_FRONTEND_DAI_MULTIMEDIA36, 1, 0, msm_routing_get_audio_mixer,
+        msm_routing_put_audio_mixer),
+#endif
+};
 
 #ifndef CONFIG_AUXPCM_DISABLE
 static const struct snd_kcontrol_new aux_pcm_rx_port_mixer_controls[] = {
@@ -25270,6 +25908,8 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_DAPM_AIF_IN("MM_DL32", "MultiMedia32 Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("MM_DL33", "MultiMedia33 Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("MM_DL34", "MultiMedia34 Playback", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_IN("MM_DL35", "MultiMedia35 Playback", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_IN("MM_DL36", "MultiMedia36 Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("VOIP_DL", "VoIP Playback", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL1", "MultiMedia1 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL2", "MultiMedia2 Capture", 0, 0, 0, 0),
@@ -25298,6 +25938,8 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_DAPM_AIF_OUT("MM_UL32", "MultiMedia32 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL33", "MultiMedia33 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL34", "MultiMedia34 Capture", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_OUT("MM_UL35", "MultiMedia35 Capture", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_OUT("MM_UL36", "MultiMedia36 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("VOIP_UL", "VoIP Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("VOICEMMODE1_DL",
 		"VoiceMMode1 Playback", 0, 0, 0, 0),
@@ -25430,6 +26072,10 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	mmul33_mixer_controls, ARRAY_SIZE(mmul33_mixer_controls)),
 	SND_SOC_DAPM_MIXER("MultiMedia34 Mixer", SND_SOC_NOPM, 0, 0,
 	mmul34_mixer_controls, ARRAY_SIZE(mmul34_mixer_controls)),
+	SND_SOC_DAPM_MIXER("MultiMedia35 Mixer", SND_SOC_NOPM, 0, 0,
+	mmul35_mixer_controls, ARRAY_SIZE(mmul35_mixer_controls)),
+	SND_SOC_DAPM_MIXER("MultiMedia36 Mixer", SND_SOC_NOPM, 0, 0,
+	mmul36_mixer_controls, ARRAY_SIZE(mmul36_mixer_controls)),
 	/* Voice Mixer */
 	SND_SOC_DAPM_MIXER("INTERNAL_BT_SCO_RX Audio Mixer", SND_SOC_NOPM, 0, 0,
 	int_bt_sco_rx_mixer_controls, ARRAY_SIZE(int_bt_sco_rx_mixer_controls)),
@@ -27169,6 +27815,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"MM_UL32", NULL, "MultiMedia32 Mixer"},
 	{"MM_UL33", NULL, "MultiMedia33 Mixer"},
 	{"MM_UL34", NULL, "MultiMedia34 Mixer"},
+	{"MM_UL35", NULL, "MultiMedia35 Mixer"},
+	{"MM_UL36", NULL, "MultiMedia36 Mixer"},
 
 	{"LSM1_UL_HL", NULL, "AUDIO_REF_EC_UL1 MUX"},
 	{"LSM2_UL_HL", NULL, "AUDIO_REF_EC_UL1 MUX"},
@@ -27361,6 +28009,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"PRI_TDM_RX_0 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"PRI_TDM_RX_0 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"PRI_TDM_RX_0 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"PRI_TDM_RX_0 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"PRI_TDM_RX_0 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"PRI_TDM_RX_0", NULL, "PRI_TDM_RX_0 Audio Mixer"},
 
 	{"PRI_TDM_RX_1 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27388,6 +28038,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"PRI_TDM_RX_1 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"PRI_TDM_RX_1 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"PRI_TDM_RX_1 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"PRI_TDM_RX_1 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"PRI_TDM_RX_1 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"PRI_TDM_RX_1", NULL, "PRI_TDM_RX_1 Audio Mixer"},
 
 	{"PRI_TDM_RX_2 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27415,6 +28067,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"PRI_TDM_RX_2 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"PRI_TDM_RX_2 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"PRI_TDM_RX_2 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"PRI_TDM_RX_2 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"PRI_TDM_RX_2 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"PRI_TDM_RX_2", NULL, "PRI_TDM_RX_2 Audio Mixer"},
 
 	{"PRI_TDM_RX_3 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27442,6 +28096,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"PRI_TDM_RX_3 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"PRI_TDM_RX_3 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"PRI_TDM_RX_3 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"PRI_TDM_RX_3 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"PRI_TDM_RX_3 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"PRI_TDM_RX_3", NULL, "PRI_TDM_RX_3 Audio Mixer"},
 
 	{"SEC_TDM_RX_0 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27469,6 +28125,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"SEC_TDM_RX_0 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"SEC_TDM_RX_0 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"SEC_TDM_RX_0 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"SEC_TDM_RX_0 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"SEC_TDM_RX_0 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"SEC_TDM_RX_0", NULL, "SEC_TDM_RX_0 Audio Mixer"},
 
 	{"SEC_TDM_RX_1 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27496,6 +28154,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"SEC_TDM_RX_1 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"SEC_TDM_RX_1 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"SEC_TDM_RX_1 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"SEC_TDM_RX_1 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"SEC_TDM_RX_1 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"SEC_TDM_RX_1", NULL, "SEC_TDM_RX_1 Audio Mixer"},
 
 	{"SEC_TDM_RX_2 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27523,6 +28183,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"SEC_TDM_RX_2 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"SEC_TDM_RX_2 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"SEC_TDM_RX_2 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"SEC_TDM_RX_2 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"SEC_TDM_RX_2 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"SEC_TDM_RX_2", NULL, "SEC_TDM_RX_2 Audio Mixer"},
 
 	{"SEC_TDM_RX_3 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27550,6 +28212,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"SEC_TDM_RX_3 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"SEC_TDM_RX_3 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"SEC_TDM_RX_3 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"SEC_TDM_RX_3 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"SEC_TDM_RX_3 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"SEC_TDM_RX_3", NULL, "SEC_TDM_RX_3 Audio Mixer"},
 
 	{"TERT_TDM_RX_0 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27577,6 +28241,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"TERT_TDM_RX_0 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"TERT_TDM_RX_0 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"TERT_TDM_RX_0 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"TERT_TDM_RX_0 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"TERT_TDM_RX_0 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"TERT_TDM_RX_0", NULL, "TERT_TDM_RX_0 Audio Mixer"},
 
 	{"TERT_TDM_RX_1 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27604,6 +28270,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"TERT_TDM_RX_1 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"TERT_TDM_RX_1 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"TERT_TDM_RX_1 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"TERT_TDM_RX_1 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"TERT_TDM_RX_1 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"TERT_TDM_RX_1", NULL, "TERT_TDM_RX_1 Audio Mixer"},
 
 	{"TERT_TDM_RX_2 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27631,6 +28299,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"TERT_TDM_RX_2 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"TERT_TDM_RX_2 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"TERT_TDM_RX_2 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"TERT_TDM_RX_2 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"TERT_TDM_RX_2 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"TERT_TDM_RX_2", NULL, "TERT_TDM_RX_2 Audio Mixer"},
 
 	{"TERT_TDM_RX_3 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27658,6 +28328,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"TERT_TDM_RX_3 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"TERT_TDM_RX_3 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"TERT_TDM_RX_3 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"TERT_TDM_RX_3 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"TERT_TDM_RX_3 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"TERT_TDM_RX_3", NULL, "TERT_TDM_RX_3 Audio Mixer"},
 
 	{"TERT_TDM_RX_4 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27685,6 +28357,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"TERT_TDM_RX_4 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"TERT_TDM_RX_4 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"TERT_TDM_RX_4 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"TERT_TDM_RX_4 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"TERT_TDM_RX_4 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"TERT_TDM_RX_4", NULL, "TERT_TDM_RX_4 Audio Mixer"},
 
 	{"QUAT_TDM_RX_0 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27713,6 +28387,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUAT_TDM_RX_0 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUAT_TDM_RX_0 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUAT_TDM_RX_0 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUAT_TDM_RX_0 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUAT_TDM_RX_0 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUAT_TDM_RX_0", NULL, "QUAT_TDM_RX_0 Audio Mixer"},
 
 	{"QUAT_TDM_RX_1 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27741,6 +28417,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUAT_TDM_RX_1 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUAT_TDM_RX_1 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUAT_TDM_RX_1 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUAT_TDM_RX_1 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUAT_TDM_RX_1 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUAT_TDM_RX_1", NULL, "QUAT_TDM_RX_1 Audio Mixer"},
 
 	{"QUAT_TDM_RX_2 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27769,6 +28447,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUAT_TDM_RX_2 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUAT_TDM_RX_2 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUAT_TDM_RX_2 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUAT_TDM_RX_2 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUAT_TDM_RX_2 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUAT_TDM_RX_2", NULL, "QUAT_TDM_RX_2 Audio Mixer"},
 
 	{"QUAT_TDM_RX_3 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27797,6 +28477,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUAT_TDM_RX_3 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUAT_TDM_RX_3 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUAT_TDM_RX_3 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUAT_TDM_RX_3 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUAT_TDM_RX_3 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUAT_TDM_RX_3", NULL, "QUAT_TDM_RX_3 Audio Mixer"},
 
 	{"QUIN_TDM_RX_0 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27825,6 +28507,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUIN_TDM_RX_0 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUIN_TDM_RX_0 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUIN_TDM_RX_0 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUIN_TDM_RX_0 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUIN_TDM_RX_0 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUIN_TDM_RX_0", NULL, "QUIN_TDM_RX_0 Audio Mixer"},
 
 	{"QUIN_TDM_RX_1 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27853,6 +28537,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUIN_TDM_RX_1 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUIN_TDM_RX_1 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUIN_TDM_RX_1 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUIN_TDM_RX_1 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUIN_TDM_RX_1 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUIN_TDM_RX_1", NULL, "QUIN_TDM_RX_1 Audio Mixer"},
 
 	{"QUIN_TDM_RX_2 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27881,6 +28567,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUIN_TDM_RX_2 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUIN_TDM_RX_2 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUIN_TDM_RX_2 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUIN_TDM_RX_2 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUIN_TDM_RX_2 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUIN_TDM_RX_2", NULL, "QUIN_TDM_RX_2 Audio Mixer"},
 
 	{"QUIN_TDM_RX_3 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -27909,6 +28597,8 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"QUIN_TDM_RX_3 Audio Mixer", "MultiMedia32", "MM_DL32"},
 	{"QUIN_TDM_RX_3 Audio Mixer", "MultiMedia33", "MM_DL33"},
 	{"QUIN_TDM_RX_3 Audio Mixer", "MultiMedia34", "MM_DL34"},
+	{"QUIN_TDM_RX_3 Audio Mixer", "MultiMedia35", "MM_DL35"},
+	{"QUIN_TDM_RX_3 Audio Mixer", "MultiMedia36", "MM_DL36"},
 	{"QUIN_TDM_RX_3", NULL, "QUIN_TDM_RX_3 Audio Mixer"},
 
 	{"SEN_TDM_RX_0 Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -29291,6 +29981,48 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"MultiMedia34 Mixer", "QUIN_TDM_TX_1", "QUIN_TDM_TX_1"},
 	{"MultiMedia34 Mixer", "QUIN_TDM_TX_2", "QUIN_TDM_TX_2"},
 	{"MultiMedia34 Mixer", "QUIN_TDM_TX_3", "QUIN_TDM_TX_3"},
+
+        {"MultiMedia35 Mixer", "PRI_TDM_TX_0", "PRI_TDM_TX_0"},
+        {"MultiMedia35 Mixer", "PRI_TDM_TX_1", "PRI_TDM_TX_1"},
+        {"MultiMedia35 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+        {"MultiMedia35 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
+        {"MultiMedia35 Mixer", "SEC_TDM_TX_0", "SEC_TDM_TX_0"},
+        {"MultiMedia35 Mixer", "SEC_TDM_TX_1", "SEC_TDM_TX_1"},
+        {"MultiMedia35 Mixer", "SEC_TDM_TX_2", "SEC_TDM_TX_2"},
+        {"MultiMedia35 Mixer", "SEC_TDM_TX_3", "SEC_TDM_TX_3"},
+        {"MultiMedia35 Mixer", "TERT_TDM_TX_0", "TERT_TDM_TX_0"},
+        {"MultiMedia35 Mixer", "TERT_TDM_TX_1", "TERT_TDM_TX_1"},
+        {"MultiMedia35 Mixer", "TERT_TDM_TX_2", "TERT_TDM_TX_2"},
+        {"MultiMedia35 Mixer", "TERT_TDM_TX_3", "TERT_TDM_TX_3"},
+        {"MultiMedia35 Mixer", "QUAT_TDM_TX_0", "QUAT_TDM_TX_0"},
+        {"MultiMedia35 Mixer", "QUAT_TDM_TX_1", "QUAT_TDM_TX_1"},
+        {"MultiMedia35 Mixer", "QUAT_TDM_TX_2", "QUAT_TDM_TX_2"},
+        {"MultiMedia35 Mixer", "QUAT_TDM_TX_3", "QUAT_TDM_TX_3"},
+        {"MultiMedia35 Mixer", "QUIN_TDM_TX_0", "QUIN_TDM_TX_0"},
+        {"MultiMedia35 Mixer", "QUIN_TDM_TX_1", "QUIN_TDM_TX_1"},
+        {"MultiMedia35 Mixer", "QUIN_TDM_TX_2", "QUIN_TDM_TX_2"},
+        {"MultiMedia35 Mixer", "QUIN_TDM_TX_3", "QUIN_TDM_TX_3"},
+
+        {"MultiMedia36 Mixer", "PRI_TDM_TX_0", "PRI_TDM_TX_0"},
+        {"MultiMedia36 Mixer", "PRI_TDM_TX_1", "PRI_TDM_TX_1"},
+        {"MultiMedia36 Mixer", "PRI_TDM_TX_2", "PRI_TDM_TX_2"},
+        {"MultiMedia36 Mixer", "PRI_TDM_TX_3", "PRI_TDM_TX_3"},
+        {"MultiMedia36 Mixer", "SEC_TDM_TX_0", "SEC_TDM_TX_0"},
+        {"MultiMedia36 Mixer", "SEC_TDM_TX_1", "SEC_TDM_TX_1"},
+        {"MultiMedia36 Mixer", "SEC_TDM_TX_2", "SEC_TDM_TX_2"},
+        {"MultiMedia36 Mixer", "SEC_TDM_TX_3", "SEC_TDM_TX_3"},
+        {"MultiMedia36 Mixer", "TERT_TDM_TX_0", "TERT_TDM_TX_0"},
+        {"MultiMedia36 Mixer", "TERT_TDM_TX_1", "TERT_TDM_TX_1"},
+        {"MultiMedia36 Mixer", "TERT_TDM_TX_2", "TERT_TDM_TX_2"},
+        {"MultiMedia36 Mixer", "TERT_TDM_TX_3", "TERT_TDM_TX_3"},
+        {"MultiMedia36 Mixer", "QUAT_TDM_TX_0", "QUAT_TDM_TX_0"},
+        {"MultiMedia36 Mixer", "QUAT_TDM_TX_1", "QUAT_TDM_TX_1"},
+        {"MultiMedia36 Mixer", "QUAT_TDM_TX_2", "QUAT_TDM_TX_2"},
+        {"MultiMedia36 Mixer", "QUAT_TDM_TX_3", "QUAT_TDM_TX_3"},
+        {"MultiMedia36 Mixer", "QUIN_TDM_TX_0", "QUIN_TDM_TX_0"},
+        {"MultiMedia36 Mixer", "QUIN_TDM_TX_1", "QUIN_TDM_TX_1"},
+        {"MultiMedia36 Mixer", "QUIN_TDM_TX_2", "QUIN_TDM_TX_2"},
+        {"MultiMedia36 Mixer", "QUIN_TDM_TX_3", "QUIN_TDM_TX_3"},
 
 	/* connect to INT4_MI2S_DL_HL since same pcm_id */
 	{"PRI_TDM_TX_0_UL_HL", NULL, "PRI_TDM_TX_0"},
@@ -32077,6 +32809,11 @@ static int msm_routing_put_device_pp_params_mixer(struct snd_kcontrol *kcontrol,
 
 	for_each_set_bit(i, &msm_bedais[be_idx].fe_sessions[0],
 				MSM_FRONTEND_DAI_MM_SIZE) {
+                if (i >= MSM_FRONTEND_DAI_MAX) {
+                        pr_debug("%s: Invalid FE id %d\n", __func__, i);
+                        return  -EINVAL;
+                }
+
 		if ((fe_dai_map[i][session_type].passthr_mode == LEGACY_PCM) ||
 			(fe_dai_map[i][session_type].passthr_mode == LISTEN))
 			compr_passthr_mode = false;
@@ -32351,7 +33088,7 @@ static const struct snd_kcontrol_new
 		},
 };
 
-#define ASRC_PARAM_MAX				10
+#define ASRC_PARAM_MAX				7
 #define ASRC_SCHED_DELAY_MS 			50
 
 #define MODULE_ID_AUTO_ASRC			0x123A7000
@@ -32409,6 +33146,8 @@ struct asrc_config {
 };
 
 static struct asrc_config asrc_cfg[ASRC_PARAM_MAX];
+
+static int asrc_params[ASRC_PARAM_MAX], asrc_enable;
 
 static int sched_delay_ms = ASRC_SCHED_DELAY_MS;
 
@@ -32676,7 +33415,7 @@ static int asrc_enable_module(struct asrc_module_config_params *params)
 {
 	int ret = 0;
 	int module_id = MODULE_ID_AUTO_ASRC;
-	int instance_id = 0;
+	int instance_id = ((params->m_io == MODULE_PORT_IN) ? 0x8000 : 0);
 	int param_id = PARAM_ID_AUTO_ASRC_ENABLE;
 	int param_size = sizeof(params->enable);
 	void *param_module = (void *)&params->enable;
@@ -32711,7 +33450,7 @@ static int asrc_put_drift_to_module(
 {
 	int ret = 0;
 	int module_id = MODULE_ID_AUTO_ASRC;
-	int instance_id = 0;
+	int instance_id = ((params->m_io == MODULE_PORT_IN) ? 0x8000 : 0);
 	int param_id = ((params->m_io == MODULE_PORT_IN)
 			? PARAM_ID_AUTO_ASRC_INPUT_TIMING_STATS
 			: PARAM_ID_AUTO_ASRC_OUTPUT_TIMING_STATS);
@@ -32858,31 +33597,38 @@ static void asrc_drift_deinit(void)
 static int msm_dai_q6_asrc_config_get(
 	struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
 {
-	int i = DRIFT_SRC_AFE_PRI;
+	int i;
 
-	for (; i < DRIFT_SRC_MAX; ++i) {
-		mutex_lock(&asrc_cfg[i].lock);
+	for (i = 0; i < ASRC_PARAM_MAX; i++) {
+
 		ucontrol->value.integer.value[i] =
-			asrc_cfg[i].drift_src;
-		mutex_unlock(&asrc_cfg[i].lock);
+			asrc_params[i];
 	}
 	return 0;
 }
 
-static int msm_dai_q6_asrc_config_put(
+static int msm_dai_q6_asrc_start_get(
 	struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
+{
+	ucontrol->value.integer.value[0] = asrc_enable;
+	return 0;
+}
+
+static int asrc_start(void)
 {
 	int ret = 0, idx = 0, i = 0, be_id = -1, module_enabled = 0;
 	struct afe_param_id_dev_timing_stats timing_stats = {0};
 	struct asrc_module_config_params params = {0};
 
-	int enable = ucontrol->value.integer.value[0];
-	int fe_id  = ucontrol->value.integer.value[1];
-	int dir    = ucontrol->value.integer.value[2];
-	int be_afe = ucontrol->value.integer.value[3];
-	int m_io   = ucontrol->value.integer.value[4];
-	int param  = ucontrol->value.integer.value[5];
-	int delay  = ucontrol->value.integer.value[6];
+	int enable = asrc_params[0];
+	int fe_id  = asrc_params[1];
+	int dir    = asrc_params[2];
+	int be_afe = asrc_params[3];
+	int m_io   = asrc_params[4];
+	int param  = asrc_params[5];
+	int delay  = asrc_params[6];
+
+	memset(asrc_params,0,sizeof(asrc_params));
 
 	/* group device */
 	be_id = msm_pcm_get_be_id_from_port_id(be_afe & ~0x0100);
@@ -32996,11 +33742,43 @@ done:
 	return ret;
 }
 
+static int msm_dai_q6_asrc_config_put(
+	struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
+{
+	int iter;
+
+	for(iter=0; iter<ASRC_PARAM_MAX; iter++){
+		asrc_params[iter] = ucontrol->value.integer.value[iter];
+	}
+	return 0;
+}
+
+static int msm_dai_q6_asrc_start_put(
+	struct snd_kcontrol *kcontrol, struct snd_ctl_elem_value *ucontrol)
+{
+	int ret = -1;
+	asrc_enable = ucontrol->value.integer.value[0];
+
+	if(asrc_enable)
+		ret = asrc_start();
+	else
+		pr_err(" %s : ASRC config is not set.\n",__func__);
+
+	return ret;
+}
+
 static const struct snd_kcontrol_new asrc_config_controls[] = {
 	SOC_SINGLE_MULTI_EXT("ASRC Config", SND_SOC_NOPM, 0,
 				 0xFFFF, 0, ASRC_PARAM_MAX,
 				 msm_dai_q6_asrc_config_get,
 				 msm_dai_q6_asrc_config_put),
+};
+
+static const struct snd_kcontrol_new asrc_start_controls[] = {
+	SOC_SINGLE_MULTI_EXT("ASRC Start", SND_SOC_NOPM, 0,
+				0xFFFF, 0, 1,
+				msm_dai_q6_asrc_start_get,
+				msm_dai_q6_asrc_start_put),
 };
 
 enum {
@@ -33171,6 +33949,9 @@ static int msm_routing_probe(struct snd_soc_component *component)
 	snd_soc_add_component_controls(component, adm_channel_config_controls,
 				ARRAY_SIZE(adm_channel_config_controls));
 
+	snd_soc_add_component_controls(component, msm_asm_format_controls,
+			ARRAY_SIZE(msm_asm_format_controls));
+
 	snd_soc_add_component_controls(component, aptx_dec_license_controls,
 					ARRAY_SIZE(aptx_dec_license_controls));
 	snd_soc_add_component_controls(
@@ -33183,6 +33964,8 @@ static int msm_routing_probe(struct snd_soc_component *component)
 				      ARRAY_SIZE(mclk_src_controls));
 	snd_soc_add_component_controls(component, asrc_config_controls,
 				      ARRAY_SIZE(asrc_config_controls));
+	snd_soc_add_component_controls(component, asrc_start_controls,
+					ARRAY_SIZE(asrc_start_controls));
 #ifdef CONFIG_MSM_INTERNAL_MCLK
 	snd_soc_add_component_controls(component, internal_mclk_control,
 				      ARRAY_SIZE(internal_mclk_control));

@@ -1,5 +1,5 @@
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 /*
  * Copyright 2011, The Android Open Source Project
@@ -142,6 +142,8 @@ static const char *const tdm_gpio_phandle[] = {"qcom,pri-tdm-gpios",
 						"qcom,quin-tdm-gpios"};
 
 static const char *const mclk_gpio_phandle[] = { "qcom,internal-mclk2-gpios" };
+
+static bool mclk_enable_status = false;
 
 enum {
 	TDM_0 = 0,
@@ -3990,7 +3992,7 @@ static int msm_pinctrl_init(struct platform_device *pdev, enum pinctrl_mode mode
 				ret = -EIO;
 				goto err;
 			}
-
+			mclk_enable_status = true;
 			ret = pinctrl_select_state(pinctrl_info->pinctrl, pinctrl_info->active);
 			if (ret != 0) {
 				pr_err("%s: set pin state to active failed with %d\n",
@@ -5271,6 +5273,42 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		SND_SOC_DAILINK_REG(multimedia5),
 	},
 	{
+		.name = MSM_DAILINK_NAME(LowLatency),
+		.stream_name = "MultiMedia35",
+		.dynamic = 1,
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
+		.async_ops = ASYNC_DPCM_SND_SOC_PREPARE,
+#endif /* CONFIG_AUDIO_QGKI */
+		.dpcm_playback = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA35,
+		.ops = &msm_fe_qos_ops,
+		SND_SOC_DAILINK_REG(multimedia35),
+	},
+	{
+		.name = MSM_DAILINK_NAME(LowLatency),
+		.stream_name = "MultiMedia36",
+		.dynamic = 1,
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
+		.async_ops = ASYNC_DPCM_SND_SOC_PREPARE,
+#endif /* CONFIG_AUDIO_QGKI */
+		.dpcm_playback = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA36,
+		.ops = &msm_fe_qos_ops,
+		SND_SOC_DAILINK_REG(multimedia36),
+	},
+	{
 		.name = "Listen 1 Audio Service",
 		.stream_name = "Listen 1 Audio Service",
 		.dynamic = 1,
@@ -6146,6 +6184,42 @@ static struct snd_soc_dai_link msm_custom_fe_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA20,
 		SND_SOC_DAILINK_REG(multimedia20),
+	},
+	{
+		.name = MSM_DAILINK_NAME(Media35),
+		.stream_name = "MultiMedia35",
+		.dynamic = 1,
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
+		.async_ops = ASYNC_DPCM_SND_SOC_PREPARE,
+#endif /* CONFIG_AUDIO_QGKI */
+		.dpcm_playback = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA35,
+		.ops = &msm_fe_qos_ops,
+		SND_SOC_DAILINK_REG(multimedia35),
+	},
+	{
+		.name = MSM_DAILINK_NAME(Media36),
+		.stream_name = "MultiMedia36",
+		.dynamic = 1,
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
+		.async_ops = ASYNC_DPCM_SND_SOC_PREPARE,
+#endif /* CONFIG_AUDIO_QGKI */
+		.dpcm_playback = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA36,
+		.ops = &msm_fe_qos_ops,
+		SND_SOC_DAILINK_REG(multimedia36),
 	},
 };
 
@@ -7299,12 +7373,25 @@ static int sa6155_ssr_enable(struct device *dev, void *data)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
-	int ret = 0;
+	int ret = 0, i;
 
 	if (!card) {
 		dev_err(dev, "%s: card is NULL\n", __func__);
 		ret = -EINVAL;
 		goto err;
+	}
+
+	if (mclk_enable_status == true) {
+		for (i = 0; i < MCLK_MAX; i++) {
+			ret = afe_set_lpass_clock_v2(AFE_PORT_ID_TDM_PORT_RANGE_START,
+			&internal_mclk[i]);
+			if (ret < 0) {
+				pr_err("%s: afe lpass clock failed to enable clock, err:%d\n",
+					__func__, ret);
+				ret = -EIO;
+				goto err;
+			}
+		}
 	}
 
 	dev_info(dev, "%s: setting snd_card to ONLINE\n", __func__);
