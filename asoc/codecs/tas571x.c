@@ -63,6 +63,7 @@ struct tas571x_private {
 	struct regmap			*regmap;
 	struct regulator_bulk_data	supplies[TAS571X_MAX_SUPPLIES];
 	struct clk			*mclk;
+	struct regulator		*vdd_pa;
 	unsigned int			format;
 	int reset_gpio;
 	int pdn_gpio;
@@ -932,6 +933,8 @@ static int tas571x_codec_suspend(struct device *dev){
 
 	tas571x_codec_reset(priv, false);
 
+	regulator_disable(priv->vdd_pa);
+
 	dev_dbg(dev, "%s: exited\n", __func__);
 
 	return 0;
@@ -943,6 +946,9 @@ static int tas571x_codec_resume(struct device *dev) {
 	int ret;
 
 	dev_dbg(dev, "%s: entered\n", __func__);
+
+	if(!regulator_is_enabled(priv->vdd_pa))
+		regulator_enable(priv->vdd_pa);
 
 	ret = regulator_bulk_enable(priv->chip->num_supply_names,
                                     priv->supplies);
@@ -1022,6 +1028,15 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 		return ret;
 	}
 
+	/* Get vdd_pa regulator to control 3v3 independently */
+	priv->vdd_pa = regulator_get(dev, "vdd_pa");
+	if (IS_ERR(priv->vdd_pa)) {
+		dev_err(dev,"regulator get of vdd_pa failed");
+		ret = PTR_ERR(priv->vdd_pa);
+		priv->vdd_pa = NULL;
+		goto disable_regs;
+	}
+
 	priv->regmap = devm_regmap_init(dev, NULL, client,
 					priv->chip->regmap_config);
 	if (IS_ERR(priv->regmap)) {
@@ -1072,8 +1087,11 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 		}
 	}
 
-       /* Reset audio codec */
-       tas571x_codec_reset(priv, true);
+	/* Enable vdd_pa regulator */
+	regulator_enable(priv->vdd_pa);
+
+	/* Reset audio codec */
+	tas571x_codec_reset(priv, true);
 
        ret = regcache_sync(priv->regmap);
        if (ret<0)
@@ -1097,6 +1115,8 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 
 disable_regs:
 	dev_err(dev, "%s: exited due to %d\n", __func__, ret);
+	regulator_disable(priv->vdd_pa);
+	regulator_put(priv->vdd_pa);
 	regulator_bulk_disable(priv->chip->num_supply_names, priv->supplies);
 	return ret;
 }
@@ -1105,6 +1125,7 @@ static int tas571x_i2c_remove(struct i2c_client *client)
 {
 	struct tas571x_private *priv = i2c_get_clientdata(client);
 
+	regulator_put(priv->vdd_pa);
 	regulator_bulk_disable(priv->chip->num_supply_names, priv->supplies);
 
 	return 0;
