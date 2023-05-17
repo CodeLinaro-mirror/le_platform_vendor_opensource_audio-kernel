@@ -78,6 +78,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/sdxpoorwillsautoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_MDM9607), y)
+		include $(AUDIO_ROOT)/config/mdm9607auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/mdm9607autoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
