@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/kthread.h>
@@ -10,6 +10,7 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/mutex.h>
+#include <linux/qcom_scm.h>
 
 #include <soc/qcom/socinfo.h>
 
@@ -1252,9 +1253,9 @@ static int voice_unmap_cal_block(struct voice_data *v, int cal_index)
 {
 	int result = 0;
 	struct cal_block_data *cal_block;
-	int dest_perms[1] = {PERM_READ | PERM_WRITE | PERM_EXEC};
-	int source_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
-	int dest_vm[1] = {VMID_HLOS};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+        struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+                PERM_READ | PERM_WRITE | PERM_EXEC}};
 
 	if (common.cal_data[cal_index] == NULL) {
 		pr_err("%s: Cal type is NULL, index %d!\n",
@@ -1296,11 +1297,11 @@ static int voice_unmap_cal_block(struct voice_data *v, int cal_index)
 			result = -EINVAL;
 			goto unlock;
 		}
-		result = hyp_assign_phys(cal_block->cal_data.paddr,
-					 cal_block->map_data.map_size,
-					 source_vm, 2, dest_vm, dest_perms, 1);
+		result = qcom_scm_assign_mem(cal_block->cal_data.paddr,
+                                         cal_block->map_data.map_size,
+                                         &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (result < 0) {
-			pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
 				__func__, result, cal_block->cal_data.paddr,
 				cal_block->map_data.map_size);
 			cal_block->map_data.q6map_handle = 0;
@@ -1308,7 +1309,7 @@ static int voice_unmap_cal_block(struct voice_data *v, int cal_index)
 			goto unlock;
 		}
 		hyp_assigned = false;
-		pr_debug("%s: hyp_assign_phys success\n", __func__);
+		pr_debug("%s: qcom_scm_assign_mem success\n", __func__);
 	}
 	cal_block->map_data.q6map_handle = 0;
 unlock:
@@ -1326,9 +1327,9 @@ static int voice_destroy_mvm_cvs_session(struct voice_data *v)
 	void *apr_mvm, *apr_cvs;
 	u16 mvm_handle, cvs_handle;
 	struct cal_block_data *cal_block;
-	int dest_perms[1] = {PERM_READ | PERM_WRITE | PERM_EXEC};
-	int source_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
-	int dest_vm[1] = {VMID_HLOS};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+        struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+                PERM_READ | PERM_WRITE | PERM_EXEC}};
 
 	if (v == NULL) {
 		pr_err("%s: v is NULL\n", __func__);
@@ -1532,12 +1533,11 @@ fail:
 				mutex_unlock(&common.cal_data[CVP_VOCPROC_CAL]->lock);
 				return -EINVAL;
 			}
-			result = hyp_assign_phys(
-					cal_block->cal_data.paddr,
-					cal_block->map_data.map_size,
-					source_vm, 2, dest_vm, dest_perms, 1);
+			result = qcom_scm_assign_mem(cal_block->cal_data.paddr,
+                                         cal_block->map_data.map_size,
+                                         &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 			if (result < 0) {
-				pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+				pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
 					__func__, result,
 					cal_block->cal_data.paddr,
 					cal_block->map_data.map_size);
@@ -1545,7 +1545,7 @@ fail:
 				return -EINVAL;
 			}
 			hyp_assigned = false;
-			pr_debug("%s: hyp_assign_phys success\n", __func__);
+			pr_debug("%s: qcom_scm_assign_mem success\n", __func__);
 			mutex_unlock(&common.cal_data[CVP_VOCPROC_CAL]->lock);
 		}
 	}
@@ -2758,9 +2758,9 @@ static int voice_get_cal(struct cal_block_data **cal_block,
 			 int col_data_idx, int session_id)
 {
 	int ret = 0;
-	int dest_perms[2] = {PERM_READ | PERM_WRITE, PERM_READ | PERM_WRITE};
-	int source_vm[1] = {VMID_HLOS};
-	int dest_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+		PERM_READ | PERM_WRITE | PERM_EXEC}};
 	*cal_block = cal_utils_get_only_cal_block(
 		common.cal_data[cal_block_idx]);
 	if (*cal_block == NULL) {
@@ -2779,18 +2779,18 @@ static int voice_get_cal(struct cal_block_data **cal_block,
 			ret = -EINVAL;
 			goto done;
 		}
-		ret = hyp_assign_phys((*cal_block)->cal_data.paddr,
-				      (*cal_block)->map_data.map_size,
-				      source_vm, 1, dest_vm, dest_perms, 2);
+		ret = qcom_scm_assign_mem((*cal_block)->cal_data.paddr,
+                                      (*cal_block)->map_data.map_size,
+                                      &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (ret < 0) {
-			pr_err("%s: hyp_assign_phys failed ret = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom_scm_assign_mem failed ret = %d addr = 0x%pK size = %d\n",
 				__func__, ret, (*cal_block)->cal_data.paddr,
 				(*cal_block)->map_data.map_size);
 			ret = -EINVAL;
 			goto done;
 		}
 		hyp_assigned = true;
-		pr_debug("%s: hyp_assign_phys success\n", __func__);
+		pr_debug("%s: qcom_scm_assign_mem  success\n", __func__);
 	}
 	ret = remap_cal_data(*cal_block, session_id);
 	if (ret < 0) {
@@ -3374,9 +3374,9 @@ static int voice_send_cvp_deregister_cal_cmd(struct voice_data *v)
 	int ret = 0;
 	int cal_index = CVP_VOCPROC_CAL;
 	struct cal_block_data *cal_block;
-	int dest_perms[1] = {PERM_READ | PERM_WRITE | PERM_EXEC};
-	int source_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
-	int dest_vm[1] = {VMID_HLOS};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+        struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+                PERM_READ | PERM_WRITE | PERM_EXEC}};
 
 	memset(&cvp_dereg_cal_cmd, 0, sizeof(cvp_dereg_cal_cmd));
 
@@ -3440,18 +3440,18 @@ static int voice_send_cvp_deregister_cal_cmd(struct voice_data *v)
 			ret = -EINVAL;
 			goto done;
 		}
-		ret = hyp_assign_phys(cal_block->cal_data.paddr,
-				      cal_block->map_data.map_size,
-				      source_vm, 2, dest_vm, dest_perms, 1);
+		ret = qcom_scm_assign_mem(cal_block->cal_data.paddr,
+                                      cal_block->map_data.map_size,
+                                      &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (ret < 0) {
-			pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
 				__func__, ret, cal_block->cal_data.paddr,
 				cal_block->map_data.map_size);
 			ret = -EINVAL;
 			goto done;
 		} else {
 			hyp_assigned = false;
-			pr_debug("%s: hyp_assign_phys success\n", __func__);
+			pr_debug("%s: qcom_scm_assign_mem success\n", __func__);
 		}
 	}
 
@@ -7204,9 +7204,9 @@ int voc_disable_device(uint32_t session_id)
 	struct voice_data *v = voice_get_session(session_id);
 	int ret = 0, result = 0;
 	struct cal_block_data *cal_block;
-	int dest_perms[1] = {PERM_READ | PERM_WRITE | PERM_EXEC};
-	int source_vm[2] = {VMID_LPASS, VMID_ADSP_HEAP};
-	int dest_vm[1] = {VMID_HLOS};
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+        struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
+                PERM_READ | PERM_WRITE | PERM_EXEC}};
 
 	if (v == NULL) {
 		pr_err("%s: v is NULL\n", __func__);
@@ -7259,12 +7259,11 @@ fail:
 				mutex_unlock(&common.cal_data[CVP_VOCPROC_CAL]->lock);
 				goto done;
 			}
-			result = hyp_assign_phys(
-					cal_block->cal_data.paddr,
+			ret = qcom_scm_assign_mem(cal_block->cal_data.paddr,
 					cal_block->map_data.map_size,
-					source_vm, 2, dest_vm, dest_perms, 1);
+					&src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 			if (result < 0) {
-				pr_err("%s: hyp_assign_phys failed result = %d addr = 0x%pK size = %d\n",
+				pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
 					__func__,
 					result,
 					cal_block->cal_data.paddr,
@@ -7274,7 +7273,7 @@ fail:
 				goto done;
 			}
 			hyp_assigned = false;
-			pr_debug("%s: hyp_assign_phys success\n", __func__);
+			pr_debug("%s: qcom_scm_assign_mem success\n", __func__);
 			mutex_unlock(&common.cal_data[CVP_VOCPROC_CAL]->lock);
 		}
 	}
