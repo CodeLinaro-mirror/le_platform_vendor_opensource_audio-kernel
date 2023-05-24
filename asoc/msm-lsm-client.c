@@ -67,6 +67,11 @@ enum lsm_ape_control {
 	LSM_STOP
 };
 
+#ifdef ENABLE_SVA_MIXER_CTL
+int generic_det_device = -1;
+int clear_device = -1;
+#endif
+
 /*
  * lsm cdev:
  * This is introduced to handle the communcation between
@@ -2947,7 +2952,7 @@ static int msm_lsm_cdev_session_lut(struct snd_pcm_substream *substream, uint8_t
 				if (sub_str_info[i].pcm == NULL)
 					continue;
 
-				if (substream->number == sub_str_info[i].pcm->device)
+				if (generic_det_device == sub_str_info[i].pcm->device)
 				{
 					memcpy(substream, &sub_str_info[i],
 							sizeof(struct snd_pcm_substream));
@@ -2966,7 +2971,7 @@ static int msm_lsm_cdev_session_lut(struct snd_pcm_substream *substream, uint8_t
 				if (sub_str_info[i].pcm == NULL)
 					continue;
 
-				if (substream->number == sub_str_info[i].pcm->device)
+				if (clear_device == sub_str_info[i].pcm->device)
 				{
 					memset(&sub_str_info[i], 0,
 							sizeof(struct snd_pcm_substream));
@@ -3150,7 +3155,6 @@ static int msm_lsm_prepare(struct snd_soc_component *component, struct snd_pcm_s
 	struct lsm_priv *prtd = runtime->private_data;
 	struct snd_soc_pcm_runtime *rtd;
 	int ret = 0;
-
 	if (!substream->private_data) {
 		pr_err("%s: Invalid private_data", __func__);
 		return -EINVAL;
@@ -3215,6 +3219,14 @@ static int msm_lsm_close(struct snd_soc_component *component, struct snd_pcm_sub
 		return -EINVAL;
 	}
 	rtd = substream->private_data;
+
+#ifdef ENABLE_SVA_MIXER_CTL
+	clear_device = substream->pcm->device;
+	if (msm_lsm_cdev_session_lut(substream, CLEAR_INFO)) {
+		pr_err("%s: clear info failed", __func__);
+		clear_device = -1;
+	}
+#endif
 
 	dev_dbg(rtd->dev, "%s\n", __func__);
 	if (prtd->lsm_client->started) {
@@ -3972,7 +3984,6 @@ static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
 	struct lsm_params_info_v2 *ptr_info_v2 = NULL, *temp_ptr_info_v2 = NULL;
 
 	get_substream_info(kcontrol, &substream);
-	pr_err("%s: Debug### enter\n", __func__);
 
 	runtime = substream->runtime;
 	prtd = runtime->private_data;
@@ -4768,22 +4779,29 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 	struct lsm_cdev_info lsm_info;
 	struct snd_pcm_runtime *runtime;
 	struct snd_soc_pcm_runtime *rtd;
-	struct snd_pcm_substream substream;
+	struct snd_pcm_substream *substream;
+
+	substream = kzalloc(sizeof(*substream), GFP_KERNEL);
+	if (!substream) {
+		pr_err("%s: alloc memory failed\n", __func__);
+		return -ENOMEM;
+	}
 
 	switch (ioctl) {
 	case SNDRV_LSM_GENERIC_DET_EVENT:
 		if (copy_from_user(&lsm_info, (void *)arg,sizeof(lsm_info)))
 			goto done;
-		/*Using substream.number to pass the device number*/
-		substream.number = lsm_info.dev_num;
-		if (msm_lsm_cdev_session_lut(&substream, GET_INFO))
-		{
+
+		generic_det_device = lsm_info.dev_num;
+		rc = msm_lsm_cdev_session_lut(substream, GET_INFO);
+		if (rc) {
 			pr_err(" %s Failed to get the required data", __func__);
-			return -EFAULT;
+			generic_det_device = -1;
+			break;
 		}
-		runtime = substream.runtime;
+		runtime = substream->runtime;
 		prtd = runtime->private_data;
-		rtd = substream.private_data;
+		rtd = substream->private_data;
 
 		atomic_set(&prtd->event_wait_stop, 0);
 
@@ -4836,17 +4854,22 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 		break;
 		case LSM_LUT_CLEAR_INFO:
 		{
-			struct snd_pcm_substream substream;
-			substream.number = (int)arg;
-			if (msm_lsm_cdev_session_lut(&substream, CLEAR_INFO))
+			clear_device = (int)arg;
+			rc = msm_lsm_cdev_session_lut(substream, CLEAR_INFO);
+			if (rc) {
 				pr_err("%s: LUT clear info failed", __func__);
+				clear_device = -1;
+				break;
+			}
 		}
 		break;
 		default:
 		pr_err("Received cmd : 0x%x", ioctl);
 	}
-	return 0;
+	kfree(substream);
+	return rc;
 done:
+	kfree(substream);
 	return -EFAULT;
 }
 
