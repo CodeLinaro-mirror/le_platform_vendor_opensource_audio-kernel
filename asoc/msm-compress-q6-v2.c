@@ -1979,6 +1979,9 @@ static int msm_compr_playback_open(struct snd_compr_stream *cstream)
 
 	pr_debug("%s: gapless mode %d", __func__, pdata->use_dsp_gapless_mode);
 
+	pr_debug("%s: Enable pause during drain", __func__);
+	snd_compr_use_pause_in_draining(cstream);
+
 	spin_lock_init(&prtd->lock);
 
 	atomic_set(&prtd->eos, 0);
