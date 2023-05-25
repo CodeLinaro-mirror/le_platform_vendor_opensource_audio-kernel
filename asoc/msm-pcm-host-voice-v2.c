@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -682,6 +683,12 @@ static void hpcm_copy_capture_data_to_queue(struct dai_data *dai_data,
 
 	if (dai_data->substream == NULL)
 		return;
+
+	if (len > HPCM_MAX_VOC_PKT_SIZE) {
+		pr_err("%s: Copy capture data len %d is > HPCM_MAX_VOC_PKT_SIZE\n",
+				__func__, len);
+		return;
+	}
 
 	/* Copy out buffer packet into free_queue */
 	spin_lock_irqsave(&dai_data->dsp_lock, dsp_flags);
