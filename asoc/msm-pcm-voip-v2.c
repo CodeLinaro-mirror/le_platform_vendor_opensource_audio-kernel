@@ -366,7 +366,7 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 		case MODE_AMR: {
 			if (pkt_len <= DSP_FRAME_HDR_LEN) {
 				pr_err("%s: pkt_len %d is < required len\n",
-						__func__,pkt_len);
+						__func__, pkt_len);
 				spin_unlock_irqrestore(&prtd->dsp_ul_lock,
 							dsp_flags);
 				return;
@@ -393,7 +393,7 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 		case MODE_4GV_NW: {
 			if (pkt_len <= DSP_FRAME_HDR_LEN) {
 				pr_err("%s: pkt_len %d is < required len\n",
-						__func__,pkt_len);
+						__func__, pkt_len);
 				spin_unlock_irqrestore(&prtd->dsp_ul_lock,
 							dsp_flags);
 				return;
@@ -437,7 +437,7 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 
 			if (pkt_len <= 2 * DSP_FRAME_HDR_LEN) {
 				pr_err("%s: pkt_len %d is < required len\n",
-						__func__,pkt_len);
+						__func__, pkt_len);
 				spin_unlock_irqrestore(&prtd->dsp_ul_lock,
 							dsp_flags);
 				return;
@@ -476,6 +476,14 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 							(*voc_pkt) & 0x03;
 				buf_node->frame.frm_hdr.timestamp = timestamp;
 				voc_pkt = voc_pkt + DSP_FRAME_HDR_LEN;
+
+				if (pkt_len <= 2 * DSP_FRAME_HDR_LEN) {
+					pr_err("%s: pkt_len %d is < required len\n",
+							__func__, pkt_len);
+					spin_unlock_irqrestore(&prtd->dsp_ul_lock,
+								dsp_flags);
+					return;
+				}
 
 				/* There are two frames in the buffer. Length
 				 * of the second frame:
