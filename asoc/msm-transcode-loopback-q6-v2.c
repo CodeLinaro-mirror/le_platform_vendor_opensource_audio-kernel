@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -12,6 +12,8 @@
 #include <linux/wait.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <audio/sound/compress_params.h>
+#include <audio/sound/compress_offload.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -22,8 +24,6 @@
 #include <sound/pcm_params.h>
 #include <sound/timer.h>
 #include <sound/tlv.h>
-#include <sound/compress_params.h>
-#include <sound/compress_offload.h>
 #include <sound/compress_driver.h>
 #include <dsp/msm_audio_ion.h>
 #include <dsp/apr_audio-v2.h>
@@ -195,14 +195,14 @@ static void populate_codec_list(struct msm_transcode_loopback *trans,
 	}
 }
 
-static int msm_transcode_loopback_open(struct snd_compr_stream *cstream)
+static int msm_transcode_loopback_open(struct snd_soc_component *component,
+					struct snd_compr_stream *cstream)
 {
 	int ret = 0;
 	struct snd_compr_runtime *runtime;
 	struct snd_soc_pcm_runtime *rtd;
 	struct msm_transcode_loopback *trans = &transcode_info;
 	struct trans_loopback_pdata *pdata;
-	struct snd_soc_component *component;
 
 	if (cstream == NULL) {
 		pr_err("%s: Invalid substream\n", __func__);
@@ -210,11 +210,6 @@ static int msm_transcode_loopback_open(struct snd_compr_stream *cstream)
 	}
 	runtime = cstream->runtime;
 	rtd = snd_pcm_substream_chip(cstream);
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
-	}
 
 	pdata = snd_soc_component_get_drvdata(component);
 	pdata->cstream[rtd->dai_link->id] = cstream;
@@ -304,20 +299,14 @@ static void stop_transcoding(struct msm_transcode_loopback *trans)
 	}
 }
 
-static int msm_transcode_loopback_free(struct snd_compr_stream *cstream)
+static int msm_transcode_loopback_free(struct snd_soc_component *component,
+					struct snd_compr_stream *cstream)
 {
 	struct snd_compr_runtime *runtime = cstream->runtime;
 	struct msm_transcode_loopback *trans = runtime->private_data;
 	struct snd_soc_pcm_runtime *rtd = snd_pcm_substream_chip(cstream);
-	struct snd_soc_component *component;
 	struct trans_loopback_pdata *pdata;
 	int ret = 0;
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
-	}
 
 	pdata = snd_soc_component_get_drvdata(component);
 
@@ -345,8 +334,8 @@ static int msm_transcode_loopback_free(struct snd_compr_stream *cstream)
 	return ret;
 }
 
-static int msm_transcode_loopback_trigger(struct snd_compr_stream *cstream,
-					  int cmd)
+static int msm_transcode_loopback_trigger(struct snd_soc_component *component,
+					struct snd_compr_stream *cstream, int cmd)
 {
 	struct snd_compr_runtime *runtime = cstream->runtime;
 	struct msm_transcode_loopback *trans = runtime->private_data;
@@ -412,8 +401,9 @@ exit:
 	return ret;
 }
 
-static int msm_transcode_loopback_set_params(struct snd_compr_stream *cstream,
-				struct snd_compr_params *codec_param)
+static int msm_transcode_loopback_set_params(struct snd_soc_component *component,
+						struct snd_compr_stream *cstream,
+						struct snd_compr_params *codec_param)
 {
 
 	struct snd_compr_runtime *runtime = cstream->runtime;
@@ -421,7 +411,6 @@ static int msm_transcode_loopback_set_params(struct snd_compr_stream *cstream,
 	struct snd_soc_pcm_runtime *soc_pcm_rx;
 	struct snd_soc_pcm_runtime *soc_pcm_tx;
 	struct snd_soc_pcm_runtime *rtd;
-	struct snd_soc_component *component;
 	struct trans_loopback_pdata *pdata;
 	uint32_t bit_width = 16;
 	int ret = 0;
@@ -445,11 +434,7 @@ static int msm_transcode_loopback_set_params(struct snd_compr_stream *cstream,
 		pr_err("%s: rtd is NULL\n", __func__);
 		return -EINVAL;
 	}
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
-	}
+
 	pdata = snd_soc_component_get_drvdata(component);
 
 	if (cstream->direction == SND_COMPRESS_PLAYBACK) {
@@ -583,8 +568,9 @@ exit:
 	return ret;
 }
 
-static int msm_transcode_loopback_get_caps(struct snd_compr_stream *cstream,
-				struct snd_compr_caps *arg)
+static int msm_transcode_loopback_get_caps(struct snd_soc_component *component,
+						struct snd_compr_stream *cstream,
+						struct snd_compr_caps *arg)
 {
 	struct snd_compr_runtime *runtime;
 	struct msm_transcode_loopback *trans;
@@ -606,13 +592,13 @@ static int msm_transcode_loopback_get_caps(struct snd_compr_stream *cstream,
 	return 0;
 }
 
-static int msm_transcode_loopback_set_metadata(struct snd_compr_stream *cstream,
-				struct snd_compr_metadata *metadata)
+static int msm_transcode_loopback_set_metadata(struct snd_soc_component *component,
+						struct snd_compr_stream *cstream,
+						struct snd_compr_metadata *metadata)
 {
 	struct snd_soc_pcm_runtime *rtd;
 	struct trans_loopback_pdata *pdata;
 	struct msm_transcode_loopback *prtd = NULL;
-	struct snd_soc_component *component;
 	struct audio_client *ac = NULL;
 
 	if (!metadata || !cstream) {
@@ -625,11 +611,7 @@ static int msm_transcode_loopback_set_metadata(struct snd_compr_stream *cstream,
 		pr_err("%s: rtd is NULL\n", __func__);
 		return -EINVAL;
 	}
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
-	}
+
 	pdata = snd_soc_component_get_drvdata(component);
 
 	prtd = cstream->runtime->private_data;
@@ -1177,9 +1159,9 @@ exit:
 	return ret;
 }
 
-static int msm_transcode_add_audio_effects_control(struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_add_audio_effects_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	const char *mixer_ctl_name = "Audio Effects Config";
 	const char *deviceNo       = "NN";
 	char *mixer_str = NULL;
@@ -1201,12 +1183,6 @@ static int msm_transcode_add_audio_effects_control(struct snd_soc_pcm_runtime *r
 		pr_err("%s NULL rtd\n", __func__);
 		ret = -EINVAL;
 		goto done;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
 	}
 
 	pr_debug("%s: added new compr FE with name %s, id %d, cpu dai %s, device no %d\n", __func__,
@@ -1236,10 +1212,9 @@ done:
 	return ret;
 }
 
-static int msm_transcode_stream_cmd_control(
-			struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_stream_cmd_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	const char *mixer_ctl_name = DSP_STREAM_CMD;
 	const char *deviceNo = "NN";
 	char *mixer_str = NULL;
@@ -1259,12 +1234,6 @@ static int msm_transcode_stream_cmd_control(
 		pr_err("%s NULL rtd\n", __func__);
 		ret = -EINVAL;
 		goto done;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
 	}
 
 	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1;
@@ -1291,10 +1260,9 @@ done:
 	return ret;
 }
 
-static int msm_transcode_stream_callback_control(
-			struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_stream_callback_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	const char *mixer_ctl_name = DSP_STREAM_CALLBACK;
 	const char *deviceNo = "NN";
 	char *mixer_str = NULL;
@@ -1316,12 +1284,6 @@ static int msm_transcode_stream_callback_control(
 		pr_err("%s: rtd is  NULL\n", __func__);
 		ret = -EINVAL;
 		goto done;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
 	}
 
 	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1;
@@ -1360,9 +1322,9 @@ done:
 	return ret;
 }
 
-static int msm_transcode_add_ion_fd_cmd_control(struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_add_ion_fd_cmd_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	const char *mixer_ctl_name = "Playback ION FD";
 	const char *deviceNo = "NN";
 	char *mixer_str = NULL;
@@ -1382,12 +1344,6 @@ static int msm_transcode_add_ion_fd_cmd_control(struct snd_soc_pcm_runtime *rtd)
 		pr_err("%s NULL rtd\n", __func__);
 		ret = -EINVAL;
 		goto done;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
 	}
 
 	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1;
@@ -1412,10 +1368,9 @@ done:
 	return ret;
 }
 
-static int msm_transcode_add_event_ack_cmd_control(
-					struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_add_event_ack_cmd_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	const char *mixer_ctl_name = "Playback Event Ack";
 	const char *deviceNo = "NN";
 	char *mixer_str = NULL;
@@ -1435,12 +1390,6 @@ static int msm_transcode_add_event_ack_cmd_control(
 		pr_err("%s NULL rtd\n", __func__);
 		ret = -EINVAL;
 		goto done;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
 	}
 
 	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1;
@@ -1475,10 +1424,9 @@ static int msm_transcode_app_type_cfg_info(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static int msm_transcode_add_app_type_cfg_control(
-			struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_add_app_type_cfg_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	char mixer_str[128];
 	struct snd_kcontrol_new fe_app_type_cfg_control[1] = {
 		{
@@ -1491,12 +1439,6 @@ static int msm_transcode_add_app_type_cfg_control(
 
 	if (!rtd) {
 		pr_err("%s NULL rtd\n", __func__);
-		return -EINVAL;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1549,9 +1491,9 @@ static int msm_transcode_volume_info(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static int msm_transcode_add_volume_control(struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_add_volume_control(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_component *component = NULL;
 	struct snd_kcontrol_new fe_volume_control[1] = {
 		{
 		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
@@ -1570,12 +1512,6 @@ static int msm_transcode_add_volume_control(struct snd_soc_pcm_runtime *rtd)
 		return -EINVAL;
 	}
 
-	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
-	if (!component) {
-		pr_err("%s: component is NULL\n", __func__);
-		return -EINVAL;
-	}
-
 	if (rtd->compr->direction == SND_COMPRESS_PLAYBACK) {
 		fe_volume_control[0].private_value = rtd->dai_link->id;
 		pr_debug("Registering new mixer ctl %s",
@@ -1586,40 +1522,41 @@ static int msm_transcode_add_volume_control(struct snd_soc_pcm_runtime *rtd)
 	return 0;
 }
 
-static int msm_transcode_loopback_new(struct snd_soc_pcm_runtime *rtd)
+static int msm_transcode_loopback_new(struct snd_soc_component *component,
+						struct snd_soc_pcm_runtime *rtd)
 {
 	int rc;
 
-	rc = msm_transcode_add_audio_effects_control(rtd);
+	rc = msm_transcode_add_audio_effects_control(component, rtd);
 	if (rc)
 		pr_err("%s: Could not add Compr Audio Effects Control\n",
 			__func__);
 
-	rc = msm_transcode_stream_cmd_control(rtd);
+	rc = msm_transcode_stream_cmd_control(component, rtd);
 	if (rc)
 		pr_err("%s: ADSP Stream Cmd Control open failed\n", __func__);
 
-	rc = msm_transcode_stream_callback_control(rtd);
+	rc = msm_transcode_stream_callback_control(component, rtd);
 	if (rc)
 		pr_err("%s: ADSP Stream callback Control open failed\n",
 			__func__);
 
-	rc = msm_transcode_add_ion_fd_cmd_control(rtd);
+	rc = msm_transcode_add_ion_fd_cmd_control(component, rtd);
 	if (rc)
 		pr_err("%s: Could not add transcode ion fd Control\n",
 			__func__);
 
-	rc = msm_transcode_add_event_ack_cmd_control(rtd);
+	rc = msm_transcode_add_event_ack_cmd_control(component, rtd);
 	if (rc)
 		pr_err("%s: Could not add transcode event ack Control\n",
 			__func__);
 
-	rc = msm_transcode_add_app_type_cfg_control(rtd);
+	rc = msm_transcode_add_app_type_cfg_control(component, rtd);
 	if (rc)
 		pr_err("%s: Could not add Compr App Type Cfg Control\n",
 			__func__);
 
-	rc = msm_transcode_add_volume_control(rtd);
+	rc = msm_transcode_add_volume_control(component, rtd);
 	if (rc)
 		pr_err("%s: Could not add transcode volume Control\n",
 			__func__);
@@ -1627,7 +1564,7 @@ static int msm_transcode_loopback_new(struct snd_soc_pcm_runtime *rtd)
 	return 0;
 }
 
-static struct snd_compr_ops msm_transcode_loopback_ops = {
+static struct snd_compress_ops msm_transcode_loopback_ops = {
 	.open			= msm_transcode_loopback_open,
 	.free			= msm_transcode_loopback_free,
 	.trigger		= msm_transcode_loopback_trigger,
@@ -1671,8 +1608,8 @@ static void msm_transcode_loopback_remove(struct snd_soc_component *component)
 static struct snd_soc_component_driver msm_soc_component = {
 	.name		= DRV_NAME,
 	.probe		= msm_transcode_loopback_probe,
-	.compr_ops	= &msm_transcode_loopback_ops,
-	.pcm_new	= msm_transcode_loopback_new,
+	.compress_ops	= &msm_transcode_loopback_ops,
+	.pcm_construct	= msm_transcode_loopback_new,
 	.remove		= msm_transcode_loopback_remove,
 };
 

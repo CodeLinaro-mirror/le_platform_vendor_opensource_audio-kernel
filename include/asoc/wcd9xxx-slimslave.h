@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __WCD9XXX_SLIMSLAVE_H_
 #define __WCD9XXX_SLIMSLAVE_H_
 
-#include <linux/slimbus/slimbus.h>
+#include <linux/slimbus.h>
 #include "core.h"
 
 
