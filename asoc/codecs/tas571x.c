@@ -64,10 +64,12 @@ struct tas571x_private {
 	struct regulator_bulk_data	supplies[TAS571X_MAX_SUPPLIES];
 	struct clk			*mclk;
 	struct regulator		*vdd_pa;
+	struct regulator		*fm_lna;
 	unsigned int			format;
 	int reset_gpio;
 	int pdn_gpio;
 	int spk_en_gpio;
+	int fm_en_gpio;
 	struct device_node		*wsa_clk_gpio_p;
 	struct snd_soc_component_driver	component_driver;
 };
@@ -833,6 +835,11 @@ static int tas571x_codec_reset(struct tas571x_private *priv, bool state) {
 		if (gpio_is_valid(priv->spk_en_gpio))
 			gpio_direction_output(priv->spk_en_gpio, 0);
 
+		if (gpio_is_valid(priv->fm_en_gpio))
+			gpio_direction_output(priv->fm_en_gpio, 0);
+
+		regulator_disable(priv->fm_lna);
+
 		pr_debug("%s: Codec suspended\n", __func__);
 		return 0;
 	}
@@ -843,6 +850,12 @@ static int tas571x_codec_reset(struct tas571x_private *priv, bool state) {
 
 	if (gpio_is_valid(priv->pdn_gpio))
 		gpio_direction_output(priv->pdn_gpio, 0);
+
+	/* Drive FM GPIO */
+	if (gpio_is_valid(priv->fm_en_gpio))
+		gpio_direction_output(priv->fm_en_gpio, 1);
+
+	regulator_enable(priv->fm_lna);
 
 	/*
 	 * Assert RESET pin to restore DAP to its default
@@ -1041,6 +1054,15 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 		goto disable_regs;
 	}
 
+	/* FM LNA Regulator supply */
+	priv->fm_lna = regulator_get(dev, "fm_lna");
+	if (IS_ERR(priv->fm_lna)) {
+		dev_err(dev, "Failed to get fm_lna regulator\n");
+		ret = PTR_ERR(priv->fm_lna);
+		priv->fm_lna = NULL;
+		return ret;
+	}
+
 	priv->regmap = devm_regmap_init(dev, NULL, client,
 					priv->chip->regmap_config);
 	if (IS_ERR(priv->regmap)) {
@@ -1088,8 +1110,18 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 		}
 	}
 
-	/* Enable vdd_pa regulator */
+	/* Enable vdd_pa and fm_lna regulators */
 	regulator_enable(priv->vdd_pa);
+
+	/* FM LNA GPIO */
+	priv->fm_en_gpio = of_get_named_gpio(dev->of_node,"fm-en-gpio", 0);
+	if(gpio_is_valid(priv->fm_en_gpio)){
+		ret = gpio_request(priv->fm_en_gpio, "fm-en-gpio");
+		if(ret<0){
+			dev_err(dev, "fm-en-gpio request failed %d\n", ret);
+			goto disable_regs;
+		}
+	}
 
 	/* Reset audio codec */
 	tas571x_codec_reset(priv, true);
@@ -1127,6 +1159,7 @@ static int tas571x_i2c_remove(struct i2c_client *client)
 	struct tas571x_private *priv = i2c_get_clientdata(client);
 
 	regulator_put(priv->vdd_pa);
+	regulator_put(priv->fm_lna);
 	regulator_bulk_disable(priv->chip->num_supply_names, priv->supplies);
 
 	return 0;
