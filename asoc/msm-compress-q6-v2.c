@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -14,6 +14,8 @@
 #include <linux/mutex.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <audio/sound/compress_params.h>
+#include <audio/sound/compress_offload.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -29,8 +31,6 @@
 
 #include <sound/timer.h>
 #include <sound/tlv.h>
-#include <sound/compress_params.h>
-#include <sound/compress_offload.h>
 #include <sound/compress_driver.h>
 
 #include <dsp/msm_audio_ion.h>
@@ -40,7 +40,6 @@
 #include <dsp/msm-audio-effects-q6-v2.h>
 #include "msm-pcm-routing-v2.h"
 #include "msm-qti-pp-config.h"
-#include "compress_ext.h"
 
 #define DRV_NAME "msm-compress-q6-v2"
 
@@ -77,8 +76,6 @@ static const DECLARE_TLV_DB_LINEAR(msm_compr_vol_gain, 0,
 #define STREAM_ARRAY_INDEX(stream_id) (stream_id - 1)
 
 #define MAX_NUMBER_OF_STREAMS 2
-
-#define SND_DEC_DDP_MAX_PARAMS 18
 
 #ifndef COMPRESSED_PERF_MODE_FLAG
 #define COMPRESSED_PERF_MODE_FLAG 0
@@ -213,12 +210,6 @@ struct msm_compr_audio_effects {
 	struct soft_volume_params volume;
 	struct query_audio_effect query;
 };
-
-struct snd_dec_ddp {
-	__u32 params_length;
-	__u32 params_id[SND_DEC_DDP_MAX_PARAMS];
-	__u32 params_value[SND_DEC_DDP_MAX_PARAMS];
-} __attribute__((packed, aligned(4)));
 
 struct msm_compr_dec_params {
 	struct snd_dec_ddp ddp_params;

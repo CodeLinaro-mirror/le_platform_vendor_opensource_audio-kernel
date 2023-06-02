@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/err.h>
@@ -10,6 +11,7 @@
 #include <dsp/q6adm-v2.h>
 #include <dsp/q6core.h>
 #include <dsp/q6common.h>
+#include <linux/compat.h>
 
 #include "msm-ds2-dap-config.h"
 #include "msm-pcm-routing-v2.h"

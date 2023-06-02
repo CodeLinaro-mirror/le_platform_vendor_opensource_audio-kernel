@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (c) 2012, 2014, 2017, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _UAPI_LINUX_MSM_AUDIO_H
@@ -10,6 +11,7 @@
 
 #include <linux/types.h>
 #include <linux/ioctl.h>
+#include <sound/asound.h>
 
 /* PCM Audio */
 
@@ -232,6 +234,11 @@ struct msm_snd_device_config {
 };
 
 #define SND_SET_DEVICE _IOW(SND_IOCTL_MAGIC, 2, struct msm_device_config *)
+
+enum {
+	SNDRV_HWDEP_IFACE_AUDIO_BE = SNDRV_HWDEP_IFACE_LAST + 1,  /* Backend Audio Control */
+	SNDRV_HWDEP_IFACE_AUDIO_CODEC,  /* codec Audio Control */
+};
 
 enum cad_device_path_type {
 	CAD_DEVICE_PATH_RX,	/*For Decoding session*/

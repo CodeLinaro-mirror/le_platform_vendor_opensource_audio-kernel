@@ -235,6 +235,7 @@ endif
 		PLATFORM_OBJS += msm-pcm-routing-v2.o
 		PLATFORM_OBJS += msm-pcm-voice-v2.o
 		PLATFORM_OBJS += msm-pcm-voip-v2.o
+		PLATFORM_OBJS += msm-transcode-loopback-q6-v2.o
 	endif
 	ifdef CONFIG_BOARD_AUTO_AUDIO
 		PLATFORM_OBJS += platform_init_auto.o
@@ -297,7 +298,9 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/legacy/aso
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/legacy/asoc/codecs/wcd937x/Module.symvers
 endif
 
+ifeq ($(KERNEL_BUILD), 1)
 obj-y += codecs/
+endif
 
 # Module information used by KBuild framework
 obj-$(CONFIG_SND_SOC_QDSP6V2) += platform_dlkm.o

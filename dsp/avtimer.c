@@ -489,7 +489,7 @@ static int dev_avtimer_probe(struct platform_device *pdev)
 	}
 	INIT_DELAYED_WORK(&avtimer.ssr_dwork, reset_work);
 
-	avtimer.p_avtimer_lsw = devm_ioremap_np(&pdev->dev,
+	avtimer.p_avtimer_lsw = devm_ioremap(&pdev->dev,
 				reg_lsb->start, resource_size(reg_lsb));
 	if (!avtimer.p_avtimer_lsw) {
 		dev_err(&pdev->dev, "%s: ioremap failed for lsb avtimer register",
@@ -497,7 +497,7 @@ static int dev_avtimer_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	avtimer.p_avtimer_msw = devm_ioremap_np(&pdev->dev,
+	avtimer.p_avtimer_msw = devm_ioremap(&pdev->dev,
 				reg_msb->start, resource_size(reg_msb));
 	if (!avtimer.p_avtimer_msw) {
 		dev_err(&pdev->dev, "%s: ioremap failed for msb avtimer register",

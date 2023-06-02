@@ -364,6 +364,14 @@ struct snd_enc_generic {
 	__s32 reserved[15];	/* Can be used for SND_AUDIOCODEC_BESPOKE */
 } __attribute__((packed, aligned(4)));
 
+#define SND_DEC_DDP_MAX_PARAMS 18
+
+struct snd_dec_ddp {
+	__u32 params_length;
+	__u32 params_id[SND_DEC_DDP_MAX_PARAMS];
+	__u32 params_value[SND_DEC_DDP_MAX_PARAMS];
+} __attribute__((packed, aligned(4)));
+
 #define SND_DEC_THD_MAX_PARAMS 8
 struct snd_dec_thd {
 	__u32 params_length;
@@ -444,6 +452,7 @@ union snd_codec_options {
 	struct snd_enc_real real;
 	struct snd_enc_flac flac;
 	struct snd_enc_generic generic;
+	struct snd_dec_ddp ddp;
 	struct snd_dec_flac flac_dec;
 	struct snd_dec_vorbis vorbis_dec;
 	struct snd_dec_alac alac;
