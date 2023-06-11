@@ -1385,44 +1385,37 @@ static void msm_dai_q6_auxpcm_shutdown(struct snd_pcm_substream *substream,
 	}
 
 	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
-		if (test_bit(STATUS_TX_PORT, aux_dai_data->auxpcm_port_status))
+		if (test_bit(STATUS_TX_PORT, aux_dai_data->auxpcm_port_status)) {
+			dev_dbg(dai->dev, "%s: dai->id = %d closing PCM_TX AFE ports\n",
+					__func__, dai->id);
+			rc = afe_close(aux_dai_data->tx_pid);
+			if (rc < 0)
+				dev_err(dai->dev, "fail to close AUX PCM TX port\n");
+			msm_dai_q6_auxpcm_set_clk(aux_dai_data, aux_dai_data->tx_pid, false);
 			clear_bit(STATUS_TX_PORT,
 				  aux_dai_data->auxpcm_port_status);
-		else {
+		} else {
 			dev_dbg(dai->dev, "%s: PCM_TX port already closed\n",
 				__func__);
 			goto exit;
 		}
 	} else if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		if (test_bit(STATUS_RX_PORT, aux_dai_data->auxpcm_port_status))
+		if (test_bit(STATUS_RX_PORT, aux_dai_data->auxpcm_port_status)) {
+			dev_dbg(dai->dev, "%s: dai->id = %d closing PCM_RX AFE ports\n",
+					__func__, dai->id);
+			rc = afe_close(aux_dai_data->rx_pid);
+			if (rc < 0)
+				dev_err(dai->dev, "fail to close PCM_RX  AFE port\n");
+			msm_dai_q6_auxpcm_set_clk(aux_dai_data, aux_dai_data->rx_pid, false);
 			clear_bit(STATUS_RX_PORT,
 				  aux_dai_data->auxpcm_port_status);
-		else {
+		} else {
 			dev_dbg(dai->dev, "%s: PCM_RX port already closed\n",
 				__func__);
 			goto exit;
 		}
 	}
-	if (test_bit(STATUS_TX_PORT, aux_dai_data->auxpcm_port_status) ||
-	    test_bit(STATUS_RX_PORT, aux_dai_data->auxpcm_port_status)) {
-		dev_dbg(dai->dev, "%s: cannot shutdown PCM ports\n",
-			__func__);
-		goto exit;
-	}
 
-	dev_dbg(dai->dev, "%s: dai->id = %d closing PCM AFE ports\n",
-			__func__, dai->id);
-
-	rc = afe_close(aux_dai_data->rx_pid); /* can block */
-	if (rc < 0)
-		dev_err(dai->dev, "fail to close PCM_RX  AFE port\n");
-
-	rc = afe_close(aux_dai_data->tx_pid);
-	if (rc < 0)
-		dev_err(dai->dev, "fail to close AUX PCM TX port\n");
-
-	msm_dai_q6_auxpcm_set_clk(aux_dai_data, aux_dai_data->rx_pid, false);
-	msm_dai_q6_auxpcm_set_clk(aux_dai_data, aux_dai_data->tx_pid, false);
 exit:
 	mutex_unlock(&aux_dai_data->rlock);
 }
