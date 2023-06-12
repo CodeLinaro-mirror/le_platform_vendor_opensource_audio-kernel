@@ -153,6 +153,8 @@ ifdef CONFIG_WCD9XXX_CODEC_CORE
 	CORE_OBJS += msm-cdc-supply.o
 	CORE_OBJS += wcd934x/wcd934x-regmap.o
 	CORE_OBJS += wcd934x/wcd934x-tables.o
+	CORE_OBJS += wcd9330/wcd9330-regmap.o
+	CORE_OBJS += wcd9330/wcd9330-tables.o
 endif
 
 ifdef CONFIG_WCD9XXX_CODEC_CORE_V2

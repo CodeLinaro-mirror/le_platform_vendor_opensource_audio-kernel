@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <linux/kernel.h>
@@ -328,10 +331,15 @@ struct wcd9xxx_pdata *wcd9xxx_populate_dt_data(struct device *dev)
 	pdata->wcd_rst_np = of_parse_phandle(dev->of_node,
 					     "qcom,wcd-rst-gpio-node", 0);
 	if (!pdata->wcd_rst_np) {
-		dev_err(dev, "%s: Looking up %s property in node %s failed\n",
-			__func__, "qcom,wcd-rst-gpio-node",
-			dev->of_node->full_name);
-		goto err_parse_dt_prop;
+			pdata->reset_gpio = of_get_named_gpio(dev->of_node,
+					"qcom,cdc-reset-gpio", 0);
+			if (pdata->reset_gpio < 0) {
+				dev_err(dev, "Looking up %s property in node %s failed %d\n",
+					"qcom, cdc-reset-gpio",
+					dev->of_node->full_name, pdata->reset_gpio);
+				goto err_parse_dt_prop;
+			}
+	dev_dbg(dev, "%s: reset gpio %d", __func__, pdata->reset_gpio);
 	}
 
 	pdata->has_buck_vsel_gpio = of_property_read_bool(dev->of_node,
