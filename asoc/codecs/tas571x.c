@@ -863,6 +863,8 @@ static int tas571x_codec_reset(struct tas571x_private *priv, bool state) {
 		ret = regmap_read(priv->regmap, TAS571X_DEV_ID_REG, &val);
 		if(ret)
 			pr_debug("I2C read retry\n");
+		else
+			break;
 
 		if (i == (RETRY_CNT-1) && ret) {
 			pr_err("I2C read failed ret: %d   Val: %d\n", ret, val);
@@ -877,6 +879,8 @@ static int tas571x_codec_reset(struct tas571x_private *priv, bool state) {
 		ret = regmap_write(priv->regmap, TAS571X_OSC_TRIM_REG, 0);
 		if (ret)
 			pr_debug("I2C write retry\n");
+		else
+			break;
 
 		if (i == (RETRY_CNT-1) && ret) {
 			pr_err("I2C write failed ret: %d   Val: %d\n", ret, val);
@@ -1055,9 +1059,6 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 	/* Configure the GPIO to drive 1.8V */
 	cfg_val |= TLMM_GPIO_CFG_EGPIO_EN;
 	writel_relaxed(cfg_val, tlmm_gpio100_cfg);
-
-	/* Wait 50mS for the configuration to settle in */
-	msleep(50);
 
 	/* Retrieve GPIOs for Audio codec initialization */
 	priv->spk_en_gpio = of_get_named_gpio(dev->of_node,"spk-en-gpio", 0);
