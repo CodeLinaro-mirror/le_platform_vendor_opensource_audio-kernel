@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
+/* Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+
 #ifndef WCD9XXX_CODEC_DIGITAL_H
 
 #define WCD9XXX_CODEC_DIGITAL_H

@@ -1,17 +1,17 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2013-2014, 2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#ifndef _MSM_DS2_DAP_CONFIG_H_
-#define _MSM_DS2_DAP_CONFIG_H_
+#ifndef _UAPI_MSM_DS2_DAP_CONFIG_H__
+#define _UAPI_MSM_DS2_DAP_CONFIG_H__
 
 #include <sound/soc.h>
-#include "msm-dolby-common.h"
+#include <linux/msm-dolby-common.h>
 #include <sound/hwdep.h>
 #include <uapi/audio/sound/devdep_params.h>
 
-#ifdef CONFIG_COMPAT
 struct dolby_param_data32 {
 	s32 version;
 	s32 device_id;
@@ -36,9 +36,7 @@ struct dolby_param_license32 {
 		_IOWR('U', 0x14, struct dolby_param_license32)
 #define SNDRV_DEVDEP_DAP_IOCTL_GET_VISUALIZER32\
 		_IOR('U', 0x15, struct dolby_param_data32)
-#endif
 
-#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
 /* DOLBY DOLBY GUIDS */
 #define DS2_MODULE_ID			0x00010775
 
@@ -104,40 +102,4 @@ int msm_ds2_dap_init(int port_id, int copp_idx, int channels,
 void msm_ds2_dap_deinit(int port_id);
 int msm_ds2_dap_set_custom_stereo_onoff(int port_id, int copp_idx,
 					bool is_custom_stereo_enabled);
-/* Dolby DOLBY end */
-#else
-
-static inline int msm_ds2_dap_update_port_parameters(struct snd_hwdep *hw,
-					       struct file *file,
-					       bool open)
-{
-	return 0;
-}
-
-static inline int msm_ds2_dap_ioctl(struct snd_hwdep *hw, struct file *file,
-				    u32 cmd, void *arg)
-{
-	return 0;
-}
-
-static inline int msm_ds2_dap_compat_ioctl(struct snd_hwdep *hw,
-					   struct file *file,
-					   u32 cmd, void *arg)
-{
-	return 0;
-}
-static inline int msm_ds2_dap_init(int port_id, int copp_idx, int channels,
-		     bool is_custom_stereo_on)
-{
-	return 0;
-}
-
-static inline void msm_ds2_dap_deinit(int port_id) { }
-
-static inline int msm_ds2_dap_set_custom_stereo_onoff(int port_id, int copp_idx,
-				    bool is_custom_stereo_enabled)
-{
-	return 0;
-}
-#endif
 #endif
