@@ -8,6 +8,9 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <linux/clk.h>
@@ -192,6 +195,7 @@ static char const *tdm_num_slots_text[] = {"eight", "sixteen"};
 static int mdm_tdm_num_slots = 8;
 
 /* TDM default offset */
+#ifdef mdm9607daisupport
 static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* PRI_TDM_RX */
 	{0, 4, 8, 12, 16, 20, 24, 28},
@@ -202,6 +206,7 @@ static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* SEC_TDM_TX */
 	{0, 4, 8, 12, 16, 20, 24, 28},
 };
+#endif
 
 static int mdm_spk_control;
 static atomic_t aux_ref_count;
@@ -476,7 +481,7 @@ done:
 		atomic_dec(&mi2s_ref_count);
 	return ret;
 }
-
+#ifdef mdm9607daisupport
 static int mdm_sec_mi2s_clk_ctl(struct snd_soc_pcm_runtime *rtd, bool enable,
 				int rate, u16 mode)
 {
@@ -662,17 +667,17 @@ done:
 		atomic_dec(&sec_mi2s_ref_count);
 	return ret;
 }
-
+#endif
 static struct snd_soc_ops mdm_mi2s_be_ops = {
 	.startup = mdm_mi2s_startup,
 	.shutdown = mdm_mi2s_shutdown,
 };
-
+#ifdef mdm9607daisupport
 static struct snd_soc_ops mdm_sec_mi2s_be_ops = {
 	.startup = mdm_sec_mi2s_startup,
 	.shutdown = mdm_sec_mi2s_shutdown,
 };
-
+#endif
 static int mdm_mi2s_rate_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
@@ -759,7 +764,7 @@ static int mdm_sec_mi2s_rate_put(struct snd_kcontrol *kcontrol,
 		 (int)ucontrol->value.integer.value[0]);
 	return 0;
 }
-
+#ifdef mdm9607daisupport
 static int mdm_sec_mi2s_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rt,
 					      struct snd_pcm_hw_params *params)
 {
@@ -792,7 +797,7 @@ static int mdm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rt,
 	rate->min = rate->max = MDM_MI2S_RATE;
 	return 0;
 }
-
+#endif
 static int mdm_mi2s_rx_ch_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
@@ -1563,7 +1568,7 @@ static int mdm_mclk_event(struct snd_soc_dapm_widget *w,
 	}
 	return 0;
 }
-
+#ifdef mdm9607daisupport
 static void mdm_auxpcm_shutdown(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -1738,7 +1743,7 @@ static struct snd_soc_ops mdm_sec_auxpcm_be_ops = {
 	.startup = mdm_sec_auxpcm_startup,
 	.shutdown = mdm_sec_auxpcm_shutdown,
 };
-
+#endif
 static int mdm_auxpcm_rate_get(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
@@ -1762,7 +1767,7 @@ static int mdm_auxpcm_rate_put(struct snd_kcontrol *kcontrol,
 	}
 	return 0;
 }
-
+#ifdef mdm9607daisupport
 static int mdm_auxpcm_be_params_fixup(struct snd_soc_pcm_runtime *rtd,
 					  struct snd_pcm_hw_params *params)
 {
@@ -1777,7 +1782,7 @@ static int mdm_auxpcm_be_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-
+#endif
 static const struct snd_soc_dapm_widget mdm9607_dapm_widgets[] = {
 
 	SND_SOC_DAPM_SUPPLY("MCLK",  SND_SOC_NOPM, 0, 0,
@@ -1907,6 +1912,7 @@ static const struct snd_kcontrol_new mdm_snd_controls[] = {
 			mdm_tdm_num_slots_get,
 			mdm_tdm_num_slots_put),
 };
+#ifdef mdm9607daisupport
 static int mdm_tdm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 				struct snd_pcm_hw_params *params)
 {
@@ -2295,6 +2301,7 @@ static struct snd_soc_ops mdm_tdm_be_ops = {
 	.hw_params = mdm_tdm_snd_hw_params,
 	.shutdown = mdm_tdm_shutdown,
 };
+#endif
 
 static int msm_snd_get_ext_clk_cnt(void)
 {
@@ -2307,7 +2314,13 @@ static int mdm_mi2s_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	struct snd_soc_dapm_context *dapm;
 	struct snd_soc_card *card = rtd->card;
 	struct snd_soc_component *component = NULL;		
-	struct mdm_machine_data *pdata = snd_soc_card_get_drvdata(rtd->card);
+	struct mdm_machine_data *pdata = snd_soc_card_get_drvdata(card);
+
+	component = snd_soc_rtdcom_lookup(rtd, "tomtom_codec");
+	if (!component) {
+		pr_err("%s: tomtom_codec component is NULL\n", __func__);
+		return -EINVAL;
+	}
 
 	rtd->pmdown_time = 0;
 	ret = snd_soc_add_component_controls(component, mdm_snd_controls,
@@ -2512,6 +2525,22 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		SND_SOC_DAILINK_REG(multimedia1),
 	},
 	{
+		.name = "Circuit-Switch Voice",
+		.stream_name = "CS-Voice",
+		.dynamic = 1,
+		.dpcm_playback = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		/* This dainlink has Voice support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_CS_VOICE,
+		SND_SOC_DAILINK_REG(csvoice),
+	},
+#ifdef mdm9607daisupport
+	{
 		.name = "MSM VoIP",
 		.stream_name = "VoIP",
 		.dynamic = 1,
@@ -2644,6 +2673,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		/* this dainlink has playback support */
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA6,
+		SND_SOC_DAILINK_REG(multimedia6),
 	},
 	{
 		.name = "Primary MI2S TX Hostless",
@@ -2774,20 +2804,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		/* this dainlink has playback support */
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA4,
 		SND_SOC_DAILINK_REG(multimedia4),
-	},
-	{
-		.name = "QCHAT",
-		.stream_name = "QCHAT",
-		.dynamic = 1,
-		.dpcm_capture = 1,
-		.dpcm_playback = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
-		.ignore_suspend = 1,
-		/* this dainlink has playback support */
-		.ignore_pmdown_time = 1,
-		.id = MSM_FRONTEND_DAI_QCHAT,
 	},
 	/* Backend DAI Links */
 	{
@@ -2960,6 +2976,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(sec_tdm_tx_0_hostless),
 	},
+#endif
 };
 
 static struct snd_soc_dai_link mdm_9330_dai[] = {
@@ -2989,6 +3006,7 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(tomtom_i2s_tx1),
 	},
+#ifdef mdm9607daisupport
 	/* TDM be dai links */
 	{
 		.name = LPASS_BE_PRI_TDM_RX_0,
@@ -3036,6 +3054,7 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(sec_tdm_tx_0),
 	},
+#endif
 };
 
 /* static struct snd_soc_dai_link mdm_9306_dai[] = {
@@ -3071,21 +3090,12 @@ static struct snd_soc_dai_link mdm_tomtom_dai_links[
 				ARRAY_SIZE(mdm_dai) +
 				ARRAY_SIZE(mdm_9330_dai)];
 
-/* static struct snd_soc_dai_link mdm_tapan_dai_links[
-				ARRAY_SIZE(mdm_dai) +
-				ARRAY_SIZE(mdm_9306_dai)]; */
 
 static struct snd_soc_card snd_soc_card_mdm_9330 = {
 	.name = "mdm9607-tomtom-i2s-snd-card",
 	.dai_link = mdm_tomtom_dai_links,
 	.num_links = ARRAY_SIZE(mdm_tomtom_dai_links),
 };
-
-/* static struct snd_soc_card snd_soc_card_mdm_9306 = {
-	.name = "mdm9607-tapan-i2s-snd-card",
-	.dai_link = mdm_tapan_dai_links,
-	.num_links = ARRAY_SIZE(mdm_tapan_dai_links), 
-};*/
 
 static const struct of_device_id mdm_asoc_machine_of_match[]  = {
 	{ .compatible = "qcom,mdm9607-audio-tomtom",
@@ -3211,17 +3221,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			   sizeof(mdm_9330_dai));
 		dailink = mdm_tomtom_dai_links;
 
-	} /* else if (!strcmp(match->data, "tapan_codec")) {
-		card = &snd_soc_card_mdm_9306;
-		len_1 = ARRAY_SIZE(mdm_dai);
-		len_2 = len_1 + ARRAY_SIZE(mdm_9306_dai);
-
-		memcpy(mdm_tapan_dai_links, mdm_dai,
-			   sizeof(mdm_dai));
-		memcpy(mdm_tapan_dai_links + len_1, mdm_9306_dai,
-			   sizeof(mdm_9306_dai));
-		dailink = mdm_tapan_dai_links;
-	} */
+	}
 
 	if (card) {
 		card->dai_link = dailink;
