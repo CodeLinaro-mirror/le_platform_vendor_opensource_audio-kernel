@@ -1468,6 +1468,9 @@ static u32 msm_pcm_routing_get_voc_sessionid(u16 val)
 	u32 session_id;
 
 	switch (val) {
+	case MSM_FRONTEND_DAI_CS_VOICE:
+		session_id = voc_get_session_id(VOICE_SESSION_NAME);
+		break;
 	case MSM_FRONTEND_DAI_QCHAT:
 		session_id = voc_get_session_id(QCHAT_SESSION_NAME);
 		break;
@@ -5775,6 +5778,10 @@ static const struct snd_kcontrol_new pri_mi2s_rx_voice_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_RX,
 	MSM_FRONTEND_DAI_VOICEMMODE2, 1, 0, msm_routing_get_voice_mixer,
 	msm_routing_put_voice_mixer),
+	SOC_DOUBLE_EXT("CSVoice", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_I2S_RX,
+	MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
+	msm_routing_put_voice_mixer),
 };
 
 static const struct snd_kcontrol_new tert_mi2s_rx_voice_mixer_controls[] = {
@@ -7400,6 +7407,8 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_DAPM_AIF_OUT("MM_UL2", "MultiMedia2 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL3", "MultiMedia3 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL4", "MultiMedia4 Capture", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_IN("CS-VOICE_DL1", "CS-VOICE Playback", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_OUT("CS-VOICE_UL1", "CS-VOICE Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("VOIP_UL", "VoIP Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("VOICEMMODE1_DL",
 		"VoiceMMode1 Playback", 0, 0, 0, 0),

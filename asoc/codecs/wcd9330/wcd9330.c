@@ -8,6 +8,9 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #include <linux/module.h>
 #include <linux/init.h>
@@ -1114,7 +1117,7 @@ static void tomtom_discharge_comp(struct snd_soc_component *component, int comp)
 	usleep_range(3000, 3100);
 }
 
-static enum wcd9xxx_buck_volt tomtom_codec_get_buck_mv(
+/* static enum wcd9xxx_buck_volt tomtom_codec_get_buck_mv(
 	struct snd_soc_component *component)
 {
 	int buck_volt = WCD9XXX_CDC_BUCK_UNSUPPORTED;
@@ -1135,7 +1138,7 @@ static enum wcd9xxx_buck_volt tomtom_codec_get_buck_mv(
 		}
 	}
 	return buck_volt;
-}
+} */
  
 static int tomtom_config_compander(struct snd_soc_dapm_widget *w,
 				  struct snd_kcontrol *kcontrol, int event)
@@ -1157,7 +1160,8 @@ static int tomtom_config_compander(struct snd_soc_dapm_widget *w,
 
 	/* Compander 0 has two channels */
 	mask = enable_mask = 0x03;
-	buck_mv = tomtom_codec_get_buck_mv(component);
+	buck_mv = 1;
+	//buck_mv = tomtom_codec_get_buck_mv(component);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -7099,7 +7103,7 @@ static irqreturn_t tomtom_slimbus_irq(int irq, void *data)
 static int tomtom_handle_pdata(struct tomtom_priv *tomtom)
 {
 	struct snd_soc_component *component = tomtom->component;
-	struct wcd9xxx *wcd9xxx = tomtom->wcd9xxx;
+	//struct wcd9xxx *wcd9xxx = tomtom->wcd9xxx;
 	struct wcd9xxx_pdata *pdata = tomtom->resmgr.pdata;
 	int k1, k2, k3, dec, rc = 0;
 	u8 leg_mode, txfe_bypass, txfe_buff, flag;
@@ -7201,7 +7205,7 @@ static int tomtom_handle_pdata(struct tomtom_priv *tomtom)
 			0xE0, (pdata->ocp.hph_ocp_limit << 5));
 	}
 
-	for (i = 0; i < wcd9xxx->num_of_supplies; i++) {
+/* 	for (i = 0; i < wcd9xxx->num_of_supplies; i++) {
 		if (pdata->regulator[i].name &&
 		    !strcmp(pdata->regulator[i].name, "CDC_VDDA_RX")) {
 			if (pdata->regulator[i].min_uV == 1800000 &&
@@ -7221,8 +7225,7 @@ static int tomtom_handle_pdata(struct tomtom_priv *tomtom)
 			}
 			break;
 		}
-	}
-
+	} */
 	/* Set micbias capless mode with tail current */
 	value = (pdata->micbias.bias1_cap_mode == MICBIAS_EXT_BYP_CAP ?
 		 0x00 : 0x16);
@@ -8416,12 +8419,6 @@ static struct regulator *tomtom_codec_find_regulator(struct snd_soc_component *c
 	return NULL;
 }
 
-static struct wcd_cpe_core *tomtom_codec_get_cpe_core(
-		struct snd_soc_component *component)
-{
-	struct tomtom_priv *priv = snd_soc_component_get_drvdata(component);
-	return priv->cpe_core;
-}
 
 static int tomtom_codec_fll_enable(struct snd_soc_component *component,
 				   bool enable)
@@ -8534,48 +8531,6 @@ static const struct wcd_cpe_cdc_cb cpe_cb = {
 	.cpe_err_irq_control = tomtom_cpe_err_irq_control,
 };
 
-static struct cpe_svc_init_param cpe_svc_params = {
-	.version = 0,
-	.query_freq_plans_cb = NULL,
-	.change_freq_plan_cb = NULL,
-};
-
-static int tomtom_cpe_initialize(struct snd_soc_component *component)
-{
-	struct tomtom_priv *tomtom = snd_soc_component_get_drvdata(component);
-	struct wcd_cpe_params cpe_params;
-
-	memset(&cpe_params, 0,
-	       sizeof(struct wcd_cpe_params));
-	cpe_params.component = component;
-	cpe_params.get_cpe_core = tomtom_codec_get_cpe_core;
-	cpe_params.cdc_cb = &cpe_cb;
-	cpe_params.dbg_mode = cpe_debug_mode;
-	cpe_params.cdc_major_ver = CPE_SVC_CODEC_TOMTOM;
-	cpe_params.cdc_minor_ver = CPE_SVC_CODEC_V1P0;
-	cpe_params.cdc_id = CPE_SVC_CODEC_TOMTOM;
-
-	cpe_params.cdc_irq_info.cpe_engine_irq =
-			WCD9330_IRQ_SVASS_ENGINE;
-	cpe_params.cdc_irq_info.cpe_err_irq =
-			WCD9330_IRQ_SVASS_ERR_EXCEPTION;
-	cpe_params.cdc_irq_info.cpe_fatal_irqs =
-			TOMTOM_CPE_FATAL_IRQS;
-
-	cpe_svc_params.context = component;
-	cpe_params.cpe_svc_params = &cpe_svc_params;
-
-	tomtom->cpe_core = wcd_cpe_init("cpe", component,
-					&cpe_params);
-	if (IS_ERR_OR_NULL(tomtom->cpe_core)) {
-		dev_err(component->dev,
-			"%s: Failed to enable CPE\n",
-			__func__);
-		return -EINVAL;
-	}
-
-	return 0;
-}
 
 static int tomtom_codec_probe(struct snd_soc_component *component)
 {
@@ -8632,7 +8587,7 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 		goto err_nomem_slimch;
 	}
 
-	tomtom->clsh_d.buck_mv = tomtom_codec_get_buck_mv(component);
+//	tomtom->clsh_d.buck_mv = tomtom_codec_get_buck_mv(component);
 	/* TomTom does not support dynamic switching of vdd_cp */
 	tomtom->clsh_d.is_dynamic_vdd_cp = false;
 	wcd9xxx_clsh_init(&tomtom->clsh_d, &tomtom->resmgr);
@@ -8657,7 +8612,7 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 		goto err_hwdep;
 	}
 
-	/* init and start mbhc */
+/* 	 init and start mbhc
 	ret = wcd9xxx_mbhc_init(&tomtom->mbhc, &tomtom->resmgr, component,
 				tomtom_enable_mbhc_micbias,
 				&mbhc_cb, &cdc_intr_ids,
@@ -8665,7 +8620,7 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 	if (ret) {
 		pr_err("%s: mbhc init failed %d\n", __func__, ret);
 		goto err_hwdep;
-	}
+	} */
 
 	tomtom->component = component;
 	for (i = 0; i < COMPANDER_MAX; i++) {
@@ -8747,11 +8702,11 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 
 	snd_soc_dapm_sync(dapm);
 
-	ret = tomtom_setup_irqs(tomtom);
+/* 	ret = tomtom_setup_irqs(tomtom);
 	if (ret) {
 		pr_err("%s: tomtom irq setup failed %d\n", __func__, ret);
 		goto err_pdata;
-	}
+	} */
 
 	atomic_set(&kp_tomtom_priv, (unsigned long)tomtom);
 	mutex_lock(&tomtom->codec_mutex);
@@ -8764,18 +8719,10 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 	snd_soc_dapm_sync(dapm);
 
 //	codec->component.ignore_pmdown_time = 1;
-	ret = tomtom_cpe_initialize(component);
-	if (ret) {
-		dev_info(component->dev,
-			"%s: cpe initialization failed, ret = %d\n",
-			__func__, ret);
-		/* Do not fail probe if CPE failed */
-		ret = 0;
-	}
 	return ret;
 
-err_pdata:
-	kfree(ptr);
+/* err_pdata:
+	kfree(ptr); */
 err_hwdep:
 	kfree(tomtom->fw_data);
 err_nomem_slimch:
@@ -8793,10 +8740,10 @@ static void tomtom_codec_remove(struct snd_soc_component *component)
 
 	if (tomtom->wcd_ext_clk)
 		clk_put(tomtom->wcd_ext_clk);
-	tomtom_cleanup_irqs(tomtom);
+	//tomtom_cleanup_irqs(tomtom);
 
 	/* cleanup MBHC */
-	wcd9xxx_mbhc_deinit(&tomtom->mbhc);
+	//wcd9xxx_mbhc_deinit(&tomtom->mbhc);
 	/* cleanup resmgr */
 	wcd9xxx_resmgr_deinit(&tomtom->resmgr);
 
@@ -8806,12 +8753,6 @@ static void tomtom_codec_remove(struct snd_soc_component *component)
 	devm_kfree(component->dev, tomtom);
 }
 
-/* static struct regmap *tomtom_get_regmap(struct device *dev)
-{
-	struct wcd9xxx *control = dev_get_drvdata(dev->parent);
-
-	return control->regmap;
-} */
 
 static struct snd_soc_component_driver soc_codec_dev_tomtom = {
 	.name = DRV_NAME,
@@ -8823,7 +8764,6 @@ static struct snd_soc_component_driver soc_codec_dev_tomtom = {
 	.num_dapm_widgets = ARRAY_SIZE(tomtom_dapm_widgets),
 	.dapm_routes = audio_map,
 	.num_dapm_routes = ARRAY_SIZE(audio_map),
-	//.get_regmap = tomtom_get_regmap,
 };
 
 #ifdef CONFIG_PM
