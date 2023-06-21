@@ -2710,6 +2710,15 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 			err = -EFAULT;
 			goto done;
 		}
+
+		if (temp_p_info.param_size > 0 &&
+			((INT_MAX - sizeof(temp_p_info)) <
+				temp_p_info.param_size)) {
+			pr_err("%s: Integer overflow\n", __func__);
+			err = -EINVAL;
+			goto done;
+		}
+
 		size = sizeof(temp_p_info) +  temp_p_info.param_size;
 		p_info = kzalloc(size, GFP_KERNEL);
 
