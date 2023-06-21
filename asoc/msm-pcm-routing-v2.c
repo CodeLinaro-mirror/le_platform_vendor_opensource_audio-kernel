@@ -5963,6 +5963,13 @@ static const struct snd_kcontrol_new rx_cdc_dma_rx_1_voice_mixer_controls[] = {
 	msm_routing_put_voice_mixer),
 };
 
+static const struct snd_kcontrol_new tx_voice_mixer_controls[] = {
+	SOC_DOUBLE_EXT("PRI_MI2S_TX_Voice", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_MI2S_TX,
+	MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
+	msm_routing_put_voice_mixer),
+};
+
 static const struct snd_kcontrol_new tx_voicemmode1_mixer_controls[] = {
 	SOC_DOUBLE_EXT("AFE_PCM_TX_MMode1", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_AFE_PCM_TX, MSM_FRONTEND_DAI_VOICEMMODE1, 1, 0,
@@ -7586,6 +7593,9 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 			   SND_SOC_NOPM, 0, 0,
 			   rx_cdc_dma_rx_1_voice_mixer_controls,
 			   ARRAY_SIZE(rx_cdc_dma_rx_1_voice_mixer_controls)),
+	SND_SOC_DAPM_MIXER("Voice_Tx Mixer",
+				SND_SOC_NOPM, 0, 0, tx_voice_mixer_controls,
+				ARRAY_SIZE(tx_voice_mixer_controls)),
 	SND_SOC_DAPM_MIXER("Voip_Tx Mixer",
 				SND_SOC_NOPM, 0, 0, tx_voip_mixer_controls,
 				ARRAY_SIZE(tx_voip_mixer_controls)),
@@ -8316,6 +8326,9 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"MM_UL3", NULL, "AUDIO_REF_EC_UL3 MUX"},
 	{"MM_UL4", NULL, "AUDIO_REF_EC_UL4 MUX"},
 
+	{"Voice_Tx Mixer", "PRI_MI2S_TX_Voice", "PRI_MI2S_TX"},
+	{"CS-VOICE_UL1", NULL, "Voice_Tx Mixer"},
+
 	{"VoiceMMode1_Tx Mixer", "USB_AUDIO_TX_MMode1", "USB_AUDIO_TX"},
 	{"VoiceMMode1_Tx Mixer", "AFE_PCM_TX_MMode1", "PCM_TX"},
 	{"VoiceMMode1_Tx Mixer", "PROXY_TX_MMode1", "PROXY_TX"},
@@ -8957,6 +8970,7 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"SEC_MI2S_RX", NULL, "SEC_MI2S_RX_Voice Mixer"},
 
 	{"PRI_MI2S_RX_Voice Mixer", "Voip", "VOIP_DL"},
+	{"PRI_MI2S_RX_Voice Mixer", "CSVoice", "CS-VOICE_DL1"},
 	{"PRI_MI2S_RX_Voice Mixer", "Voice Stub", "VOICE_STUB_DL"},
 	{"PRI_MI2S_RX_Voice Mixer", "Voice2 Stub", "VOICE2_STUB_DL"},
 	{"PRI_MI2S_RX_Voice Mixer", "QCHAT", "QCHAT_DL"},
