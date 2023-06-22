@@ -896,6 +896,7 @@ static int msm_audio_ion_probe(struct platform_device *pdev)
 			rc = msm_audio_protect_memory_region(pdev);
 			if (rc) {
 				dev_err(dev, "%s: HYP ASSIGN Failed\n", __func__);
+				rc = 0;
 			}
 		}
 		else
