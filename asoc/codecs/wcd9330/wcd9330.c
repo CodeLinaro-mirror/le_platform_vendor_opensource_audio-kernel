@@ -7205,6 +7205,7 @@ static int tomtom_handle_pdata(struct tomtom_priv *tomtom)
 			0xE0, (pdata->ocp.hph_ocp_limit << 5));
 	}
 
+	snd_soc_component_write(component, TOMTOM_A_BIAS_REF_CTL, 0x1C);
 /* 	for (i = 0; i < wcd9xxx->num_of_supplies; i++) {
 		if (pdata->regulator[i].name &&
 		    !strcmp(pdata->regulator[i].name, "CDC_VDDA_RX")) {
@@ -7397,10 +7398,6 @@ static const struct wcd9xxx_reg_mask_val tomtom_1_0_reg_defaults[] = {
 	TOMTOM_REG_VAL(TOMTOM_A_RX_EAR_BIAS_PA, 0x76),
 	TOMTOM_REG_VAL(TOMTOM_A_RX_EAR_CNP, 0xC0),
 	TOMTOM_REG_VAL(TOMTOM_A_RX_LINE_BIAS_PA, 0x78),
-	TOMTOM_REG_VAL(TOMTOM_A_RX_LINE_1_TEST, 0x2),
-	TOMTOM_REG_VAL(TOMTOM_A_RX_LINE_2_TEST, 0x2),
-	TOMTOM_REG_VAL(TOMTOM_A_RX_LINE_3_TEST, 0x2),
-	TOMTOM_REG_VAL(TOMTOM_A_RX_LINE_4_TEST, 0x2),
 	TOMTOM_REG_VAL(TOMTOM_A_SPKR_DRV1_OCP_CTL, 0x97),
 	TOMTOM_REG_VAL(TOMTOM_A_SPKR_DRV1_CLIP_DET, 0x1),
 	TOMTOM_REG_VAL(TOMTOM_A_SPKR_DRV1_IEC, 0x0),
@@ -8549,6 +8546,7 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 
 	control = dev_get_drvdata(component->dev->parent);
 
+	snd_soc_component_init_regmap(component, control->regmap);
 	tomtom = snd_soc_component_get_drvdata(component);
 
 	control->dev_down = tomtom_device_down;
@@ -8587,7 +8585,8 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 		goto err_nomem_slimch;
 	}
 
-//	tomtom->clsh_d.buck_mv = tomtom_codec_get_buck_mv(component);
+	tomtom->clsh_d.buck_mv = WCD9XXX_CDC_BUCK_MV_1P8;
+	//tomtom_codec_get_buck_mv(component);
 	/* TomTom does not support dynamic switching of vdd_cp */
 	tomtom->clsh_d.is_dynamic_vdd_cp = false;
 	wcd9xxx_clsh_init(&tomtom->clsh_d, &tomtom->resmgr);
