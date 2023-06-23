@@ -32,6 +32,9 @@ endif
 ifeq ($(TARGET_SUPPORT), sdxpoorwills)
 KBUILD_OPTIONS += CONFIG_ARCH_SA415M=y
 endif
+ifeq ($(TARGET_SUPPORT), mdm9607)
+KBUILD_OPTIONS += CONFIG_ARCH_MDM9607=y
+endif
 
 subdir-ccflags-y += -I$(AUDIO_ROOT)/include/uapi/
 
@@ -55,6 +58,9 @@ obj-m += asoc/codecs/wcd934x/
 endif
 ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sdxpoorwills))
 obj-m += asoc/codecs/wcd934x/
+endif
+ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), mdm9607))
+obj-m += asoc/codecs/wcd9330/
 endif
 ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sa410m))
 obj-m += asoc/codecs/bolero/

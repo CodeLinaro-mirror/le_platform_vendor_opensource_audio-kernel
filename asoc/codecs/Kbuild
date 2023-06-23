@@ -107,6 +107,11 @@ else
 			export
 			INCS    +=  -include $(AUDIO_ROOT)/config/sdxpoorwillsautoconf.h
 		endif
+		ifeq ($(CONFIG_ARCH_MDM9607), y)
+			include $(AUDIO_ROOT)/config/mdm9607auto.conf
+			export
+			INCS    +=  -include $(AUDIO_ROOT)/config/mdm9607autoconf.h
+		endif
 	endif
 endif
 
@@ -148,6 +153,8 @@ ifdef CONFIG_WCD9XXX_CODEC_CORE
 	CORE_OBJS += msm-cdc-supply.o
 	CORE_OBJS += wcd934x/wcd934x-regmap.o
 	CORE_OBJS += wcd934x/wcd934x-tables.o
+	CORE_OBJS += wcd9330/wcd9330-regmap.o
+	CORE_OBJS += wcd9330/wcd9330-tables.o
 endif
 
 ifdef CONFIG_WCD9XXX_CODEC_CORE_V2
@@ -168,6 +175,12 @@ endif
 	WCD9XXX_OBJS += wcdcal-hwdep.o
 	WCD9XXX_OBJS += wcd9xxx-soc-init.o
 	WCD9XXX_OBJS += audio-ext-clk-up.o
+endif
+
+ifdef CONFIG_SND_SOC_WCD9330
+	WCD9XXX_OBJS += wcd9xxx-common.o
+	WCD9XXX_OBJS += wcd9xxx-resmgr.o
+	WCD9XXX_OBJS += wcd9xxx-mbhc.o
 endif
 
 ifdef CONFIG_SND_SOC_WCD9335
