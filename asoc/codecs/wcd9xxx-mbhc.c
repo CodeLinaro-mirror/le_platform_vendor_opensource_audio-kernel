@@ -5555,14 +5555,14 @@ int wcd9xxx_mbhc_init(struct wcd9xxx_mbhc *mbhc, struct wcd9xxx_resmgr *resmgr,
 		goto err_remove_irq;
 	}
 
- 	ret = wcd9xxx_request_irq(core_res, mbhc->intr_ids->dce_est_complete,
+/*  	ret = wcd9xxx_request_irq(core_res, mbhc->intr_ids->dce_est_complete,
 				  wcd9xxx_dce_handler, "DC Estimation detect",
 				  mbhc);
 	if (ret) {
 		pr_err("%s: Failed to request irq %d\n", __func__,
 		       mbhc->intr_ids->dce_est_complete);
 		goto err_potential_irq;
-	}
+	} */
 
 	ret = wcd9xxx_request_irq(core_res, mbhc->intr_ids->button_release,
 				  wcd9xxx_release_handler,
@@ -5605,8 +5605,8 @@ err_hphl_ocp_irq:
 	wcd9xxx_free_irq(core_res, mbhc->intr_ids->button_release, mbhc);
 err_release_irq:
 	wcd9xxx_free_irq(core_res, mbhc->intr_ids->dce_est_complete, mbhc);
-err_potential_irq:
-	wcd9xxx_free_irq(core_res, mbhc->intr_ids->poll_plug_rem, mbhc);
+/* err_potential_irq:
+	wcd9xxx_free_irq(core_res, mbhc->intr_ids->poll_plug_rem, mbhc); */
 err_remove_irq:
 	wcd9xxx_free_irq(core_res, mbhc->intr_ids->insertion, mbhc);
 err_insert_irq:

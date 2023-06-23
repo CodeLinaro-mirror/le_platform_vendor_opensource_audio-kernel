@@ -244,9 +244,9 @@ static void param_set_mask(struct snd_pcm_hw_params *p, int n, unsigned bit)
 static int mdm_enable_codec_ext_clk(struct snd_soc_component *component,
 					int enable, bool dapm);
 
-//static void *def_codec_mbhc_cal(void);
+static void *def_codec_mbhc_cal(void);
 
-/* static struct wcd9xxx_mbhc_config mbhc_cfg = {
+static struct wcd9xxx_mbhc_config mbhc_cfg = {
 	.read_fw_bin = false,
 	.calibration = NULL,
 	.micbias = MBHC_MICBIAS2,
@@ -265,7 +265,7 @@ static int mdm_enable_codec_ext_clk(struct snd_soc_component *component,
 	.use_vddio_meas = true,
 	.enable_anc_mic_detect = false,
 	.hw_jack_type = FOUR_POLE_JACK,
-}; */
+};
 
 static void mdm_gpio_set_mux_ctl(struct mdm_machine_data *dt)
 {
@@ -1499,10 +1499,12 @@ static int mdm_enable_codec_ext_clk(struct snd_soc_component *component,
 					int enable, bool dapm)
 {
 	int ret = 0;
-/* 	struct snd_soc_card *card = codec->component.card;
+	struct snd_soc_card *card = component->card;
 	struct mdm_machine_data *pdata =
 			snd_soc_card_get_drvdata(card);
 	struct afe_clk_set *lpass_clk = NULL;
+
+	pr_debug("%s mclk enable: %d\n",__func__, enable);
 
 	lpass_clk = kzalloc(sizeof(struct afe_clk_set), GFP_KERNEL);
 	if (!lpass_clk)
@@ -1525,7 +1527,7 @@ static int mdm_enable_codec_ext_clk(struct snd_soc_component *component,
 			}
 		}
 		atomic_inc(&pdata->prim_clk_usrs);
-		pdata->mdm9607_codec_fn.mclk_enable_fn(codec, 1, dapm);
+		tomtom_mclk_enable(component, 1, dapm);
 	} else {
 		if (atomic_read(&pdata->prim_clk_usrs) > 0)
 			atomic_dec(&pdata->prim_clk_usrs);
@@ -1541,13 +1543,13 @@ static int mdm_enable_codec_ext_clk(struct snd_soc_component *component,
 				goto err;
 			}
 		}
-		pdata->mdm9607_codec_fn.mclk_enable_fn(codec, 0, dapm);
+		tomtom_mclk_enable(component, 0, dapm);
 	}
 	pr_debug("%s clk %x\n",  __func__, pdata->mclk_freq);
 err:
 	mutex_unlock(&cdc_mclk_mutex);
 	kfree(lpass_clk);
-	clk_users = atomic_read(&pdata->prim_clk_usrs); */
+	clk_users = atomic_read(&pdata->prim_clk_usrs);
 	return ret;
 }
 
@@ -2392,9 +2394,9 @@ static int mdm_mi2s_audrx_init(struct snd_soc_pcm_runtime *rtd)
 
 	ret = afe_enable_lpass_core_shared_clock(MI2S_RX, CLOCK_OFF);
 
-	//mbhc_cfg.calibration = def_codec_mbhc_cal();
-/* 	if (mbhc_cfg.calibration) {
-		ret = pdata->mdm9607_codec_fn.mbhc_hs_detect(component, mbhc->mbhc_cfg);
+	mbhc_cfg.calibration = def_codec_mbhc_cal();
+ 	if (mbhc_cfg.calibration) {
+		ret = pdata->mdm9607_codec_fn.mbhc_hs_detect(component, &mbhc_cfg);
 		if (ret < 0) {
 			pr_err("%s: Failed to intialise mbhc %d\n",
 				__func__, ret);
@@ -2402,7 +2404,7 @@ static int mdm_mi2s_audrx_init(struct snd_soc_pcm_runtime *rtd)
 		}
 	} else {
 		ret = -ENOMEM;
-	} */
+	}
 
 	if (!strcmp(card->name, "mdm9607-tomtom-i2s-snd-card")) {
 		tomtom_register_ext_clk_cb(mdm_enable_codec_ext_clk,
@@ -2428,7 +2430,7 @@ done:
 	return ret;
 }
 
-/* void *def_codec_mbhc_cal(void)
+void *def_codec_mbhc_cal(void)
 {
 	void *tomtom_cal;
 	struct wcd9xxx_mbhc_btn_detect_cfg *btn_cfg;
@@ -2505,7 +2507,7 @@ done:
 	gain[1] = 9;
 
 	return tomtom_cal;
-} */
+}
 
 /* Digital audio interface connects codec <---> CPU */
 static struct snd_soc_dai_link mdm_dai[] = {
@@ -3057,34 +3059,7 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 #endif
 };
 
-/* static struct snd_soc_dai_link mdm_9306_dai[] = {
-		 Backend DAI Links 
-	{
-		.name = LPASS_BE_PRI_MI2S_RX,
-		.stream_name = "Primary MI2S Playback",
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		.id = MSM_BACKEND_DAI_PRI_MI2S_RX,
-		.init  = &mdm_mi2s_audrx_init,
-		.be_hw_params_fixup = &mdm_mi2s_rx_be_hw_params_fixup,
-		.ops = &mdm_mi2s_be_ops,
-		.ignore_pmdown_time = 1,
-		.ignore_suspend = 1,
-		SND_SOC_DAILINK_REG(pri_mi2s_auto_rx),
-	},
-	{
-		.name = LPASS_BE_PRI_MI2S_TX,
-		.stream_name = "Primary MI2S Capture",
-		.no_pcm = 1,
-		.dpcm_capture = 1,
-		.id = MSM_BACKEND_DAI_PRI_MI2S_TX,
-		.be_hw_params_fixup = &mdm_mi2s_tx_be_hw_params_fixup,
-		.ops = &mdm_mi2s_be_ops,
-		.ignore_pmdown_time = 1,
-		.ignore_suspend = 1,
-		SND_SOC_DAILINK_REG(pri_mi2s_auto_tx),
-	},
-}; */
+
 
 static struct snd_soc_dai_link mdm_tomtom_dai_links[
 				ARRAY_SIZE(mdm_dai) +
