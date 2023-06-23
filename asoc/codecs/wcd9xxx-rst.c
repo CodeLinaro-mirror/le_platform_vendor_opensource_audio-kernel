@@ -110,9 +110,6 @@ static const struct intr_data wcd9330_intr_table[] = {
 	{WCD9320_IRQ_EAR_PA_STARTUP, false},
 	{WCD9330_IRQ_SVASS_ERR_EXCEPTION, false},
 	{WCD9330_IRQ_SVASS_ENGINE, true},
-	{WCD9330_IRQ_MAD_AUDIO, false},
-	{WCD9330_IRQ_MAD_BEACON, false},
-	{WCD9330_IRQ_MAD_ULTRASOUND, false},
 	{WCD9330_IRQ_SPEAKER1_CLIPPING, false},
 	{WCD9330_IRQ_SPEAKER2_CLIPPING, false},
 	{WCD9330_IRQ_VBAT_MONITOR_ATTACK, false},
@@ -391,6 +388,26 @@ static int wcd9330_get_cdc_info(struct wcd9xxx *wcd9xxx,
 		dev_err(wcd9xxx->dev, "%s: wcd9330 version unknown (major 0x%x, minor 0x%x)\n",
 			__func__, id_major, id_minor);
 
+	/* Fill codec type info */
+	wcd_type->id_major = id_major;
+	wcd_type->id_minor = id_minor;
+	wcd_type->num_irqs = 29;
+	wcd_type->version = version;
+	wcd_type->slim_slave_type = WCD9XXX_SLIM_SLAVE_ADDR_TYPE_1;
+	wcd_type->i2c_chip_status = 0x01;
+	wcd_type->intr_tbl = wcd9330_intr_table;
+	wcd_type->intr_tbl_size = ARRAY_SIZE(wcd9330_intr_table);
+
+	wcd_type->intr_reg[WCD9XXX_INTR_STATUS_BASE] =
+						WCD9XXX_A_INTR_STATUS0;
+	wcd_type->intr_reg[WCD9XXX_INTR_CLEAR_BASE] =
+						WCD9XXX_A_INTR_CLEAR0;
+	wcd_type->intr_reg[WCD9XXX_INTR_MASK_BASE] =
+						WCD9XXX_A_INTR_MASK0;
+	wcd_type->intr_reg[WCD9XXX_INTR_LEVEL_BASE] =
+						WCD9XXX_A_INTR_LEVEL0;
+	wcd_type->intr_reg[WCD9XXX_INTR_CLR_COMMIT] =
+						WCD9XXX_A_INTR_MODE;
 	return rc;
 }
 

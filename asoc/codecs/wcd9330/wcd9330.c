@@ -1160,8 +1160,7 @@ static int tomtom_config_compander(struct snd_soc_dapm_widget *w,
 
 	/* Compander 0 has two channels */
 	mask = enable_mask = 0x03;
-	buck_mv = 1;
-	//buck_mv = tomtom_codec_get_buck_mv(component);
+	buck_mv = WCD9XXX_CDC_BUCK_MV_1P8;
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -1560,59 +1559,59 @@ static int tomtom_tx_hpf_bypass_put(struct snd_kcontrol *kcontrol,
 
 static const struct snd_kcontrol_new tomtom_snd_controls[] = {
 
-	SOC_SINGLE_SX_TLV("RX1 Digital Volume", TOMTOM_A_CDC_RX1_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX2 Digital Volume", TOMTOM_A_CDC_RX2_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX3 Digital Volume", TOMTOM_A_CDC_RX3_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX4 Digital Volume", TOMTOM_A_CDC_RX4_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX5 Digital Volume", TOMTOM_A_CDC_RX5_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX6 Digital Volume", TOMTOM_A_CDC_RX6_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX7 Digital Volume", TOMTOM_A_CDC_RX7_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("RX8 Digital Volume", TOMTOM_A_CDC_RX8_VOL_CTL_B2_CTL,
-		0, -84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX1 Digital Volume", TOMTOM_A_CDC_RX1_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX2 Digital Volume", TOMTOM_A_CDC_RX2_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX3 Digital Volume", TOMTOM_A_CDC_RX3_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX4 Digital Volume", TOMTOM_A_CDC_RX4_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX5 Digital Volume", TOMTOM_A_CDC_RX5_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX6 Digital Volume", TOMTOM_A_CDC_RX6_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX7 Digital Volume", TOMTOM_A_CDC_RX7_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
+	SOC_SINGLE_S8_TLV("RX8 Digital Volume", TOMTOM_A_CDC_RX8_VOL_CTL_B2_CTL,
+		-84, 40, digital_gain),
 
-	SOC_SINGLE_SX_TLV("DEC1 Volume", TOMTOM_A_CDC_TX1_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC1 Volume", TOMTOM_A_CDC_TX1_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC2 Volume", TOMTOM_A_CDC_TX2_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC2 Volume", TOMTOM_A_CDC_TX2_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC3 Volume", TOMTOM_A_CDC_TX3_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC3 Volume", TOMTOM_A_CDC_TX3_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC4 Volume", TOMTOM_A_CDC_TX4_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC4 Volume", TOMTOM_A_CDC_TX4_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC5 Volume", TOMTOM_A_CDC_TX5_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC5 Volume", TOMTOM_A_CDC_TX5_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC6 Volume", TOMTOM_A_CDC_TX6_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC6 Volume", TOMTOM_A_CDC_TX6_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC7 Volume", TOMTOM_A_CDC_TX7_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC7 Volume", TOMTOM_A_CDC_TX7_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC8 Volume", TOMTOM_A_CDC_TX8_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC8 Volume", TOMTOM_A_CDC_TX8_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC9 Volume", TOMTOM_A_CDC_TX9_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC9 Volume", TOMTOM_A_CDC_TX9_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("DEC10 Volume", TOMTOM_A_CDC_TX10_VOL_CTL_GAIN, 0,
+	SOC_SINGLE_S8_TLV("DEC10 Volume", TOMTOM_A_CDC_TX10_VOL_CTL_GAIN,
 					  -84, 40, digital_gain),
 
-	SOC_SINGLE_SX_TLV("IIR1 INP1 Volume", TOMTOM_A_CDC_IIR1_GAIN_B1_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR1 INP1 Volume", TOMTOM_A_CDC_IIR1_GAIN_B1_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR1 INP2 Volume", TOMTOM_A_CDC_IIR1_GAIN_B2_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR1 INP2 Volume", TOMTOM_A_CDC_IIR1_GAIN_B2_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR1 INP3 Volume", TOMTOM_A_CDC_IIR1_GAIN_B3_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR1 INP3 Volume", TOMTOM_A_CDC_IIR1_GAIN_B3_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR1 INP4 Volume", TOMTOM_A_CDC_IIR1_GAIN_B4_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR1 INP4 Volume", TOMTOM_A_CDC_IIR1_GAIN_B4_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR2 INP1 Volume", TOMTOM_A_CDC_IIR2_GAIN_B1_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR2 INP1 Volume", TOMTOM_A_CDC_IIR2_GAIN_B1_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR2 INP2 Volume", TOMTOM_A_CDC_IIR2_GAIN_B2_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR2 INP2 Volume", TOMTOM_A_CDC_IIR2_GAIN_B2_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR2 INP3 Volume", TOMTOM_A_CDC_IIR2_GAIN_B3_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR2 INP3 Volume", TOMTOM_A_CDC_IIR2_GAIN_B3_CTL,
 					  -84, 40, digital_gain),
-	SOC_SINGLE_SX_TLV("IIR2 INP4 Volume", TOMTOM_A_CDC_IIR2_GAIN_B4_CTL, 0,
+	SOC_SINGLE_S8_TLV("IIR2 INP4 Volume", TOMTOM_A_CDC_IIR2_GAIN_B4_CTL,
 					  -84, 40, digital_gain),
 
 	SOC_SINGLE_EXT("ANC Slot", SND_SOC_NOPM, 0, 100, 0, tomtom_get_anc_slot,
@@ -8287,6 +8286,7 @@ static int tomtom_post_reset_cb(struct wcd9xxx *wcd9xxx)
 	mutex_lock(&tomtom->codec_mutex);
 
 	tomtom_update_reg_defaults(component);
+	tomtom->component = component;
 	if (wcd9xxx->mclk_rate == TOMTOM_MCLK_CLK_12P288MHZ)
 		snd_soc_component_update_bits(component, TOMTOM_A_CHIP_CTL, 0x06, 0x0);
 	else if (wcd9xxx->mclk_rate == TOMTOM_MCLK_CLK_9P6MHZ)
@@ -8611,7 +8611,7 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 		goto err_hwdep;
 	}
 
-/* 	 init and start mbhc
+	/* init and start mbhc */
 	ret = wcd9xxx_mbhc_init(&tomtom->mbhc, &tomtom->resmgr, component,
 				tomtom_enable_mbhc_micbias,
 				&mbhc_cb, &cdc_intr_ids,
@@ -8619,8 +8619,7 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 	if (ret) {
 		pr_err("%s: mbhc init failed %d\n", __func__, ret);
 		goto err_hwdep;
-	} */
-
+	}
 	tomtom->component = component;
 	for (i = 0; i < COMPANDER_MAX; i++) {
 		tomtom->comp_enabled[i] = 0;
@@ -8701,11 +8700,11 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 
 	snd_soc_dapm_sync(dapm);
 
-/* 	ret = tomtom_setup_irqs(tomtom);
+	ret = tomtom_setup_irqs(tomtom);
 	if (ret) {
 		pr_err("%s: tomtom irq setup failed %d\n", __func__, ret);
 		goto err_pdata;
-	} */
+	}
 
 	atomic_set(&kp_tomtom_priv, (unsigned long)tomtom);
 	mutex_lock(&tomtom->codec_mutex);
@@ -8720,8 +8719,8 @@ static int tomtom_codec_probe(struct snd_soc_component *component)
 //	codec->component.ignore_pmdown_time = 1;
 	return ret;
 
-/* err_pdata:
-	kfree(ptr); */
+err_pdata:
+	kfree(ptr);
 err_hwdep:
 	kfree(tomtom->fw_data);
 err_nomem_slimch:
@@ -8739,10 +8738,10 @@ static void tomtom_codec_remove(struct snd_soc_component *component)
 
 	if (tomtom->wcd_ext_clk)
 		clk_put(tomtom->wcd_ext_clk);
-	//tomtom_cleanup_irqs(tomtom);
+	tomtom_cleanup_irqs(tomtom);
 
 	/* cleanup MBHC */
-	//wcd9xxx_mbhc_deinit(&tomtom->mbhc);
+	wcd9xxx_mbhc_deinit(&tomtom->mbhc);
 	/* cleanup resmgr */
 	wcd9xxx_resmgr_deinit(&tomtom->resmgr);
 
