@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -931,7 +931,7 @@ int msm_audio_ion_mmap(struct audio_buffer *abuff,
 	page = sg_page(table->sgl);
 	if (page) {
 		pr_debug("%s: page is NOT null\n", __func__);
-		for_each_sg(table->sgl, sg, table->nents, i) {
+		for_each_sg(table->sgl, sg, table->orig_nents, i) {
 			unsigned long remainder = vma->vm_end - addr;
 			unsigned long len = sg->length;
 
