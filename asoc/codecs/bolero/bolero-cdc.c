@@ -906,9 +906,6 @@ static int bolero_ssr_enable(struct device *dev, void *data)
 	}
 
 	regcache_cache_only(priv->regmap, false);
-	mutex_lock(&priv->clk_lock);
-	priv->dev_up = true;
-	mutex_unlock(&priv->clk_lock);
 	regcache_mark_dirty(priv->regmap);
 	bolero_clk_rsc_enable_all_clocks(priv->clk_dev, true);
 	regcache_sync(priv->regmap);
@@ -925,6 +922,9 @@ static int bolero_ssr_enable(struct device *dev, void *data)
 			BOLERO_MACRO_EVT_SSR_UP, 0x0);
 	}
 	trace_printk("%s: SSR up events processed by all macros\n", __func__);
+	mutex_lock(&priv->clk_lock);
+	priv->dev_up = true;
+	mutex_unlock(&priv->clk_lock);
 	bolero_cdc_notifier_call(priv, BOLERO_SLV_EVT_SSR_UP);
 	return 0;
 }
