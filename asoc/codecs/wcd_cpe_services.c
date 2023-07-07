@@ -403,6 +403,7 @@ unlock_and_exit:
 	pr_debug("%s: thread stopped\n", __func__);
 	CPE_SVC_REL_LOCK(&t_info->msg_lock, "msg_lock");
 	complete_and_exit(&t_info->thread_comp, 0);
+	return 0;
 }
 
 static void cpe_create_worker_thread(struct cpe_info *t_info)
