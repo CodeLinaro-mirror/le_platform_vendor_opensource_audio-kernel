@@ -55,6 +55,8 @@
 /* for external mclk dynamic switch */
 #define AFE_API_VERSION_V8		8
 #define AFE_API_VERSION_V10		10
+/* for spdif playback and channel status update event */
+#define AFE_API_VERSION_V11		11
 
 #define AFE_SAMPLING_RATE_8KHZ 8000
 
@@ -374,6 +376,7 @@ enum {
 	IDX_AFE_PORT_ID_HSIF2_TDM_TX_6,
 	IDX_AFE_PORT_ID_HSIF2_TDM_RX_7,
 	IDX_AFE_PORT_ID_HSIF2_TDM_TX_7,
+	/* IDX 276 */
 	AFE_MAX_PORTS
 };
 
@@ -469,6 +472,7 @@ int afe_set_display_stream(u16 rx_port_id, u32 stream_idx, u32 ctl_idx);
 int afe_loopback_gain(u16 port_id, u16 volume);
 int afe_validate_port(u16 port_id);
 int afe_get_port_index(u16 port_id);
+int afe_get_port_id(u16 port_idx);
 int afe_get_topology(int port_id);
 int afe_start_pseudo_port(u16 port_id);
 int afe_stop_pseudo_port(u16 port_id);
@@ -563,6 +567,14 @@ int afe_spdif_reg_event_cfg(u16 port_id, u16 reg_flag,
 		uint32_t token, uint32_t *payload, void *priv),
 		void *private_data);
 
+int afe_send_spdif_chstatus_mask_cfg(struct afe_spdif_chstatus_mask_config
+		*chstatus_mask_cfg, u16 port_id);
+
+int afe_spdif_reg_chstatus_event_cfg(u16 port_id, u16 reg_flag,
+		void (*cb)(uint32_t opcode,
+		uint32_t token, uint32_t *payload, void *priv),
+		void *private_data);
+
 int afe_turn_onoff_hw_mad(u16 mad_type, u16 mad_enable);
 int afe_port_set_mad_type(u16 port_id, enum afe_mad_type mad_type);
 enum afe_mad_type afe_port_get_mad_type(u16 port_id);
@@ -578,6 +590,8 @@ int afe_port_group_set_param(u16 group_id,
 int afe_port_group_enable(u16 group_id,
 	union afe_port_group_config *afe_group_config, u16 enable,
 	struct afe_param_id_tdm_lane_cfg *lane_cfg);
+int afe_port_tdm_lane_config_v2(u16 port_id,
+	struct afe_param_id_tdm_lane_cfg *lane_cfg);
 int afe_unmap_rtac_block(uint32_t *mem_map_handle);
 int afe_map_rtac_block(struct rtac_cal_block_data *cal_block);
 int afe_send_slot_mapping_cfg(
@@ -587,7 +601,8 @@ int afe_send_custom_tdm_header_cfg(
 	struct afe_param_id_custom_tdm_header_cfg *custom_tdm_header_cfg,
 	u16 port_id);
 int afe_tdm_port_start(u16 port_id, struct afe_tdm_port_config *tdm_port,
-		       u32 rate, u16 num_groups);
+		       u32 rate, u16 num_groups,
+		       struct afe_param_id_tdm_lane_cfg *lane_cfg);
 void afe_set_routing_callback(routing_cb cb);
 int afe_port_send_logging_cfg(u16 port_id,
 	struct afe_param_id_port_data_log_disable_t *log_disable);
