@@ -651,10 +651,21 @@ static int msm_pcm_volume_ctl_put(struct snd_kcontrol *kcontrol,
 {
 	int rc = 0;
 	struct snd_pcm_volume *vol = kcontrol->private_data;
-	struct snd_pcm_substream *substream = vol->pcm->streams[0].substream;
+	struct snd_pcm_substream *substream = NULL;
 	struct msm_pcm_loopback *prtd;
 	int volume = ucontrol->value.integer.value[0];
 
+	if (!vol) {
+		pr_err("%s: vol is NULL\n", __func__);
+		return -ENODEV;
+	}
+
+	if (!vol->pcm) {
+		pr_err("%s: vol->pcm is NULL\n", __func__);
+		return -ENODEV;
+	}
+
+	substream = vol->pcm->streams[0].substream;
 	pr_debug("%s: volume : 0x%x\n", __func__, volume);
 	if ((!substream) || (!substream->runtime)) {
 		pr_err("%s substream or runtime not found\n", __func__);
@@ -689,6 +700,12 @@ static int msm_pcm_volume_ctl_get(struct snd_kcontrol *kcontrol,
 		pr_err("%s: vol is NULL\n", __func__);
 		return -ENODEV;
 	}
+
+	if (!vol->pcm) {
+		pr_err("%s: vol->pcm is NULL\n", __func__);
+		return -ENODEV;
+	}
+
 	substream = vol->pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream;
 	if ((!substream) || (!substream->runtime)) {
 		pr_debug("%s substream or runtime not found\n", __func__);
@@ -1035,7 +1052,7 @@ static int msm_pcm_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 		if (prtd->audio_client) {
 			stream_id = prtd->audio_client->session;
 			be_id = chmixer_pspd->port_idx;
-			msm_pcm_routing_set_channel_mixer_runtime(be_id,
+			msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 					stream_id,
 					session_type,
 					chmixer_pspd);
