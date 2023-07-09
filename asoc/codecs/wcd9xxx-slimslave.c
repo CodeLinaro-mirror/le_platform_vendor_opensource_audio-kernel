@@ -211,7 +211,7 @@ err_close_slim_sch:
 }
 EXPORT_SYMBOL(wcd9xxx_cfg_slim_sch_rx);
 
-/* Enable slimbus slave device for RX path */
+/* Enable slimbus slave device for TX path */
 int wcd9xxx_cfg_slim_sch_tx(struct wcd9xxx *wcd9xxx,
 			    struct list_head *wcd9xxx_ch_list,
 			    unsigned int rate, unsigned int bit_width,
@@ -307,7 +307,7 @@ err:
 	sconfig_tx.chs = NULL;
 	return ret;
 }
-EXPORT_SYMBOL(wcd9xxx_close_slim_sch);
+EXPORT_SYMBOL(wcd9xxx_cfg_slim_sch_tx);
 
 int wcd9xxx_get_slave_port(unsigned int ch_num)
 {

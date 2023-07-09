@@ -195,6 +195,7 @@ struct msm_wsa881x_dev_info {
 
 struct msm_csra66x0_dev_info {
 	struct device_node *of_node;
+	const char *name;
 	u32 index;
 };
 
@@ -9933,9 +9934,9 @@ static int msm_init_csra_dev(struct platform_device *pdev,
 	u32 csra_max_devs;
 	u32 csra_dev_cnt;
 	char *dev_name_str = NULL;
-	struct platform_device *csra66x0_plat_dev = NULL;
-	struct device *csra66x0_dev = NULL;
+	struct i2c_client *csra66x0_client_i2c = NULL;
 	struct msm_csra66x0_dev_info *csra66x0_dev_info;
+	struct snd_soc_component *csra66x0_component = NULL;
 	const char *csra_auxdev_name_prefix[1];
 	int i;
 	int found = 0;
@@ -10026,18 +10027,18 @@ static int msm_init_csra_dev(struct platform_device *pdev,
 			goto err_free_dev_info;
 		}
 
-		csra66x0_plat_dev = of_find_device_by_node(csra_of_node);
-		if (!csra66x0_plat_dev) {
+		csra66x0_client_i2c = of_find_i2c_device_by_node(csra_of_node);
+		if (!csra66x0_client_i2c) {
 			dev_err(&pdev->dev,
 				"%s: failed to find plat device for csra66x0 %d\n",
 				__func__, i);
 			return -EPROBE_DEFER;
 		}
-
-		csra66x0_dev = &csra66x0_plat_dev->dev;
-		if (snd_soc_lookup_component(csra66x0_dev, NULL)) {
+		csra66x0_component = snd_soc_lookup_component(&csra66x0_client_i2c->dev, NULL);
+		if (csra66x0_component) {
 			/* CSRA device registered with ALSA core */
 			csra66x0_dev_info[found].of_node = csra_of_node;
+			csra66x0_dev_info[found].name = csra66x0_component->name;
 			csra66x0_dev_info[found].index = i;
 			found++;
 			if (found == csra_max_devs)
@@ -10094,7 +10095,7 @@ static int msm_init_csra_dev(struct platform_device *pdev,
 			goto err_free_dev_name_str;
 		}
 
-		snprintf(dev_name_str, strlen("csra66x0.%d"), "csra66x0.%d", i);
+		strlcpy(dev_name_str, csra66x0_dev_info[i].name, (strlen(csra66x0_dev_info[i].name)+1));
 		msm_aux_dev[i].dlc.name = dev_name_str;
 		msm_aux_dev[i].dlc.of_node =
 						csra66x0_dev_info[i].of_node;
@@ -10520,6 +10521,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret == -EPROBE_DEFER) {
+		dev_err(&pdev->dev, "sndcard EPROBE_DEFER\n");
 		if (codec_reg_done)
 			ret = -EINVAL;
 		goto err;

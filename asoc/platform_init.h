@@ -50,17 +50,5 @@ void msm_fe_dai_exit(void);
 void msm_compress_dsp_exit(void);
 void msm_common_exit(void);
 
-#if IS_ENABLED(CONFIG_WCD9XXX_CODEC_CORE)
-int msm_dai_slim_init(void);
-void msm_dai_slim_exit(void);
-#else
-static inline int msm_dai_slim_init(void)
-{
-	return 0;
-};
-static inline void msm_dai_slim_exit(void)
-{
-};
-#endif
 #endif
 

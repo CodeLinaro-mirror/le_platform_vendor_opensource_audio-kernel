@@ -91,7 +91,6 @@ int wcd9xxx_cfg_slim_sch_tx(struct wcd9xxx *wcd9xxx,
 			    struct list_head *wcd9xxx_ch_list,
 				unsigned int rate, unsigned int bit_width,
 				unsigned int direction);
-int wcd9xxx_close_slim_sch(struct slim_stream_config *sconfig);
 int wcd9xxx_get_channel(struct wcd9xxx *wcd9xxx,
 			unsigned int *rx_ch,
 			unsigned int *tx_ch);
