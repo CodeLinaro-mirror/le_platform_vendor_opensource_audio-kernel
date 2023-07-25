@@ -165,6 +165,11 @@ ifdef CONFIG_SND_SOC_KONA
 	MACHINE_OBJS += kona.o
 endif
 
+# for TRINKET sound card driver
+ifdef CONFIG_SND_SOC_TRINKET
+	MACHINE_OBJS += sm6150.o
+endif
+
 # for LAHAINA sound card driver
 ifdef CONFIG_SND_SOC_LAHAINA
 	MACHINE_OBJS += lahaina.o
@@ -316,6 +321,9 @@ obj-$(CONFIG_SND_SOC_QCS405) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_KONA) += machine_dlkm.o
+machine_dlkm-y := $(MACHINE_OBJS)
+
+obj-$(CONFIG_SND_SOC_TRINKET) += machine_dlkm.o
 machine_dlkm-y := $(MACHINE_OBJS)
 
 obj-$(CONFIG_SND_SOC_LAHAINA) += machine_dlkm.o
