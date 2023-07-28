@@ -928,6 +928,7 @@ static struct snd_soc_card snd_soc_card_kona_msm;
 static int dmic_0_1_gpio_cnt;
 static int dmic_2_3_gpio_cnt;
 static int dmic_4_5_gpio_cnt;
+static int wcd_index;
 
 static void *def_wcd_mbhc_cal(void);
 
@@ -5809,6 +5810,8 @@ static int msm_int_wsa_init(struct snd_soc_pcm_runtime *rtd)
 	struct msm_asoc_mach_data *pdata =
 				snd_soc_card_get_drvdata(rtd->card);
 	int wsa_active_devs = 0;
+	int i = 0;
+	char *wsa_codec[] = {"wsa-codec.1", "wsa-codec.2", "wsa-codec.3", "wsa-codec.4"};
 
 	card = rtd->card->snd_card;
 	if (!pdata->codec_root) {
@@ -5822,7 +5825,65 @@ static int msm_int_wsa_init(struct snd_soc_pcm_runtime *rtd)
 		pdata->codec_root = entry;
 	}
 
-        if (pdata->wsa_max_devs > 0) {
+	if (pdata->wsa_max_devs == 1) {
+		for(i = 0; i < 4; i++) {
+			component = snd_soc_rtdcom_lookup(rtd, wsa_codec[i]);
+			if (component) {
+				dapm = snd_soc_component_get_dapm(component);
+
+				if (strnstr(component->name, "wsa883x", sizeof(component->name))) {
+#if IS_ENABLED(CONFIG_SND_SOC_WSA883X)
+					if (!strcmp(component->name_prefix, "SpkrLeft")) {
+						wsa883x_set_channel_map(component, &spkleft_ports[0],
+								WSA883X_MAX_SWR_PORTS, &ch_mask[0],
+								&ch_rate[0], &spkleft_port_types[0]);
+					} else {
+						wsa883x_set_channel_map(component, &spkright_ports[0],
+								WSA883X_MAX_SWR_PORTS, &ch_mask[0],
+								&ch_rate[0], &spkright_port_types[0]);
+					}
+					wsa883x_codec_info_create_codec_entry(pdata->codec_root,
+										component);
+#endif
+				} else if (strnstr(component->name, "wsa881x", sizeof(component->name))) {
+					if (!strcmp(component->name_prefix, "SpkrLeft")) {
+						wsa881x_set_channel_map(component, &spkleft_ports[0],
+								WSA881X_MAX_SWR_PORTS, &ch_mask[0],
+								&ch_rate[0], &spkleft_port_types[0]);
+					} else {
+						wsa881x_set_channel_map(component, &spkright_ports[0],
+								WSA881X_MAX_SWR_PORTS, &ch_mask[0],
+								&ch_rate[0], &spkright_port_types[0]);
+					}
+					wsa881x_codec_info_create_codec_entry(pdata->codec_root,
+										component);
+				}
+
+				if (dapm->component) {
+					if (!strcmp(component->name_prefix, "SpkrLeft")) {
+						snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft IN");
+						snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft SPKR");
+					}
+
+					if (!strcmp(component->name_prefix, "SpkrRight")) {
+						snd_soc_dapm_ignore_suspend(dapm, "SpkrRight IN");
+						snd_soc_dapm_ignore_suspend(dapm, "SpkrRight SPKR");
+					}
+			    }
+
+				if (!strcmp(component->name, WSA8810_NAME_1) ||
+					!strcmp(component->name, WSA8810_NAME_2))
+					is_wsa8810 = true;
+
+				break;
+			} else {
+				pr_err("%s: %s component are NULL\n", __func__, wsa_codec[i]);
+			}
+		}
+	}
+
+	if (pdata->wsa_max_devs == 2) {
+		/* check left component */
 		component = snd_soc_rtdcom_lookup(rtd, "wsa-codec.1");
 		if (!component)
 			component = snd_soc_rtdcom_lookup(rtd, "wsa-codec.3");
@@ -5845,23 +5906,19 @@ static int msm_int_wsa_init(struct snd_soc_pcm_runtime *rtd)
 									component);
 			}
 
-		        if (dapm->component) {
-			        snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft IN");
-			        snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft SPKR");
-		        }
+		    if (dapm->component) {
+			    snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft IN");
+			    snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft SPKR");
+		    }
 
-			if (!strcmp(component->name, WSA8810_NAME_1) ||
-				!strcmp(component->name, WSA8810_NAME_2))
+			if (!strcmp(component->name, WSA8810_NAME_1))
 				is_wsa8810 = true;
 
-			wsa_active_devs++;
 		} else {
 			pr_err("%s: wsa-codec.1 and wsa-codec.3 component are NULL\n", __func__);
 		}
-	}
 
-        /* If current platform has more than one WSA */
-        if (pdata->wsa_max_devs > wsa_active_devs) {
+		/* check right component */
 		component = snd_soc_rtdcom_lookup(rtd, "wsa-codec.2");
 		if (!component)
 			component = snd_soc_rtdcom_lookup(rtd, "wsa-codec.4");
@@ -5893,6 +5950,9 @@ static int msm_int_wsa_init(struct snd_soc_pcm_runtime *rtd)
 			snd_soc_dapm_ignore_suspend(dapm, "SpkrRight IN");
 			snd_soc_dapm_ignore_suspend(dapm, "SpkrRight SPKR");
 		}
+
+		if (!strcmp(component->name, WSA8810_NAME_2))
+			is_wsa8810 = true;
 	}
 
 	return 0;
@@ -7706,11 +7766,11 @@ static int msm_snd_card_late_probe(struct snd_soc_card *card)
 	if (pdata->wcd_disabled)
 		return 0;
 
-	rtd = snd_soc_get_pcm_runtime(card, &card->dai_link[0]);
+	rtd = snd_soc_get_pcm_runtime(card, &card->dai_link[wcd_index]);
 	if (!rtd) {
 		dev_err(card->dev,
 			"%s: snd_soc_get_pcm_runtime for %s failed!\n",
-			__func__, card->dai_link[0]);
+			__func__, card->dai_link[wcd_index]);
 		return -EINVAL;
 	}
 
@@ -7757,6 +7817,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	u32 auxpcm_audio_intf = 0;
 	u32 val = 0;
 	u32 wcn_btfm_intf = 0;
+	u32 wsa_bolero_codec = 0;
 	const struct of_device_id *match;
 
 	match = of_match_node(kona_asoc_machine_of_match, dev->of_node);
@@ -7775,12 +7836,12 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		total_links += ARRAY_SIZE(msm_common_dai_links);
 
 		rc = of_property_read_u32(dev->of_node, "qcom,wsa-bolero-codec",
-				&val);
+				&wsa_bolero_codec);
 		if (rc) {
 			dev_dbg(dev, "%s: No DT match WSA BOLERO Codec interface\n",
 				__func__);
 		} else {
-			if (!rc && val) {
+			if (wsa_bolero_codec) {
 				dev_dbg(dev, "%s(): wsa bolero codec support present\n",
 					__func__);
 				memcpy(msm_kona_dai_links + total_links,
@@ -7788,12 +7849,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			       	sizeof(msm_bolero_fe_dai_links));
 				total_links +=
 					ARRAY_SIZE(msm_bolero_fe_dai_links);
-
-				memcpy(msm_kona_dai_links + total_links,
-				       msm_wsa_cdc_dma_be_dai_links,
-				       sizeof(msm_wsa_cdc_dma_be_dai_links));
-				total_links +=
-					ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links);
 			}
 		}
 
@@ -7806,6 +7861,17 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		       msm_common_be_dai_links,
 		       sizeof(msm_common_be_dai_links));
 		total_links += ARRAY_SIZE(msm_common_be_dai_links);
+
+		if(wsa_bolero_codec) {
+			memcpy(msm_kona_dai_links + total_links,
+			       msm_wsa_cdc_dma_be_dai_links,
+			       sizeof(msm_wsa_cdc_dma_be_dai_links));
+			total_links +=
+				ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links);
+		}
+
+		/* late probe uses dai link at index wcd_index to get wcd component */
+		wcd_index = total_links;
 
 		memcpy(msm_kona_dai_links + total_links,
 		       msm_rx_tx_cdc_dma_be_dai_links,
@@ -7932,7 +7998,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		card->num_links = total_links;
 		card->late_probe = msm_snd_card_late_probe;
 	}
-
 	return card;
 }
 

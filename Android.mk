@@ -14,8 +14,12 @@ ifeq ($(call is-board-platform, kona),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_KONA=m
 endif
 
+ifeq ($(call is-board-platform, trinket),true)
+AUDIO_SELECT  := CONFIG_SND_SOC_TRINKET=m
+endif
+
 # Build/Package only in case of supported target
-ifeq ($(call is-board-platform-in-list,msmnile kona), true)
+ifeq ($(call is-board-platform-in-list,msmnile kona trinket), true)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -148,7 +152,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(call intermediates-dir-for,DLKM,msm-ext-disp-
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 ###########################################################
 
-ifeq ($(call is-board-platform-in-list,kona), true)
+ifeq ($(call is-board-platform-in-list,kona trinket), true)
 ##########################################################
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
@@ -221,6 +225,26 @@ LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
+ifeq ($(call is-board-platform-in-list,trinket), true)
+########################### WCD937x CODEC  ################################
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := wcd937x_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/wcd937x/wcd937x_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+###########################################################
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := wcd937x_slave_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/wcd937x/wcd937x_slave_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+endif #TRINKET check
 ########################### WCD938x CODEC  ################################
 #include $(CLEAR_VARS)
 #LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)

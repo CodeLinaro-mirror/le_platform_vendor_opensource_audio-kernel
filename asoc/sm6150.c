@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2019, 2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -29,17 +29,22 @@
 #include "device_event.h"
 #include "msm-pcm-routing-v2.h"
 #include <asoc/msm-cdc-pinctrl.h>
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 #include "codecs/wcd934x/wcd934x.h"
-#include "codecs/wcd9335.h"
 #include "codecs/wcd934x/wcd934x-mbhc.h"
+#endif
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
+#include "codecs/wcd9335.h"
+#endif
 #include "codecs/wcd937x/wcd937x-mbhc.h"
 #include "codecs/wsa881x.h"
 #include "codecs/bolero/bolero-cdc.h"
-#include <dt-bindings/sound/audio-codec-port-types.h>
+#include <bindings/audio-codec-port-types.h>
 #include "codecs/bolero/wsa-macro.h"
 #include "codecs/wcd937x/wcd937x.h"
 #include "msm_talos_dailink.h"
 #include "talos-port-config.h"
+#include "msm_common.h"
 
 #define DRV_NAME "sm6150-asoc-snd"
 
@@ -626,7 +631,10 @@ static struct msm_asoc_wcd93xx_codec msm_codec_fn;
 static int dmic_0_1_gpio_cnt;
 static int dmic_2_3_gpio_cnt;
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static void *def_wcd_mbhc_cal(void);
+#endif
 static int msm_snd_enable_codec_ext_clk(struct snd_soc_component *component,
 					int enable, bool dapm);
 static int msm_wsa881x_init(struct snd_soc_pcm_runtime *rtd);
@@ -658,12 +666,15 @@ static struct wcd_mbhc_config wcd_mbhc_cfg = {
 	.moisture_duty_cycle_en = true,
 };
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static struct snd_soc_dapm_route wcd_audio_paths[] = {
 	{"MIC BIAS1", NULL, "MCLK TX"},
 	{"MIC BIAS2", NULL, "MCLK TX"},
 	{"MIC BIAS3", NULL, "MCLK TX"},
 	{"MIC BIAS4", NULL, "MCLK TX"},
 };
+#endif
 
 static struct afe_clk_set mi2s_clk[MI2S_MAX] = {
 	{
@@ -3865,9 +3876,13 @@ static int msm_snd_enable_codec_ext_clk(struct snd_soc_component *component,
 	int ret = 0;
 
 	if (!strcmp(component->name, "tavil_codec")) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 		ret = tavil_cdc_mclk_enable(component, enable);
+#endif
 	} else if (!strcmp(dev_name(component->dev), "tasha_codec")) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 		ret = tasha_cdc_mclk_enable(component, enable, dapm);
+#endif
 	} else {
 		dev_err(component->dev, "%s: unknown codec to enable ext clk\n",
 			__func__);
@@ -3882,9 +3897,13 @@ static int msm_snd_enable_codec_ext_tx_clk(struct snd_soc_component *component,
 	int ret = 0;
 
 	if (!strcmp(component->name, "tavil_codec")) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 		ret = tavil_cdc_mclk_tx_enable(component, enable);
+#endif
 	} else if (!strcmp(dev_name(component->dev), "tasha_codec")) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 		ret = tasha_cdc_mclk_tx_enable(component, enable, dapm);
+#endif
 	} else {
 		dev_err(component->dev, "%s: unknown codec to enable TX ext clk\n",
 			__func__);
@@ -4699,6 +4718,8 @@ static bool msm_swap_gnd_mic(struct snd_soc_component *component, bool active)
 	return ret;
 }
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static int msm_afe_set_config(struct snd_soc_component *component)
 {
 	int ret = 0;
@@ -4747,12 +4768,16 @@ static int msm_afe_set_config(struct snd_soc_component *component)
 
 	return 0;
 }
+#endif
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static void msm_afe_clear_config(void)
 {
 	afe_clear_config(AFE_CDC_REGISTERS_CONFIG);
 	afe_clear_config(AFE_SLIMBUS_SLAVE_CONFIG);
 }
+#endif
 
 static struct snd_info_entry *msm_snd_info_create_subdir(struct module *mod,
 				const char *name,
@@ -4771,14 +4796,15 @@ static struct snd_info_entry *msm_snd_info_create_subdir(struct module *mod,
 	return entry;
 }
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 static int msm_audrx_tavil_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int ret = 0;
 	void *config_data;
 	struct snd_soc_component *component = NULL;
 	struct snd_soc_dapm_context *dapm;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
 	struct snd_card *card = rtd->card->snd_card;
 	struct snd_info_entry *entry;
 	struct msm_asoc_mach_data *pdata =
@@ -4913,15 +4939,17 @@ static int msm_audrx_tavil_init(struct snd_soc_pcm_runtime *rtd)
 err:
 	return ret;
 }
+#endif
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 static int msm_audrx_tasha_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int ret = 0;
 	void *config_data;
 	struct snd_soc_component *component = NULL;
 	struct snd_soc_dapm_context *dapm;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
 	struct snd_card *card;
 	struct snd_info_entry *entry;
 	struct msm_asoc_mach_data *pdata =
@@ -5081,6 +5109,7 @@ static int msm_audrx_tasha_init(struct snd_soc_pcm_runtime *rtd)
 err:
 	return ret;
 }
+#endif
 
 static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 {
@@ -5182,12 +5211,14 @@ static int msm_wcn_init(struct snd_soc_pcm_runtime *rtd)
 {
 	unsigned int rx_ch[WCN_CDC_SLIM_RX_CH_MAX] = {157, 158};
 	unsigned int tx_ch[WCN_CDC_SLIM_TX_CH_MAX]  = {159, 160, 161};
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
 
 	return snd_soc_dai_set_channel_map(codec_dai, ARRAY_SIZE(tx_ch),
 					   tx_ch, ARRAY_SIZE(rx_ch), rx_ch);
 }
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static void *def_wcd_mbhc_cal(void)
 {
 	void *wcd_mbhc_cal;
@@ -5221,13 +5252,16 @@ static void *def_wcd_mbhc_cal(void)
 
 	return wcd_mbhc_cal;
 }
+#endif
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static int msm_snd_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
 
 	int ret = 0;
@@ -5304,14 +5338,15 @@ static int msm_snd_hw_params(struct snd_pcm_substream *substream,
 err:
 	return ret;
 }
+#endif
 
 
 static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
 
 	int ret = 0;
@@ -5390,12 +5425,14 @@ err:
 	return ret;
 }
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static int msm_slimbus_2_hw_params(struct snd_pcm_substream *substream,
 					  struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	unsigned int rx_ch[SLIM_MAX_RX_PORTS], tx_ch[SLIM_MAX_TX_PORTS];
 	unsigned int rx_ch_cnt = 0, tx_ch_cnt = 0;
 	unsigned int num_tx_ch = 0;
@@ -5443,13 +5480,14 @@ static int msm_slimbus_2_hw_params(struct snd_pcm_substream *substream,
 err:
 	return ret;
 }
+#endif
 
 static int msm_wcn_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
 	u32 rx_ch[WCN_CDC_SLIM_RX_CH_MAX], tx_ch[WCN_CDC_SLIM_TX_CH_MAX];
 	u32 rx_ch_cnt = 0, tx_ch_cnt = 0;
@@ -5479,12 +5517,13 @@ err:
 	return ret;
 }
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 int msm_snd_cpe_hw_params(struct snd_pcm_substream *substream,
 			  struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
 	int ret = 0;
 	u32 tx_ch[SLIM_MAX_TX_PORTS];
@@ -5520,6 +5559,7 @@ int msm_snd_cpe_hw_params(struct snd_pcm_substream *substream,
 end:
 	return ret;
 }
+#endif
 
 static int msm_get_port_id(int be_id)
 {
@@ -5604,7 +5644,7 @@ static int msm_mi2s_set_sclk(struct snd_pcm_substream *substream, bool enable)
 {
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	int port_id = 0;
 	/* Rx and Tx DAIs should use same clk index */
 	int index = (cpu_dai->id) / 2;
@@ -5640,7 +5680,7 @@ static int sm6150_tdm_snd_hw_params(struct snd_pcm_substream *substream,
 				     struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	int ret = 0;
 	int slot_width = 32;
 	int channels, slots;
@@ -5788,7 +5828,7 @@ static int sm6150_tdm_snd_startup(struct snd_pcm_substream *substream)
 {
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 	int tdm_mode = msm_get_tdm_mode(cpu_dai->id);
@@ -5809,7 +5849,7 @@ static int sm6150_tdm_snd_startup(struct snd_pcm_substream *substream)
 static void sm6150_tdm_snd_shutdown(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 	int tdm_mode = msm_get_tdm_mode(cpu_dai->id);
@@ -5845,7 +5885,7 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 {
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	/* Rx and Tx DAIs should use same clk index */
 	int index = (cpu_dai->id) / 2;
 	int port_id = msm_get_port_id(rtd->dai_link->id);
@@ -5928,8 +5968,9 @@ static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 {
 	int ret;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	/* Rx and Tx DAIs should use same clk index */
-	int index = (rtd->cpu_dai->id) / 2;
+	int index = (cpu_dai->id) / 2;
 	int port_id = msm_get_port_id(rtd->dai_link->id);
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
@@ -5981,6 +6022,8 @@ static struct snd_soc_ops msm_cdc_dma_be_ops = {
 	.hw_params = msm_snd_cdc_dma_hw_params,
 };
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static struct snd_soc_ops msm_be_ops = {
 	.hw_params = msm_snd_hw_params,
 };
@@ -5988,14 +6031,17 @@ static struct snd_soc_ops msm_be_ops = {
 static struct snd_soc_ops msm_slimbus_2_be_ops = {
 	.hw_params = msm_slimbus_2_hw_params,
 };
+#endif
 
 static struct snd_soc_ops msm_wcn_ops = {
 	.hw_params = msm_wcn_hw_params,
 };
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 static struct snd_soc_ops msm_ext_cpe_ops = {
 	.hw_params = msm_snd_cpe_hw_params,
 };
+#endif
 
 /* Digital audio interface glue - connects codec <---> CPU */
 static struct snd_soc_dai_link msm_common_dai_links[] = {
@@ -6039,7 +6085,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_VOICEMMODE1,
@@ -6084,7 +6129,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6131,7 +6175,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		/* this dainlink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6145,7 +6188,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6159,7 +6201,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6173,7 +6214,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6204,7 +6244,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 			     SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM1,
 		SND_SOC_DAILINK_REG(listen1),
@@ -6260,7 +6299,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_playback = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(hdmi_rx_hostless),
@@ -6273,7 +6311,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_VOICEMMODE2,
@@ -6287,7 +6324,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM2,
 		SND_SOC_DAILINK_REG(listen2),
@@ -6299,7 +6335,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM3,
 		SND_SOC_DAILINK_REG(listen3),
@@ -6311,7 +6346,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM4,
 		SND_SOC_DAILINK_REG(listen4),
@@ -6323,7 +6357,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM5,
 		SND_SOC_DAILINK_REG(listen5),
@@ -6335,7 +6368,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM6,
 		SND_SOC_DAILINK_REG(listen6),
@@ -6347,7 +6379,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM7,
 		SND_SOC_DAILINK_REG(listen7),
@@ -6359,7 +6390,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = { SND_SOC_DPCM_TRIGGER_POST,
 				 SND_SOC_DPCM_TRIGGER_POST },
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.id = MSM_FRONTEND_DAI_LSM8,
 		SND_SOC_DAILINK_REG(listen8),
@@ -6465,7 +6495,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(slimbus8_hostless),
 	},
@@ -6477,7 +6506,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6490,12 +6518,12 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(tx3_cdcdma_hostless),
 	},
 };
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 static struct snd_soc_dai_link msm_tavil_fe_dai_links[] = {
 	{/* hw:x,37 */
 		.name = LPASS_BE_SLIMBUS_4_TX,
@@ -6503,7 +6531,6 @@ static struct snd_soc_dai_link msm_tavil_fe_dai_links[] = {
 		.id = MSM_BACKEND_DAI_SLIMBUS_4_TX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ops = &msm_be_ops,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(lpass_be_slimbus_4_tx),
 	},
@@ -6513,7 +6540,6 @@ static struct snd_soc_dai_link msm_tavil_fe_dai_links[] = {
 		.stream_name = "SLIMBUS_2 Hostless Playback",
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm_slimbus_2_be_ops,
 		SND_SOC_DAILINK_REG(slimbus_2_hostless_playback),
 	},
@@ -6522,11 +6548,11 @@ static struct snd_soc_dai_link msm_tavil_fe_dai_links[] = {
 		.name = "SLIMBUS_2 Hostless Capture",
 		.stream_name = "SLIMBUS_2 Hostless Capture",
 		.ignore_suspend = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm_slimbus_2_be_ops,
 		SND_SOC_DAILINK_REG(slimbus_2_hostless_capture),
 	},
 };
+#endif
 
 static struct snd_soc_dai_link msm_int_compress_capture_dai[] = {
 	{
@@ -6593,12 +6619,12 @@ static struct snd_soc_dai_link msm_bolero_fe_dai_links[] = {
 		.id = MSM_BACKEND_DAI_WSA_CDC_DMA_TX_0,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(wsa_cdcdma0_capture),
 	},
 };
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 	/* tasha_vifeedback for speaker protection */
 	{
@@ -6607,7 +6633,6 @@ static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 		.id = MSM_BACKEND_DAI_SLIMBUS_4_TX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ops = &msm_be_ops,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(lpass_be_slimbus_4_tx),
 	},
@@ -6619,7 +6644,6 @@ static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 		.dpcm_playback = 1,
 		.dpcm_capture = 1,
 		.ignore_pmdown_time = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm_slimbus_2_be_ops,
 		SND_SOC_DAILINK_REG(slimbus_2_hostless_playback),
 	},
@@ -6629,7 +6653,6 @@ static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 		.stream_name = "SLIMBUS_2 Hostless Capture",
 		.ignore_suspend = 1,
 		.dpcm_capture = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ops = &msm_slimbus_2_be_ops,
 		SND_SOC_DAILINK_REG(slimbus_2_hostless_capture),
 	},
@@ -6639,7 +6662,6 @@ static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 		.stream_name = "CPE Listen Audio Service",
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.dpcm_capture = 1,
 		.ops = &msm_ext_cpe_ops,
@@ -6652,7 +6674,6 @@ static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 		.dpcm_playback = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
@@ -6664,12 +6685,12 @@ static struct snd_soc_dai_link msm_tasha_fe_dai_links[] = {
 		.stream_name = "CPE Listen Audio Service ECPP",
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(cpe_listen_service_ecpp),
 	},
 };
+#endif
 
 static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 	{
@@ -6681,7 +6702,6 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
 		.ignore_suspend = 1,
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA6,
 		SND_SOC_DAILINK_REG(multimedia6),
@@ -6694,7 +6714,6 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(usbaudio_hostless),
@@ -6774,9 +6793,6 @@ static struct snd_soc_dai_link msm_common_be_dai_links[] = {
 	{
 		.name = LPASS_BE_USB_AUDIO_RX,
 		.stream_name = "USB Audio Playback",
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
-		.dynamic_be = 1,
-#endif /* CONFIG_AUDIO_QGKI */
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_USB_RX,
@@ -6912,6 +6928,7 @@ static struct snd_soc_dai_link msm_common_be_dai_links[] = {
 	},
 };
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 static struct snd_soc_dai_link msm_tavil_be_dai_links[] = {
 	{
 		.name = LPASS_BE_SLIMBUS_0_RX,
@@ -7063,7 +7080,9 @@ static struct snd_soc_dai_link msm_tavil_be_dai_links[] = {
 		SND_SOC_DAILINK_REG(slimbus_tx_vi),
 	},
 };
+#endif
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 static struct snd_soc_dai_link msm_tasha_be_dai_links[] = {
 	/* Backend DAI Links */
 	{
@@ -7193,6 +7212,7 @@ static struct snd_soc_dai_link msm_tasha_be_dai_links[] = {
 		SND_SOC_DAILINK_REG(slimbus_6_rx),
 	},
 };
+#endif
 
 static struct snd_soc_dai_link msm_wcn_be_dai_links[] = {
 	{
@@ -7614,14 +7634,22 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 
 static struct snd_soc_dai_link msm_sm6150_dai_links[
 			 ARRAY_SIZE(msm_common_dai_links) +
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 			 ARRAY_SIZE(msm_tavil_fe_dai_links) +
+#endif
 			 ARRAY_SIZE(msm_bolero_fe_dai_links) +
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 			 ARRAY_SIZE(msm_tasha_fe_dai_links) +
+#endif
 			 ARRAY_SIZE(msm_common_misc_fe_dai_links) +
 			 ARRAY_SIZE(msm_int_compress_capture_dai) +
 			 ARRAY_SIZE(msm_common_be_dai_links) +
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 			 ARRAY_SIZE(msm_tavil_be_dai_links) +
+#endif
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 			 ARRAY_SIZE(msm_tasha_be_dai_links) +
+#endif
 			 ARRAY_SIZE(msm_wcn_be_dai_links) +
 #if IS_ENABLED(CONFIG_AUDIO_QGKI)
 			 ARRAY_SIZE(ext_disp_be_dai_link) +
@@ -7631,6 +7659,7 @@ static struct snd_soc_dai_link msm_sm6150_dai_links[
 			 ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
 			 ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links)];
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 static int msm_snd_card_tavil_late_probe(struct snd_soc_card *card)
 {
 	const char *be_dl_name = LPASS_BE_SLIMBUS_0_RX;
@@ -7674,7 +7703,9 @@ err_mbhc_cal:
 err_pcm_runtime:
 	return ret;
 }
+#endif
 
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 static int msm_snd_card_tasha_late_probe(struct snd_soc_card *card)
 {
 	const char *be_dl_name = LPASS_BE_SLIMBUS_0_RX;
@@ -7719,6 +7750,7 @@ err_mbhc_cal:
 err_pcm_runtime:
 	return ret;
 }
+#endif
 
 static int msm_populate_dai_link_component_of_node(
 					struct snd_soc_card *card)
@@ -7885,7 +7917,7 @@ static int msm_snd_stub_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 
 	int ret = 0;
 	unsigned int rx_ch[] = {144, 145, 146, 147, 148, 149, 150,
@@ -8029,6 +8061,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				__func__);
 
 		if (tavil_codec) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 			card->late_probe =
 				msm_snd_card_tavil_late_probe;
 			memcpy(msm_sm6150_dai_links + total_links,
@@ -8036,7 +8069,9 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				sizeof(msm_tavil_fe_dai_links));
 			total_links +=
 				ARRAY_SIZE(msm_tavil_fe_dai_links);
+#endif
 		} else if (tasha_codec) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 			card->late_probe =
 				msm_snd_card_tasha_late_probe;
 			memcpy(msm_sm6150_dai_links + total_links,
@@ -8044,6 +8079,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				sizeof(msm_tasha_fe_dai_links));
 			total_links +=
 				ARRAY_SIZE(msm_tasha_fe_dai_links);
+#endif
 		} else {
 			memcpy(msm_sm6150_dai_links + total_links,
 				msm_bolero_fe_dai_links,
@@ -8065,15 +8101,19 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		total_links += ARRAY_SIZE(msm_common_be_dai_links);
 
 		if (tavil_codec) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD934X)
 			memcpy(msm_sm6150_dai_links + total_links,
 					msm_tavil_be_dai_links,
 					sizeof(msm_tavil_be_dai_links));
 			total_links += ARRAY_SIZE(msm_tavil_be_dai_links);
+#endif
 		} else if (tasha_codec) {
+#if IS_ENABLED(CONFIG_SND_SOC_WCD9335)
 			memcpy(msm_sm6150_dai_links + total_links,
 					msm_tasha_be_dai_links,
 					sizeof(msm_tasha_be_dai_links));
 			total_links += ARRAY_SIZE(msm_tasha_be_dai_links);
+#endif
 		} else {
 			memcpy(msm_sm6150_dai_links + total_links,
 			       msm_wsa_cdc_dma_be_dai_links,
@@ -8291,8 +8331,11 @@ static int sm6150_ssr_enable(struct device *dev, void *data)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 	struct msm_asoc_mach_data *pdata = NULL;
 	struct snd_soc_component *component = NULL;
+#endif
 	int ret = 0;
 
 	if (!card) {
@@ -8301,6 +8344,8 @@ static int sm6150_ssr_enable(struct device *dev, void *data)
 		goto err;
 	}
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 	if (strnstr(card->name, "tavil", strlen(card->name)) ||
 	    strnstr(card->name, "tasha", strlen(card->name))) {
 		pdata = snd_soc_card_get_drvdata(card);
@@ -8331,9 +8376,8 @@ static int sm6150_ssr_enable(struct device *dev, void *data)
 				pdata->is_afe_config_done = true;
 		}
 	}
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
-	snd_soc_card_change_online_state(card, 1);
-#endif /* CONFIG_AUDIO_QGKI */
+#endif
+	snd_card_notify_user(SND_CARD_STATUS_ONLINE);
 	dev_dbg(dev, "%s: setting snd_card to ONLINE\n", __func__);
 
 err:
@@ -8344,7 +8388,10 @@ static void sm6150_ssr_disable(struct device *dev, void *data)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 	struct msm_asoc_mach_data *pdata;
+#endif
 
 	if (!card) {
 		dev_err(dev, "%s: card is NULL\n", __func__);
@@ -8352,16 +8399,17 @@ static void sm6150_ssr_disable(struct device *dev, void *data)
 	}
 
 	dev_dbg(dev, "%s: setting snd_card to OFFLINE\n", __func__);
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
-	snd_soc_card_change_online_state(card, 0);
-#endif /* CONFIG_AUDIO_QGKI */
+	snd_card_notify_user(SND_CARD_STATUS_OFFLINE);
 
+#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
+     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 	if (strnstr(card->name, "tavil", strlen(card->name)) ||
 	    strnstr(card->name, "tasha", strlen(card->name))) {
 		pdata = snd_soc_card_get_drvdata(card);
 		msm_afe_clear_config();
 		pdata->is_afe_config_done = false;
 	}
+#endif
 }
 
 static int msm_ext_prepare_hifi(struct msm_asoc_mach_data *pdata)
