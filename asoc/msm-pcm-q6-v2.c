@@ -599,8 +599,20 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	/* rate and channels are sent to audio driver */
 	prtd->samp_rate = runtime->rate;
 	prtd->channel_mode = runtime->channels;
-	if (prtd->enabled)
+	if (prtd->enabled) {
+
+		pr_info("%s: start=%d, out_needed=%d, out_count=%d, periods=%d\n", __func__,
+			atomic_read(&prtd->start), atomic_read(&prtd->out_needed), atomic_read(&prtd->out_count), runtime->periods);
+
+		if (!atomic_read(&prtd->start)) {
+			while (atomic_read(&prtd->out_needed) && (runtime->periods > atomic_read(&prtd->out_count)))  {
+				q6asm_cpu_buf_release(IN, prtd->audio_client);
+				atomic_dec(&prtd->out_needed);
+				atomic_inc(&prtd->out_count);
+			};
+		}
 		return 0;
+	}
 
 	prtd->audio_client->perf_mode = pdata->perf_mode;
 	pr_debug("%s: perf: %x\n", __func__, pdata->perf_mode);
