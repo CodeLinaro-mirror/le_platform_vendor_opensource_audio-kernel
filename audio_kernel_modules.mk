@@ -12,6 +12,9 @@ AUDIO_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/q6_notifier_dlkm.ko\
 	$(KERNEL_MODULES_OUT)/platform_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/wcd_core_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/wcd9xxx_dlkm.ko \
+	$(KERNEL_MODULES_OUT)/wcd938x_dlkm.ko \
+	$(KERNEL_MODULES_OUT)/wcd938x_slave_dlkm.ko \
+	$(KERNEL_MODULES_OUT)/mbhc_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/bolero_cdc_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/q6_pdr_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/swr_dlkm.ko \
