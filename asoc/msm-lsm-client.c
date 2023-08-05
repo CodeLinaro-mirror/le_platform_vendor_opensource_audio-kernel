@@ -3926,8 +3926,13 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		return -EINVAL;
 	}
 
+#ifdef __LP64__
+	p_size = lsm_params.num_params *
+			(sizeof(struct lsm_params_info_v2));
+#else
 	p_size = lsm_params.num_params *
 			(sizeof(struct lsm_params_info) - LSM_POINTER_SIZE_32B);
+#endif
 
 	if (lsm_params.data_size != p_size) {
 		dev_err(rtd->dev,
