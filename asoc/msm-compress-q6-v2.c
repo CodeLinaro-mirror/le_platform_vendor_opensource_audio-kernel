@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -590,7 +590,7 @@ static void compr_event_handler(uint32_t opcode,
 	struct audio_client *ac;
 	uint32_t chan_mode = 0;
 	uint32_t sample_rate = 0;
-	uint64_t bytes_available;
+	uint64_t bytes_available = 0;
 	int stream_id;
 	uint32_t stream_index;
 	unsigned long flags;
@@ -745,7 +745,7 @@ static void compr_event_handler(uint32_t opcode,
 				pr_debug("%s:Send zero size buffer\n", __func__);
 				msm_compr_send_buffer(prtd);
 				prtd->zero_buffer = 1;
-			} else {
+			} else if (atomic_read(&prtd->drain)) {
 				/*
 				 * moving to next stream failed, so reset the gapless state
 				 * set next stream id for the same session so that the same
@@ -764,7 +764,11 @@ static void compr_event_handler(uint32_t opcode,
 				q6asm_stream_cmd_nowait(ac, CMD_EOS, ac->stream_id);
 
 				prtd->cmd_interrupt = 0;
+			} else {
+				pr_debug("%s:underrun, bytes_available is 0\n", __func__);
+				atomic_set(&prtd->xrun, 1);
 			}
+
 		} else if (bytes_available < cstream->runtime->fragment_size) {
 			pr_debug("%s:Partial Buffer Case \n", __func__);
 			atomic_set(&prtd->xrun, 1);
