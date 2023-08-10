@@ -5844,6 +5844,10 @@ static const struct snd_kcontrol_new aux_pcm_rx_voice_mixer_controls[] = {
 	MSM_BACKEND_DAI_AUXPCM_RX,
 	MSM_FRONTEND_DAI_VOIP, 1, 0, msm_routing_get_voice_mixer,
 	msm_routing_put_voice_mixer),
+	SOC_DOUBLE_EXT("CSVoice", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_SEC_AUXPCM_RX,
+        MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
+        msm_routing_put_voice_mixer),
 	SOC_DOUBLE_EXT("DTMF", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_AUXPCM_RX,
 	MSM_FRONTEND_DAI_DTMF_RX, 1, 0, msm_routing_get_voice_mixer,
@@ -5867,6 +5871,10 @@ static const struct snd_kcontrol_new sec_aux_pcm_rx_voice_mixer_controls[] = {
 MSM_BACKEND_DAI_SEC_AUXPCM_RX,
 	MSM_FRONTEND_DAI_VOIP, 1, 0, msm_routing_get_voice_mixer,
 	msm_routing_put_voice_mixer),
+	SOC_DOUBLE_EXT("CSVoice", SND_SOC_NOPM,
+MSM_BACKEND_DAI_SEC_AUXPCM_RX,
+        MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
+        msm_routing_put_voice_mixer),
 	SOC_DOUBLE_EXT("DTMF", SND_SOC_NOPM,
 MSM_BACKEND_DAI_SEC_AUXPCM_RX,
 	MSM_FRONTEND_DAI_DTMF_RX, 1, 0, msm_routing_get_voice_mixer,
@@ -5975,6 +5983,10 @@ static const struct snd_kcontrol_new tx_voice_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_TX,
 	MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
 	msm_routing_put_voice_mixer),
+        SOC_DOUBLE_EXT("SEC_AUX_PCM_TX_Voice", SND_SOC_NOPM,
+        MSM_BACKEND_DAI_SEC_AUXPCM_TX,
+        MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
+        msm_routing_put_voice_mixer),
 };
 
 static const struct snd_kcontrol_new tx_voicemmode1_mixer_controls[] = {
@@ -8336,6 +8348,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"MM_UL4", NULL, "AUDIO_REF_EC_UL4 MUX"},
 
 	{"Voice_Tx Mixer", "PRI_MI2S_TX_Voice", "PRI_MI2S_TX"},
+	{"Voice_Tx Mixer", "SEC_AUX_PCM_TX_Voice", "SEC_AUX_PCM_TX"},
 	{"CS-VOICE_UL1", NULL, "Voice_Tx Mixer"},
 
 	{"VoiceMMode1_Tx Mixer", "USB_AUDIO_TX_MMode1", "USB_AUDIO_TX"},
@@ -8497,6 +8510,7 @@ static const struct snd_soc_dapm_route intercon_aux_pcm[] = {
 	{"SEC_AUX_PCM_RX_Voice Mixer", "QCHAT", "QCHAT_DL"},
 	{"SEC_AUX_PCM_RX_Voice Mixer", "VoiceMMode1", "VOICEMMODE1_DL"},
 	{"SEC_AUX_PCM_RX_Voice Mixer", "VoiceMMode2", "VOICEMMODE2_DL"},
+	{"SEC_AUX_PCM_RX_Voice Mixer", "CSVoice", "CS-VOICE_DL1"},
 	{"SEC_AUX_PCM_RX", NULL, "SEC_AUX_PCM_RX_Voice Mixer"},
 
 	{"TERT_AUX_PCM_RX_Voice Mixer", "Voip", "VOIP_DL"},
