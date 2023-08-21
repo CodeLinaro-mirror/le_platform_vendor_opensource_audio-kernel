@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _TALOS_PORT_CONFIG
@@ -87,6 +87,12 @@ static struct port_params tx_frame_params_0p6MHz[SWR_MSTR_PORT_LEN] = {
 	{1,  1,  0,  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0x00, 0x00}, /* TX3 */
 };
 
+static struct port_params tx_frame_params_wcd937x[SWR_MSTR_PORT_LEN] = {
+	{3, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 1, 0x00, 0x00}, /* TX1 */
+	{3, 1, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0x00, 0x00}, /* TX2 */
+	{3,  2,  0,  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0x00, 0x00}, /* TX3 */
+};
+
 static struct swr_mstr_port_map sm_port_map[] = {
 	{TX_MACRO, SWR_UC0, tx_frame_params_default},
 	{TX_MACRO, SWR_UC1, tx_frame_params_4p8MHz},
@@ -122,6 +128,17 @@ static struct swr_mstr_port_map sm_port_map_tasha[] = {
 
 static struct swr_mstr_port_map sm_port_map_tavil_wsa[] = {
 	{WSA_MACRO, SWR_UC0, wsa_frame_params_default},
+};
+
+static struct swr_mstr_port_map sm_port_map_wcd937x[] = {
+	{TX_MACRO, SWR_UC0, tx_frame_params_wcd937x},
+	{TX_MACRO, SWR_UC1, tx_frame_params_wcd937x},
+	{TX_MACRO, SWR_UC2, tx_frame_params_wcd937x},
+	{RX_MACRO, SWR_UC0, rx_frame_params_default},
+	{RX_MACRO, SWR_UC1, rx_frame_params_dsd},
+	{RX_MACRO, SWR_UC2, rx_frame_params_44p1KHz},
+	{WSA_MACRO, SWR_UC0, wsa_frame_params_default},
+	{WSA_MACRO, SWR_UC1, wsa_frame_params_receiver},
 };
 
 #endif /* _TALOS_PORT_CONFIG */
