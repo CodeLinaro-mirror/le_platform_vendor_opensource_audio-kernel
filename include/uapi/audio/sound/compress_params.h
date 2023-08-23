@@ -452,13 +452,11 @@ union snd_codec_options {
 	struct snd_enc_real real;
 	struct snd_enc_flac flac;
 	struct snd_enc_generic generic;
-	struct snd_dec_ddp ddp;
 	struct snd_dec_flac flac_dec;
 	struct snd_dec_vorbis vorbis_dec;
 	struct snd_dec_alac alac;
 	struct snd_dec_ape ape;
 	struct snd_dec_aptx aptx_dec;
-	struct snd_dec_thd truehd;
 	struct snd_dec_pcm pcm_dec;
 	struct snd_dec_amrwb_plus amrwbplus;
 	struct snd_dec_dsd dsd_dec;
@@ -540,9 +538,7 @@ struct snd_codec {
 	__u32 format;
 	__u32 align;
 	union snd_codec_options options;
-	__u32 compr_passthr;
-	__u32 flags;
-	__u32 reserved[1];
+	__u32 reserved[3];
 } __attribute__((packed, aligned(4)));
 
 #define SND_CODEC_COMPRESS_PASSTHROUGH
