@@ -35,8 +35,10 @@
 #include "msm-pcm-routing-v2.h"
 #include "msm-pcm-routing-devdep.h"
 #include "msm-qti-pp-config.h"
-#include "msm-dolby-dap-config.h"
-#include "msm-ds2-dap-config.h"
+#ifdef CONFIG_DOLBY_DAP
+#include <linux/msm-dolby-dap-config.h>
+#endif
+#include <linux/msm-ds2-dap-config.h>
 
 #define DRV_NAME "msm-pcm-routing-v2"
 
@@ -516,6 +518,7 @@ static void msm_pcm_routing_cfg_pp(int port_id, int copp_idx, int topology,
 		msm_dts_srs_tm_init(port_id, copp_idx);
 		break;
 	case DS2_ADM_COPP_TOPOLOGY_ID:
+#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
 		pr_debug("%s: DS2_ADM_COPP_TOPOLOGY %d\n",
 			 __func__, DS2_ADM_COPP_TOPOLOGY_ID);
 		rc = msm_ds2_dap_init(port_id, copp_idx, channels,
@@ -524,22 +527,27 @@ static void msm_pcm_routing_cfg_pp(int port_id, int copp_idx, int topology,
 			pr_err("%s: DS2 topo_id 0x%x, port %d, CS %d rc %d\n",
 				__func__, topology, port_id,
 				is_custom_stereo_on, rc);
+#endif
 		break;
 	case DOLBY_ADM_COPP_TOPOLOGY_ID:
 		if (is_ds2_on) {
+#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
 			pr_debug("%s: DS2_ADM_COPP_TOPOLOGY\n", __func__);
 			rc = msm_ds2_dap_init(port_id, copp_idx, channels,
 				is_custom_stereo_on);
 			if (rc < 0)
 				pr_err("%s:DS2 topo_id 0x%x, port %d, rc %d\n",
 					__func__, topology, port_id, rc);
+#endif
 		} else {
+#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
 			pr_debug("%s: DOLBY_ADM_COPP_TOPOLOGY_ID\n", __func__);
 			rc = msm_dolby_dap_init(port_id, copp_idx, channels,
 						is_custom_stereo_on);
 			if (rc < 0)
 				pr_err("%s: DS1 topo_id 0x%x, port %d, rc %d\n",
 					__func__, topology, port_id, rc);
+#endif
 		}
 		break;
 	case ADM_CMD_COPP_OPEN_TOPOLOGY_ID_AUDIOSPHERE:
@@ -563,11 +571,14 @@ static void msm_pcm_routing_deinit_pp(int port_id, int topology)
 		msm_dts_srs_tm_deinit(port_id);
 		break;
 	case DS2_ADM_COPP_TOPOLOGY_ID:
+#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
 		pr_debug("%s: DS2_ADM_COPP_TOPOLOGY_ID %d\n",
 			 __func__, DS2_ADM_COPP_TOPOLOGY_ID);
 		msm_ds2_dap_deinit(port_id);
+#endif
 		break;
 	case DOLBY_ADM_COPP_TOPOLOGY_ID:
+#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
 		if (is_ds2_on) {
 			pr_debug("%s: DS2_ADM_COPP_TOPOLOGY_ID\n", __func__);
 			msm_ds2_dap_deinit(port_id);
@@ -575,6 +586,7 @@ static void msm_pcm_routing_deinit_pp(int port_id, int topology)
 			pr_debug("%s: DOLBY_ADM_COPP_TOPOLOGY_ID\n", __func__);
 			msm_dolby_dap_deinit(port_id);
 		}
+#endif
 		break;
 	case ADM_CMD_COPP_OPEN_TOPOLOGY_ID_AUDIOSPHERE:
 		pr_debug("%s: TOPOLOGY_ID_AUDIOSPHERE\n", __func__);

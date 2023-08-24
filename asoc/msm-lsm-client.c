@@ -846,6 +846,13 @@ static int msm_lsm_reg_model(struct snd_pcm_substream *substream,
 
 		q6lsm_sm_set_param_data(client, p_info, &offset, sm);
 
+		if ((sm->size - offset) < p_info->param_size) {
+			dev_err(rtd->dev, "%s: user buff size is greater than expected\n",
+				__func__);
+			rc = -EINVAL;
+			goto err_copy;
+		}
+
 		/*
 		 * For set_param, advance the sound model data with the
 		 * number of bytes required by param_data.
@@ -2382,6 +2389,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 	case SNDRV_LSM_GET_MODULE_PARAMS_32: {
 		struct lsm_params_get_info_32 p_info_32, *param_info_rsp = NULL;
 		struct lsm_params_get_info *p_info = NULL;
+		prtd->lsm_client->get_param_payload = NULL;
 
 		memset(&p_info_32, 0 , sizeof(p_info_32));
 		if (!prtd->lsm_client->use_topology) {
@@ -2432,6 +2440,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 				__func__, err);
 			kfree(p_info);
 			kfree(prtd->lsm_client->get_param_payload);
+			prtd->lsm_client->get_param_payload = NULL;
 			goto done;
 		}
 
@@ -2442,6 +2451,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 			err = -ENOMEM;
 			kfree(p_info);
 			kfree(prtd->lsm_client->get_param_payload);
+			prtd->lsm_client->get_param_payload = NULL;
 			goto done;
 		}
 
@@ -2466,6 +2476,7 @@ free:
 		kfree(p_info);
 		kfree(param_info_rsp);
 		kfree(prtd->lsm_client->get_param_payload);
+		prtd->lsm_client->get_param_payload = NULL;
 		break;
 	}
 	case SNDRV_LSM_REG_SND_MODEL_V2:
@@ -2692,6 +2703,7 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 
 	case SNDRV_LSM_GET_MODULE_PARAMS: {
 		struct lsm_params_get_info temp_p_info, *p_info = NULL;
+		prtd->lsm_client->get_param_payload = NULL;
 
 		memset(&temp_p_info, 0, sizeof(temp_p_info));
 		if (!prtd->lsm_client->use_topology) {
@@ -2710,6 +2722,15 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 			err = -EFAULT;
 			goto done;
 		}
+
+		if (temp_p_info.param_size > 0 &&
+			((INT_MAX - sizeof(temp_p_info)) <
+				temp_p_info.param_size)) {
+			pr_err("%s: Integer overflow\n", __func__);
+			err = -EINVAL;
+			goto done;
+		}
+
 		size = sizeof(temp_p_info) +  temp_p_info.param_size;
 		p_info = kzalloc(size, GFP_KERNEL);
 
@@ -2763,6 +2784,7 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 free:
 		kfree(p_info);
 		kfree(prtd->lsm_client->get_param_payload);
+		prtd->lsm_client->get_param_payload = NULL;
 		break;
 	}
 	case SNDRV_LSM_EVENT_STATUS:
@@ -3329,7 +3351,7 @@ static int msm_lsm_close(struct snd_soc_component *component, struct snd_pcm_sub
 	return 0;
 }
 
-static int msm_lsm_hw_params(struct snd_soc_component *component, 
+static int msm_lsm_hw_params(struct snd_soc_component *component,
 				struct snd_pcm_substream *substream,
 				struct snd_pcm_hw_params *params)
 {
@@ -3851,8 +3873,10 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	u8 *params;
 	int param_size;
 	u8 *params_temp;
+#ifndef __LP64__
 	uintptr_t ptr_32;
 	void *temp_ptr = NULL;
+#endif
 	struct lsm_priv *prtd;
 	size_t p_size = 0, count;
 	struct snd_pcm_runtime *runtime;
@@ -3861,7 +3885,9 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	struct snd_lsm_module_params *p_data = NULL;
 	struct snd_lsm_module_params lsm_params;
 	struct snd_pcm_substream *substream = NULL;
+#ifndef __LP64__
 	struct lsm_params_info temp_ptr_info;
+#endif
 	struct lsm_params_info_v2 *ptr_info_v2 = NULL;
 
 	get_substream_info(kcontrol, &substream);
@@ -3880,6 +3906,9 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	if (copy_from_user(p_data, bytes, size))
 		pr_err("%s: Error copying from user", __func__);
 
+#ifdef __LP64__
+	lsm_params = *p_data;
+#else
 	/*pack lsm_params to handle 32/64 bit issue*/
 	temp_ptr = (void *)p_data;
 	ptr_32 = (uintptr_t)(*((__u8 **) temp_ptr));
@@ -3888,7 +3917,7 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	lsm_params.num_params = *((__u32 *) temp_ptr);
 	temp_ptr = temp_ptr + LSM_ALIGN_4BYTE(sizeof(__u32));
 	lsm_params.data_size = *((__u32 *) temp_ptr);
-
+#endif
 
 	if (lsm_params.num_params > LSM_PARAMS_MAX) {
 		dev_err(rtd->dev, "%s: %s: Invalid num_params %d\n",
@@ -3897,8 +3926,13 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		return -EINVAL;
 	}
 
+#ifdef __LP64__
+	p_size = lsm_params.num_params *
+			(sizeof(struct lsm_params_info_v2));
+#else
 	p_size = lsm_params.num_params *
 			(sizeof(struct lsm_params_info) - LSM_POINTER_SIZE_32B);
+#endif
 
 	if (lsm_params.data_size != p_size) {
 		dev_err(rtd->dev,
@@ -3926,6 +3960,17 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	params_temp = params;
 
 	for (count = 0; count < lsm_params.num_params; count++) {
+#ifdef __LP64__
+		param_size = sizeof(struct lsm_params_info_v2);
+		info_v2.module_id = ((struct lsm_params_info_v2 *)(params))->module_id;
+		info_v2.param_id = ((struct lsm_params_info_v2 *)(params))->param_id;
+		info_v2.param_size = ((struct lsm_params_info_v2 *)(params))->param_size;
+		info_v2.param_data = ((struct lsm_params_info_v2 *)(params))->param_data;
+		info_v2.param_type = ((struct lsm_params_info_v2 *)(params))->param_type;
+		info_v2.instance_id = INSTANCE_ID_0;
+		info_v2.stage_idx = LSM_STAGE_INDEX_FIRST;
+		info_v2.model_id = 0;
+#else
 		/* convert to V2 param info struct from legacy param info */
 		param_size = pack_lsm_params_info(&temp_ptr_info, params);
 		info_v2.module_id = temp_ptr_info.module_id;
@@ -3933,13 +3978,12 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		info_v2.param_size = temp_ptr_info.param_size;
 		info_v2.param_data = temp_ptr_info.param_data;
 		info_v2.param_type = temp_ptr_info.param_type;
-
+#endif
 		info_v2.instance_id = INSTANCE_ID_0;
 		info_v2.stage_idx = LSM_STAGE_INDEX_FIRST;
 		info_v2.model_id = 0;
-
-		ptr_info_v2 = &info_v2;
 		params = params + param_size;
+		ptr_info_v2 = &info_v2;
 
 		err = msm_lsm_process_params(substream, ptr_info_v2);
 		if (err)

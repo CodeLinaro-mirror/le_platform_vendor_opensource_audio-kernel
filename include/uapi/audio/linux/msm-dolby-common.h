@@ -1,10 +1,11 @@
-/* SPDX-License-Identifier: GPL-2.0-only */
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2013-2014, 2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#ifndef _MSM_DOLBY_COMMON_H_
-#define _MSM_DOLBY_COMMON_H_
+#ifndef _UAPI_MSM_DOLBY_COMMON_H_
+#define _UAPI_MSM_DOLBY_COMMON_H_
 
 #include <sound/soc.h>
 
