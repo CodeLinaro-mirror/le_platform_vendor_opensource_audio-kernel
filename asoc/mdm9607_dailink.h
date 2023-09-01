@@ -63,13 +63,10 @@ SND_SOC_DAILINK_DEFS(msmvoip,
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-voip-dsp")));
 
-/*To-do*/
-/*
 SND_SOC_DAILINK_DEFS(volte,
 	DAILINK_COMP_ARRAY(COMP_CPU("VoLTE")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-voice")));
-*/
 
 SND_SOC_DAILINK_DEFS(afepcm_rx,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-dev.241")),
