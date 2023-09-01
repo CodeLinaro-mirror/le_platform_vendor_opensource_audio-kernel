@@ -2554,8 +2554,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(pri_mi2s_rx_hostless),
 	},
-/*To-do*/
-/*	{
+	{
 		.name = "VoLTE",
 		.stream_name = "VoLTE",
 		.dynamic = 1,
@@ -2569,7 +2568,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_VOLTE,
 		SND_SOC_DAILINK_REG(volte),
-	}, */
+	},
 	{	.name = "MSM AFE-PCM RX",
 		.stream_name = "AFE-PROXY RX",
 		.dpcm_playback = 1,
@@ -2610,7 +2609,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_suspend = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-		SND_SOC_DAILINK_REG(csvoicehostrxcapture),		
+		SND_SOC_DAILINK_REG(csvoicehostrxcapture),
 	},
 	{
 		.name = "CS-VOICE HOST RX PLAYBACK",
