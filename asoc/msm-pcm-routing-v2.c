@@ -1,5 +1,4 @@
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -9,6 +8,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <linux/init.h>
@@ -5173,6 +5176,10 @@ static const struct snd_kcontrol_new int0_mi2s_rx_mixer_controls[] = {
 	MSM_BACKEND_DAI_INT0_MI2S_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA16, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
+	SOC_DOUBLE_EXT("MultiMedia26", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_INT0_MI2S_RX,
+	MSM_FRONTEND_DAI_MULTIMEDIA26, 1, 0, msm_routing_get_audio_mixer,
+	msm_routing_put_audio_mixer),
 };
 
 static const struct snd_kcontrol_new int4_mi2s_rx_mixer_controls[] = {
@@ -5240,9 +5247,9 @@ static const struct snd_kcontrol_new int4_mi2s_rx_mixer_controls[] = {
 	MSM_BACKEND_DAI_INT4_MI2S_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA16, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
-    SOC_DOUBLE_EXT("MultiMedia26", SND_SOC_NOPM,
+	SOC_DOUBLE_EXT("MultiMedia26", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_INT4_MI2S_RX,
-	MSM_FRONTEND_DAI_MULTIMEDIA16, 1, 0, msm_routing_get_audio_mixer,
+	MSM_FRONTEND_DAI_MULTIMEDIA26, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
 };
 
@@ -5602,7 +5609,7 @@ static const struct snd_kcontrol_new slimbus_7_rx_mixer_controls[] = {
 	MSM_BACKEND_DAI_SLIMBUS_7_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA16, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
-SOC_DOUBLE_EXT("MultiMedia26", SND_SOC_NOPM,
+	SOC_DOUBLE_EXT("MultiMedia26", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_SLIMBUS_7_RX,
 	MSM_FRONTEND_DAI_MULTIMEDIA26, 1, 0, msm_routing_get_audio_mixer,
 	msm_routing_put_audio_mixer),
@@ -17981,6 +17988,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"INT0_MI2S_RX Audio Mixer", "MultiMedia14", "MM_DL14"},
 	{"INT0_MI2S_RX Audio Mixer", "MultiMedia15", "MM_DL15"},
 	{"INT0_MI2S_RX Audio Mixer", "MultiMedia16", "MM_DL16"},
+	{"INT0_MI2S_RX Audio Mixer", "MultiMedia26", "MM_DL26"},
 	{"INT0_MI2S_RX", NULL, "INT0_MI2S_RX Audio Mixer"},
 
 	{"INT4_MI2S_RX Audio Mixer", "MultiMedia1", "MM_DL1"},
@@ -17998,7 +18006,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"INT4_MI2S_RX Audio Mixer", "MultiMedia14", "MM_DL14"},
 	{"INT4_MI2S_RX Audio Mixer", "MultiMedia15", "MM_DL15"},
 	{"INT4_MI2S_RX Audio Mixer", "MultiMedia16", "MM_DL16"},
-	{"INT4_MI2S_RX Audio Mixer", "MultiMedia26", "MM_DL16"},
+	{"INT4_MI2S_RX Audio Mixer", "MultiMedia26", "MM_DL26"},
 	{"INT4_MI2S_RX", NULL, "INT4_MI2S_RX Audio Mixer"},
 
 	{"QUIN_MI2S_RX Audio Mixer", "MultiMedia1", "MM_DL1"},
