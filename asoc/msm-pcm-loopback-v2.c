@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 /*
  * Add support for 24 and 32bit format for ASM loopback and playback session.
@@ -528,11 +528,33 @@ static int msm_pcm_prepare(struct snd_pcm_substream *substream)
 	}
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+		long wait_time = MSM_PCM_PLAYBACK_MAX_WAIT;
+
 		if (!pcm->playback_start)
 			pcm->playback_start = 1;
+
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+			runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+		pr_debug("%s : Update wait time for playback set to  %ld\n",__func__,wait_time);
 	} else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+		long wait_time = MSM_PCM_CAPTURE_MAX_WAIT;
+
 		if (!pcm->capture_start)
 			pcm->capture_start = 1;
+
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+			runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+		pr_debug("%s : Update wait time for capture set to  %ld\n",__func__,wait_time);
 	}
 
 	if (pcm->playback_start && pcm->capture_start) {

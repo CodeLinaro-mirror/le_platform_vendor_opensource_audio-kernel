@@ -598,7 +598,20 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	prtd->pcm_irq_pos = 0;
 	/* rate and channels are sent to audio driver */
 	prtd->samp_rate = runtime->rate;
+	{
+		long wait_time = MSM_PCM_PLAYBACK_MAX_WAIT;
+
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+			runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+		pr_debug("%s : Update wait time for playback set to  %ld\n",__func__,wait_time);
+	}
 	prtd->channel_mode = runtime->channels;
+
 	if (prtd->enabled)
 		return 0;
 
@@ -859,6 +872,18 @@ static int msm_pcm_capture_prepare(struct snd_pcm_substream *substream)
 	prtd->pcm_irq_pos = 0;
 	/* rate and channels are sent to audio driver */
 	prtd->samp_rate = runtime->rate;
+	{
+		long wait_time = MSM_PCM_CAPTURE_MAX_WAIT;
+
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+			runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+		pr_debug("%s : Update wait time for capture set to  %ld\n",__func__,wait_time);
+	}
 	prtd->channel_mode = runtime->channels;
 
 	if (prtd->enabled == IDLE || prtd->enabled == STOPPED) {
@@ -1019,12 +1044,16 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 
 	prtd->audio_client->dev = component->dev;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
 		runtime->hw = msm_pcm_hardware_playback;
+		substream->wait_time = msecs_to_jiffies(MSM_PCM_PLAYBACK_MAX_WAIT * 1000);
+	}
 
 	/* Capture path */
-	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
+	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE){
 		runtime->hw = msm_pcm_hardware_capture;
+		substream->wait_time = msecs_to_jiffies(MSM_PCM_CAPTURE_MAX_WAIT* 1000);
+	}
 	else {
 		pr_err("Invalid Stream type %d\n", substream->stream);
 		return -EINVAL;
@@ -1335,7 +1364,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 			goto fail;
 		}
 
-		if (size == 0 || size < prtd->pcm_count) {
+		if ((size == 0 || size < prtd->pcm_count) && ((offset + size) < prtd->pcm_count)) {
 			memset(bufptr + offset + size, 0, prtd->pcm_count - size);
 			if (fbytes > prtd->pcm_count)
 				size = xfer = prtd->pcm_count;
