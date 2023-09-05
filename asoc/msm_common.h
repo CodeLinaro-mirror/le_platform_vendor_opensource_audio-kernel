@@ -32,6 +32,8 @@ struct snd_card_pdata {
 struct msm_asoc_mach_data {
 	struct snd_info_entry *codec_root;
 	int usbc_en2_gpio; /* used by gpio driver API */
+	int hph_en1_gpio;
+	int hph_en0_gpio;
 	int lito_v2_enabled;
 	struct device_node *dmic01_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic23_gpio_p; /* used by pinctrl API */
