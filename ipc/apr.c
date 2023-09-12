@@ -321,7 +321,7 @@ static void apr_adsp_up(void)
 {
 	if (apr_get_q6_state() != APR_SUBSYS_LOADED) {
 		pr_info("%s: Q6 is Up\n", __func__);
-		pr_err("boot_kpi: M - ADSP Ready");
+		pr_err("boot_kpi: M - ADSP Ready\n");
 		apr_set_q6_state(APR_SUBSYS_LOADED);
 
 		spin_lock(&apr_priv->apr_lock);
@@ -522,13 +522,12 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 			if (rt != 0) {
 				pr_err("%s: adsp not up rproc is NULL\n", __func__);
 				return NULL;
-			} else {
-				apr_adsp_up();
-				pr_info("%s: Updated adsp state as rproc boot done\n", __func__);
-				spin_lock(&apr_priv->apr_lock);
-				apr_priv->is_initial_boot = false;
-				spin_unlock(&apr_priv->apr_lock);
 			}
+			apr_adsp_up();
+			pr_info("%s: Updated adsp state up as rproc boot done\n", __func__);
+			spin_lock(&apr_priv->apr_lock);
+			apr_priv->is_initial_boot = false;
+			spin_unlock(&apr_priv->apr_lock);
 		}
 		pr_debug("%s: adsp Up\n", __func__);
 	} else if (dest_id == APR_DEST_MODEM) {
