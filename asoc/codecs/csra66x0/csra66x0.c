@@ -747,12 +747,8 @@ static int csra66x0_init(struct csra66x0_priv *csra66x0)
 		__func__, component->name);
 	csra66x0->sysfs_reg_addr = CSRA66X0_BASE;
 	/* config */
-	ret = snd_soc_component_write(component, CSRA66X0_CHIP_STATE_CTRL_FA,
+	snd_soc_component_write(component, CSRA66X0_CHIP_STATE_CTRL_FA,
 				SET_CONFIG_STATE);
-	if(ret < 0) {
-		dev_err(component->dev, "%s: failed to set config state, ret: %d\n", __func__, ret);
-		return 0;
-	}
 
 	/* wait until HW is in config state before proceeding */
 	ret = csra66x0_wait_for_config_state(component);
@@ -852,12 +848,8 @@ static int csra66x0_msconfig(struct csra66x0_priv *csra66x0)
 	dev_dbg(component->dev, "%s: configure %s\n",
 		__func__, component->name);
 	/* config */
-	ret = snd_soc_component_write(component, CSRA66X0_CHIP_STATE_CTRL_FA,
+	snd_soc_component_write(component, CSRA66X0_CHIP_STATE_CTRL_FA,
 		SET_CONFIG_STATE);
-	if(ret < 0) {
-		dev_err(component->dev, "%s: failed to set config state, ret: %d\n", __func__, ret);
-		return 0;
-	}
 
 	/* wait until HW is in config state before proceeding */
 	ret = csra66x0_wait_for_config_state(component);
