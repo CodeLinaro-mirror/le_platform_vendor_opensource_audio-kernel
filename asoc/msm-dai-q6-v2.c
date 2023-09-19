@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -20,6 +20,7 @@
 #include <dsp/sp_params.h>
 #include <dsp/q6core.h>
 #include "msm-dai-q6-v2.h"
+#include "msm_common.h"
 #include <asoc/core.h>
 
 #define MSM_DAI_PRI_RX_AUXPCM_DT_DEV_ID 1
@@ -55,6 +56,16 @@
 #define DAI_FORMATS_S16_S24_S32_LE (SNDRV_PCM_FMTBIT_S16_LE | \
 				    SNDRV_PCM_FMTBIT_S24_LE | \
 				    SNDRV_PCM_FMTBIT_S32_LE)
+
+#define SAMPLING_RATE_11P025KHZ 11025
+#define SAMPLING_RATE_22P05KHZ  22050
+#define SAMPLING_RATE_44P1KHZ   44100
+#define SAMPLING_RATE_88P2KHZ   88200
+#define SAMPLING_RATE_176P4KHZ  176400
+#define SAMPLING_RATE_352P8KHZ  352800
+
+#define IS_TDM_INTERFACE(x) \
+((x >= AFE_PORT_ID_TDM_PORT_RANGE_START) && (x < AFE_PORT_ID_TDM_PORT_RANGE_END))
 
 static int msm_mi2s_get_port_id(u32 mi2s_id, int stream, u16 *port_id);
 
@@ -307,6 +318,11 @@ enum {
 	IDX_GROUP_TDM_MAX,
 };
 
+#define IS_FRACTIONAL(x) \
+((x == SAMPLING_RATE_11P025KHZ) || (x == SAMPLING_RATE_22P05KHZ) || \
+(x == SAMPLING_RATE_44P1KHZ) || (x == SAMPLING_RATE_88P2KHZ) || \
+(x == SAMPLING_RATE_176P4KHZ) || (x == SAMPLING_RATE_352P8KHZ))
+
 struct msm_dai_q6_dai_data {
 	DECLARE_BITMAP(status_mask, STATUS_MAX);
 	DECLARE_BITMAP(hwfree_status, STATUS_MAX);
@@ -488,6 +504,8 @@ static bool afe_port_logging_item[IDX_TDM_MAX];
 
 static int afe_port_loggging_control_added;
 
+static int afe_port_limiter_control_added;
+
 static int afe_dyn_mclk_control_added;
 
 static DEFINE_MUTEX(tdm_mutex);
@@ -498,6 +516,9 @@ static struct afe_param_id_tdm_lane_cfg tdm_lane_cfg = {
 	AFE_GROUP_DEVICE_ID_QUINARY_TDM_RX,
 	0x0,
 };
+
+#define LIMITER_PARM_MAX 3
+static u16 limiter_param[LIMITER_PARM_MAX];
 
 /* cache of group cfg per parent node */
 static struct afe_param_id_group_device_tdm_cfg tdm_group_cfg = {
@@ -10898,6 +10919,94 @@ int jitter_cleaner_afe_enable_mclk_and_get_info_cb_func(void *private_data,
 	return 0;
 }
 
+static int msm_pcm_afe_limiter_param_ctl_info(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_info* ucontrol)
+{
+	ucontrol->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	/* two int values: port_id and enable/disable */
+	ucontrol->count = LIMITER_PARM_MAX;
+	/* Valid range is all positive values to support above controls */
+	ucontrol->value.integer.min = 0;
+	ucontrol->value.integer.max = INT_MAX;
+	return 0;
+}
+
+static int msm_pcm_afe_limiter_param_ctl_get(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	ucontrol->value.integer.value[0] = limiter_param[0];
+	ucontrol->value.integer.value[1] = limiter_param[1];
+	ucontrol->value.integer.value[2] = limiter_param[2];
+	return 0;
+}
+
+static int msm_pcm_afe_limiter_param_ctl_put(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	u16 port_id;
+	struct afe_param_id_port_afe_limiter_disable_t afe_limiter_disable;
+	struct param_hdr_v3 param_hdr;
+	int ret = -EINVAL;
+
+	limiter_param[0] = ucontrol->value.integer.value[0];
+	limiter_param[1] = ucontrol->value.integer.value[1];
+	limiter_param[2] = ucontrol->value.integer.value[2];
+
+
+	if(limiter_param[2] != LIMITER_PARM_MAX - 1)
+	{
+		return 0;
+	}
+
+	pr_debug("%s: enter\n", __func__);
+	memset(&param_hdr, 0, sizeof(param_hdr));
+
+	port_id = limiter_param[0];
+	afe_limiter_disable.disable_afe_limiter = limiter_param[1];
+
+	ret = afe_port_send_afe_limiter_param(port_id, &afe_limiter_disable);
+	if (ret)
+		pr_err("%s: AFE port logging setting for port 0x%x failed %d\n",
+			__func__, port_id, ret);
+
+	//resetting number of parameters to zero
+	limiter_param[2] = 0;
+
+	return ret;
+}
+
+static int msm_pcm_add_afe_port_limiter_control(struct snd_soc_dai *dai)
+{
+	const char* afe_port_limiter_ctl_name = "AFE_port_limiter_disable";
+	int rc = 0;
+	struct snd_kcontrol_new *knew = NULL;
+	struct snd_kcontrol* kctl = NULL;
+
+	/* Add AFE port logging controls */
+	knew = kzalloc(sizeof(struct snd_kcontrol_new), GFP_KERNEL);
+	if (!knew) {
+		return -ENOMEM;
+	}
+	knew->iface = SNDRV_CTL_ELEM_IFACE_MIXER;
+	knew->info = msm_pcm_afe_limiter_param_ctl_info;
+	knew->get = msm_pcm_afe_limiter_param_ctl_get;
+	knew->put = msm_pcm_afe_limiter_param_ctl_put;
+	knew->name = afe_port_limiter_ctl_name;
+	knew->private_value = dai->id;
+	kctl = snd_ctl_new1(knew, knew);
+	if (!kctl) {
+		kfree(knew);
+		return -ENOMEM;
+	}
+
+	rc = snd_ctl_add(dai->component->card->snd_card, kctl);
+	if (rc < 0)
+		pr_err("%s: err add AFE port limiter disable control, DAI = %s\n",
+			__func__, dai->name);
+
+	return rc;
+}
+
 static int msm_dai_q6_dai_tdm_probe(struct snd_soc_dai *dai)
 {
 	int rc = 0;
@@ -11004,6 +11113,17 @@ static int msm_dai_q6_dai_tdm_probe(struct snd_soc_dai *dai)
 				__func__, dai->name);
 			goto rtn;
 		}
+	}
+
+	if (!afe_port_limiter_control_added) {
+		rc = msm_pcm_add_afe_port_limiter_control(dai);
+		if (rc < 0) {
+			dev_err(dai->dev, "%s: add AFE port logging control failed DAI: %s\n",
+				__func__, dai->name);
+			goto rtn;
+		}
+
+		afe_port_limiter_control_added = 1;
 	}
 
 	if (tdm_dai_data->is_island_dai)
@@ -11877,6 +11997,11 @@ static int msm_dai_q6_tdm_prepare(struct snd_pcm_substream *substream,
 	int rc = 0;
 	struct msm_dai_q6_tdm_dai_data *dai_data =
 		dev_get_drvdata(dai->dev);
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+        struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+        int index = cpu_dai->id;
+        int sample_rate = dai_data->rate;
+
 	u16 group_id = dai_data->group_cfg.tdm_cfg.group_id;
 	int group_idx = 0;
 	atomic_t *group_ref = NULL;
@@ -11900,6 +12025,15 @@ static int msm_dai_q6_tdm_prepare(struct snd_pcm_substream *substream,
 	group_ref = &tdm_group_ref[group_idx];
 
 	if (!test_bit(STATUS_PORT_STARTED, dai_data->status_mask)) {
+
+		if (IS_TDM_INTERFACE(index) && (IS_FRACTIONAL(sample_rate))) {
+			rc = msm_lpass_audio_hw_vote_req(substream, true);
+			if (rc < 0) {
+				dev_err(dai->dev, "%s: fail to enable audio hw clk 0x%x\n",
+					__func__, dai->id);
+				goto rtn;
+			}
+		}
 
 		if (msm_dai_q6_get_tdm_clk_ref(group_idx) == 0) {
 			/* TX and RX share the same clk. So enable the clk
@@ -11945,6 +12079,9 @@ static int msm_dai_q6_tdm_prepare(struct snd_pcm_substream *substream,
 				msm_dai_q6_tdm_set_clk(dai_data,
 					dai->id, false);
 			}
+			if (IS_TDM_INTERFACE(index) && (IS_FRACTIONAL(sample_rate)))
+				msm_lpass_audio_hw_vote_req(substream, false);
+
 			dev_err(dai->dev, "%s: fail to open AFE port 0x%x\n",
 				__func__, dai->id);
 		} else {
@@ -11972,6 +12109,10 @@ static void msm_dai_q6_tdm_shutdown(struct snd_pcm_substream *substream,
 	u16 group_id = dai_data->group_cfg.tdm_cfg.group_id;
 	int group_idx = 0;
 	atomic_t *group_ref = NULL;
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	int index = cpu_dai->id;
+	int sample_rate = dai_data->rate;
 
 	group_idx = msm_dai_q6_get_group_idx(dai->id);
 	if (group_idx < 0) {
@@ -12016,6 +12157,9 @@ static void msm_dai_q6_tdm_shutdown(struct snd_pcm_substream *substream,
 		/* NOTE: AFE should error out if HW resource contention */
 
 	}
+
+	if (IS_TDM_INTERFACE(index) && (IS_FRACTIONAL(sample_rate)))
+		msm_lpass_audio_hw_vote_req(substream, false);
 
 	mutex_unlock(&tdm_mutex);
 }
