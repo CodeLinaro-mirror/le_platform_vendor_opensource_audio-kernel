@@ -121,7 +121,7 @@ static int msm_ext_disp_dai_format_get(struct snd_kcontrol *kcontrol,
 }
 
 static const struct snd_kcontrol_new ext_disp_config_controls[] = {
-	SOC_ENUM_EXT("HDMI RX Format", ext_disp_config_enum[0],
+	SOC_ENUM_EXT("HDMI_CODEC RX Format", ext_disp_config_enum[0],
 			msm_ext_disp_dai_format_get,
 			msm_ext_disp_dai_format_put),
 };
