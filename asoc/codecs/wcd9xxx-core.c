@@ -76,9 +76,6 @@ static struct regmap_config wcd9xxx_i2c_base_regmap_config = {
 	.use_single_write = true,
 };
 
-static u8 wcd9xxx_pgd_la;
-static u8 wcd9xxx_inf_la;
-
 static const int wcd9xxx_cdc_types[] = {
 	[WCD9XXX] = WCD9XXX,
 	[WCD9330] = WCD9330,
@@ -288,8 +285,6 @@ static int wcd9xxx_slim_read_device(struct wcd9xxx *wcd9xxx, unsigned short reg,
 		return 0;
 	}
 
-	dev_dbg(wcd9xxx->dev, "%s: number of bytes to read=(%d), allowed bytes = 16\n", __func__, bytes);
-
 	while (1) {
 		mutex_lock(&wcd9xxx->xfer_lock);
 		ret = slim_read(interface ?
@@ -326,8 +321,6 @@ static int wcd9xxx_slim_write_device(struct wcd9xxx *wcd9xxx,
 			__func__, wcd9xxx->dev_up);
 		return 0;
 	}
-
-	dev_dbg(wcd9xxx->dev, "%s: number of bytes to write=(%d), allowed bytes = 16\n", __func__, bytes);
 
 	while (1) {
 		mutex_lock(&wcd9xxx->xfer_lock);
@@ -1282,7 +1275,6 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 	const struct slim_device_id *device_id;
 	int ret = 0;
 	int intf_type;
-	struct device_node *ifc_dev_np;
 
 	if (!slim)
 		return -EINVAL;
@@ -1343,7 +1335,8 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 		ret = -EINVAL;
 		goto err;
 	}
-	dev_dbg(&slim->dev, "%s: Getting Device ID  sucessful.device_id=%d\n", __func__, device_id);
+
+	dev_dbg(&slim->dev, "%s: device id 0x%x\n", __func__, device_id);
 
 	wcd9xxx->type = device_id->driver_data;
 	dev_info(&slim->dev, "%s: probing for wcd type: %d\n",
@@ -1357,7 +1350,6 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 	wcd9xxx->dev = &slim->dev;
 	wcd9xxx->mclk_rate = pdata->mclk_rate;
 	wcd9xxx->mclk_div_by_2 = !!pdata->mclk_div_by_2;
-	wcd9xxx->dev_up = true;
 	wcd9xxx->wcd_rst_np = pdata->wcd_rst_np;
 
 	wcd9xxx->regmap = wcd9xxx_regmap_init(&slim->dev,
@@ -1412,54 +1404,16 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 		goto err_supplies;
 	}
 
-	ret = wcd9xxx_slim_get_laddr(wcd9xxx->slim);
-	if (ret) {
-		dev_err(&slim->dev, " failed to get slimbus %s logical address of pgd device: %d\n",
-		       __func__, ret);
-		goto err_reset;
-	}
-
-	dev_dbg(&slim->dev, "%s: Getting logical adress of PGD = %x sucessful", __func__, wcd9xxx->slim->laddr);
-	wcd9xxx->read_dev = wcd9xxx_slim_read_device;
-	wcd9xxx->write_dev = wcd9xxx_slim_write_device;
-	wcd9xxx_pgd_la = wcd9xxx->slim->laddr;
-	wcd9xxx->slim_slave = &pdata->slimbus_slave_device;
-	if (!wcd9xxx->dev->of_node)
-		wcd9xxx_assign_irq(&wcd9xxx->core_res,
-	pdata->irq, pdata->irq_base);
-	ifc_dev_np = of_parse_phandle(wcd9xxx->dev->of_node, "cdc-slim-ifd", 0);
-
-	if (!ifc_dev_np) {
-		dev_err(&slim->dev, "No Interface device found\n");
-		return -EINVAL;
-	}
-	wcd9xxx->slim_slave = of_slim_get_device(slim->ctrl, ifc_dev_np);
-	of_node_put(ifc_dev_np);
-
-	if (!wcd9xxx->slim_slave) {
-		dev_err(&slim->dev, "Unable to get SLIM Interface device\n");
-		goto  err_reset;
-	} else {
-		dev_dbg(&slim->dev, "%s: Getting IFD  sucessful\n", __func__);
-	}
-
-	ret = wcd9xxx_slim_get_laddr(wcd9xxx->slim_slave);
-	if (ret) {
-		dev_err(&slim->dev, " failed to get slimbus %s logical address of interface device: %d\n",
-		       __func__, ret);
-		goto err;
-	}
-
-	dev_dbg(&slim->dev, "%s: Getting logical adress of IFD = %x sucessful", __func__, wcd9xxx->slim_slave->laddr);
-	wcd9xxx_inf_la = wcd9xxx->slim_slave->laddr;
 	wcd9xxx_set_intf_type(WCD9XXX_INTERFACE_TYPE_SLIMBUS);
 
-	ret = wcd9xxx_device_init(wcd9xxx);
-	if (ret) {
-		dev_err(&slim->dev, "%s: error, initializing device failed (%d)\n",
-			__func__, ret);
-		goto err;
-	}
+	/** FixMe: slimbus driver continues to call client probe
+	  * until slimbus device is up. This is causing supplies
+	  * to be enabled more than once and resulting in device crash.
+	  * In 5.15 kernel, ADSP slimbus takes upto 2 seconds to come up.
+	  * sleep for 2 seconds as a workaround.
+	  */
+	msleep(2000);
+
 #ifdef CONFIG_DEBUG_FS
 	debugCodec = wcd9xxx;
 
@@ -1485,8 +1439,6 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 #endif
 
 	return ret;
-err_reset:
-	wcd9xxx_reset_low(wcd9xxx->dev);
 err_supplies:
 	msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
 				 pdata->regulator,
@@ -1495,6 +1447,8 @@ err_codec:
 	dev_set_drvdata(&(slim->dev), NULL);
 err:
 	devm_kfree(&slim->dev, wcd9xxx);
+
+	dev_err(&slim->dev, "%s: failed, ret %d\n", __func__, ret);
 	return ret;
 }
 
@@ -1516,43 +1470,65 @@ static void wcd9xxx_slim_remove(struct slim_device *pdev)
 	dev_set_drvdata(&(pdev->dev), NULL);
 }
 
-static int wcd9xxx_device_up(struct wcd9xxx *wcd9xxx)
-{
-	int ret = 0;
-	struct wcd9xxx_core_resource *wcd9xxx_res = &wcd9xxx->core_res;
-
-	dev_info(wcd9xxx->dev, "%s: codec bring up\n", __func__);
-	wcd9xxx_bringup(wcd9xxx->dev);
-	ret = wcd9xxx_irq_init(wcd9xxx_res);
-	if (ret) {
-		pr_err("%s: wcd9xx_irq_init failed : %d\n", __func__, ret);
-	} else {
-		if (wcd9xxx->post_reset)
-			ret = wcd9xxx->post_reset(wcd9xxx);
-	}
-	return ret;
-}
-
 static int wcd9xxx_slim_device_up(struct slim_device *sldev)
 {
 	struct wcd9xxx *wcd9xxx = slim_get_devicedata(sldev);
+	struct slim_device *slim = wcd9xxx->slim;
+	struct device_node *ifc_dev_np;
+	struct wcd9xxx_pdata *pdata = slim->dev.platform_data;
 	int ret = 0;
 
 	if (!wcd9xxx) {
 		pr_err("%s: wcd9xxx is NULL\n", __func__);
 		return -EINVAL;
 	}
+
 	dev_info(wcd9xxx->dev, "%s: slim device up, dev_up = %d\n",
-		__func__, wcd9xxx->dev_up);
+			__func__, wcd9xxx->dev_up);
+
 	if (wcd9xxx->dev_up)
 		return 0;
 
 	wcd9xxx->dev_up = true;
 
-	mutex_lock(&wcd9xxx->reset_lock);
-	ret = wcd9xxx_device_up(wcd9xxx);
-	mutex_unlock(&wcd9xxx->reset_lock);
+	wcd9xxx->read_dev = wcd9xxx_slim_read_device;
+	wcd9xxx->write_dev = wcd9xxx_slim_write_device;
 
+	if (!wcd9xxx->dev->of_node)
+		wcd9xxx_assign_irq(&wcd9xxx->core_res,
+	pdata->irq, pdata->irq_base);
+	ifc_dev_np = of_parse_phandle(wcd9xxx->dev->of_node, "qcom,cdc-slim-ifd", 0);
+
+	if (!ifc_dev_np) {
+		dev_err(&slim->dev, "No Interface device found\n");
+		return -EINVAL;
+	}
+
+	wcd9xxx->slim_slave = of_slim_get_device(slim->ctrl, ifc_dev_np);
+	of_node_put(ifc_dev_np);
+
+	if (!wcd9xxx->slim_slave) {
+		dev_err(&slim->dev, "Unable to get SLIM Interface device\n");
+		goto  err;
+	}
+
+	ret = wcd9xxx_slim_get_laddr(wcd9xxx->slim_slave);
+	if (ret) {
+		dev_err(&slim->dev, "%s: Failed to get logical address for ifd, ret %d\n",
+		       __func__, ret);
+		goto err;
+	}
+
+	dev_dbg(&slim->dev, "%s: Slimbus ifd logical address 0x%x\n", __func__, wcd9xxx->slim_slave->laddr);
+
+	ret = wcd9xxx_device_init(wcd9xxx);
+	if (ret) {
+		dev_err(&slim->dev, "%s: Failed to initialize device (%d)\n",
+			__func__, ret);
+		goto err;
+	}
+
+err:
 	return ret;
 }
 
@@ -1583,7 +1559,7 @@ static int wcd9xxx_slim_device_down(struct slim_device *sldev)
 }
 
 static int wcd9xxx_slim_device_status(struct slim_device *sldev,
-				      enum slim_device_status device_status)
+					enum slim_device_status device_status)
 {
 	struct wcd9xxx *wcd9xxx = slim_get_devicedata(sldev);
 	int ret = 0;
@@ -1595,11 +1571,11 @@ static int wcd9xxx_slim_device_status(struct slim_device *sldev,
 	dev_dbg(wcd9xxx->dev, "%s: device status = %d\n", __func__, device_status);
 
 	if (device_status == SLIM_DEVICE_STATUS_DOWN) {
-		ret = wcd9xxx_slim_device_down(debugCodec->slim);
+		ret = wcd9xxx_slim_device_down(sldev);
 	}
 
 	if (device_status == SLIM_DEVICE_STATUS_UP) {
-		ret = wcd9xxx_slim_device_up(debugCodec->slim);
+		ret = wcd9xxx_slim_device_up(sldev);
 	}
 
 	return ret;
