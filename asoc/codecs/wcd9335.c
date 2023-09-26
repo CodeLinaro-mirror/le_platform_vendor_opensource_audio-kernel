@@ -3040,31 +3040,20 @@ static int tasha_codec_enable_slimrx(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
-		dev_dbg(component->dev, "%s: Enabling RX port and channels\n");
 		dai->bus_down_in_recovery = false;
 		tasha_codec_enable_int_port(dai, component);
 		(void) tasha_codec_enable_slim_chmask(dai, true);
-		ret = wcd9xxx_cfg_slim_sch_rx(core, &dai->wcd9xxx_ch_list,
-					      dai->rate, dai->bit_width,
-					      dai->direction);
-		dev_dbg(component->dev, "%s: Enabling RX port and channels done, ret =%d\n", __func__, ret);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		tasha_codec_vote_max_bw(component, true);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		dev_dbg(component->dev, "%s: Disabling RX port and channels\n", __func__);
-		ret = wcd9xxx_disconnect_port_rx(core);
-		dev_dbg(component->dev, "%s: Disconnect RX port, ret = %d\n",
-			__func__, ret);
-
 		if (!dai->bus_down_in_recovery)
 			ret = tasha_codec_enable_slim_chmask(dai, false);
 		else
 			dev_dbg(component->dev,
 				"%s: bus in recovery skip enable slim_chmask",
 				__func__);
-		dev_dbg(component->dev, "%s: Disabling RX port and channels done,ret=%d\n", __func__, ret);
 		break;
 	}
 	return ret;
@@ -3241,25 +3230,13 @@ static int __tasha_codec_enable_slimtx(struct snd_soc_component *component,
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
-		dev_dbg(component->dev, "%s: Enabling tx ports and channels \n", __func__);
 		dai->bus_down_in_recovery = false;
 		tasha_codec_enable_int_port(dai, component);
 		(void) tasha_codec_enable_slim_chmask(dai, true);
-		ret = wcd9xxx_cfg_slim_sch_tx(core, &dai->wcd9xxx_ch_list,
-					      dai->rate, dai->bit_width,
-					      dai->direction);
-		dev_dbg(component->dev, "%s: Enabling tx ports and channels done\n", __func__);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		dev_dbg(component->dev, "%s: Disbaling tx ports and channels \n", __func__);
 		if (!dai->bus_down_in_recovery)
 			ret = tasha_codec_enable_slim_chmask(dai, false);
-		if (ret < 0) {
-			ret = wcd9xxx_disconnect_port_tx(core);
-			pr_debug("%s: Disconnect RX port, ret = %d\n",
-				 __func__, ret);
-		}
-		dev_dbg(component->dev, "%s: Disbaling RX ports and channels done\n", __func__);
 		break;
 	}
 	return ret;
@@ -11851,6 +11828,50 @@ static int tasha_prepare(struct snd_pcm_substream *substream,
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		tasha_codec_vote_max_bw(dai->component, false);
+
+	return 0;
+}
+
+static int tasha_trigger(struct snd_pcm_substream *substream, int cmd,
+			   struct snd_soc_dai *dai)
+{
+	struct tasha_priv *tasha =
+		snd_soc_component_get_drvdata(dai->component);
+	struct wcd9xxx *core = tasha->wcd9xxx;
+	struct wcd9xxx_codec_dai_data *dai_data = &tasha->dai[dai->id];
+	int ret;
+
+	pr_debug("%s: dai id %d, cmd %d\n", __func__, dai->id, cmd);
+
+	switch (cmd) {
+	case SNDRV_PCM_TRIGGER_START:
+		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+			ret = wcd9xxx_cfg_slim_sch_rx(core, &dai_data->wcd9xxx_ch_list,
+							dai_data->rate, dai_data->bit_width,
+							dai_data->direction);
+			pr_debug("%s: Enabling RX port and channels, ret %d\n", __func__, ret);
+		} else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+			ret = wcd9xxx_cfg_slim_sch_tx(core, &dai_data->wcd9xxx_ch_list,
+								dai_data->rate, dai_data->bit_width,
+								dai_data->direction);
+			pr_debug("%s: Enabling TX ports and channels, ret %d\n", __func__, ret);
+		}
+		break;
+	case SNDRV_PCM_TRIGGER_STOP:
+		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+			ret = wcd9xxx_disconnect_port_rx(core);
+			pr_debug("%s: Disconnect RX port, ret %d\n",
+				__func__, ret);
+		} else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+			ret = wcd9xxx_disconnect_port_tx(core);
+			pr_debug("%s: Disconnect TX port, ret = %d\n",
+				 __func__, ret);
+		}
+		break;
+	default:
+		break;
+	};
+
 	return 0;
 }
 
@@ -11889,6 +11910,9 @@ static int tasha_hw_params(struct snd_pcm_substream *substream,
 			i2s_bit_mode = 0x00;
 			break;
 		default:
+			dev_err(tasha->dev,
+			"%s: Invalid RX bit width: %d\n",
+			__func__, params_width(params));
 			return -EINVAL;
 		}
 		tasha->dai[dai->id].rate = params_rate(params);
@@ -12072,6 +12096,7 @@ static struct snd_soc_dai_ops tasha_dai_ops = {
 	.shutdown = tasha_shutdown,
 	.hw_params = tasha_hw_params,
 	.prepare = tasha_prepare,
+	.trigger = tasha_trigger,
 	.set_sysclk = tasha_set_dai_sysclk,
 	.set_fmt = tasha_set_dai_fmt,
 	.set_channel_map = tasha_set_channel_map,
@@ -12609,6 +12634,12 @@ int tasha_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 	if (!tasha->entry) {
 		dev_dbg(component->dev, "%s: failed to create wcd9335 entry\n",
 			__func__);
+		return -ENOMEM;
+	}
+
+	tasha->entry->mode = S_IFDIR | 0555;
+	if (snd_info_register(tasha->entry) < 0) {
+		snd_info_free_entry(tasha->entry);
 		return -ENOMEM;
 	}
 
