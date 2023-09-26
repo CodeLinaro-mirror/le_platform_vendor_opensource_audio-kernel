@@ -17,6 +17,7 @@
 #include <bindings/qcom,audio-ext-clk.h>
 #include <linux/ratelimit.h>
 #include <dsp/q6afe-v2.h>
+#include <dsp/q6core.h>
 #include "audio-ext-clk-up.h"
 
 enum {
@@ -157,18 +158,33 @@ static u8 audio_ext_clk_get_parent(struct clk_hw *hw)
 static int lpass_hw_vote_prepare(struct clk_hw *hw)
 {
 	struct audio_ext_clk_priv *clk_priv = to_audio_clk(hw);
-	int ret;
+	int ret = 0;
+	int32_t avs_state = 0;
+	uint32_t *client_handle = &clk_priv->lpass_core_hwvote_client_handle;
 	static DEFINE_RATELIMIT_STATE(rtl, 1 * HZ, 1);
 
 	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_CORE_HW_VOTE)  {
 		trace_printk("%s: vote for %d clock\n",
 			__func__, clk_priv->clk_src);
 		ret = afe_vote_lpass_core_hw(AFE_LPASS_CORE_HW_MACRO_BLOCK,
-			"LPASS_HW_MACRO",
-			&clk_priv->lpass_core_hwvote_client_handle);
+					     "LPASS_HW_MACRO",
+					     client_handle);
 		if (ret < 0) {
 			pr_err("%s lpass core hw vote failed %d\n",
 				__func__, ret);
+			/*
+			 * DSP returns -EBUSY when AVS services are not up
+			 * Check for AVS state and then retry voting
+			 * for core hw clock.
+			 */
+			if (ret == -EBUSY) {
+				q6core_is_avs_up(&avs_state);
+				if (avs_state)
+					ret = afe_vote_lpass_core_hw(
+						AFE_LPASS_CORE_HW_MACRO_BLOCK,
+						"LPASS_HW_MACRO",
+						client_handle);
+			}
 			return ret;
 		}
 	}
@@ -177,12 +193,25 @@ static int lpass_hw_vote_prepare(struct clk_hw *hw)
 		trace_printk("%s: vote for %d clock\n",
 			__func__, clk_priv->clk_src);
 		ret = afe_vote_lpass_core_hw(AFE_LPASS_CORE_HW_DCODEC_BLOCK,
-			"LPASS_HW_DCODEC",
-			&clk_priv->lpass_audio_hwvote_client_handle);
+					     "LPASS_HW_DCODEC",
+					     client_handle);
 		if (ret < 0) {
 			if (__ratelimit(&rtl))
 				pr_err("%s lpass audio hw vote failed %d\n",
 				__func__, ret);
+			/*
+			 * DSP returns -EBUSY when AVS services are not up
+			 * Check for AVS state and then retry voting
+			 * for audio hw clock.
+			 */
+			if (ret == -EBUSY) {
+				q6core_is_avs_up(&avs_state);
+				if (avs_state)
+					ret = afe_vote_lpass_core_hw(
+						AFE_LPASS_CORE_HW_DCODEC_BLOCK,
+						"LPASS_HW_DCODEC",
+						client_handle);
+			}
 			return ret;
 		}
 	}
@@ -201,10 +230,9 @@ static void lpass_hw_vote_unprepare(struct clk_hw *hw)
 		ret = afe_unvote_lpass_core_hw(
 			AFE_LPASS_CORE_HW_MACRO_BLOCK,
 			clk_priv->lpass_core_hwvote_client_handle);
-		if (ret < 0) {
+		if (ret < 0)
 			pr_err("%s lpass core hw vote failed %d\n",
 				__func__, ret);
-		}
 	}
 
 	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_AUDIO_HW_VOTE) {
