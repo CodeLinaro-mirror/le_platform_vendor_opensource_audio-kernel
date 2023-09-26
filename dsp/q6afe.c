@@ -110,8 +110,8 @@ enum {
 };
 
 enum {
-	APTX_AD_48 = 0,
-	APTX_AD_44_1 = 1
+	APTX_48 = 0,
+	APTX_44_1 = 1
 };
 
 enum {
@@ -209,6 +209,16 @@ struct afe_ctl {
 	int pri_spdif_config_change;
 	int sec_spdif_config_change;
 	struct work_struct afe_spdif_work;
+
+	void (*pri_spdif_tx_chstatus_cb)(uint32_t opcode,
+		uint32_t token, uint32_t *payload, void *priv);
+	void (*sec_spdif_tx_chstatus_cb)(uint32_t opcode,
+		uint32_t token, uint32_t *payload, void *priv);
+	void *pri_spdif_tx_chstatus_priv;
+	void *sec_spdif_tx_chstatus_priv;
+	int pri_spdif_chstatus_change;
+	int sec_spdif_chstatus_change;
+	struct work_struct afe_spdif_chstatus_work;
 
 	int	topology[AFE_MAX_PORTS];
 	struct cal_type_data *cal_data[MAX_AFE_CAL_TYPES];
@@ -929,6 +939,29 @@ static void afe_notify_spdif_fmt_update_work_fn(struct work_struct *work)
 	}
 }
 
+static void afe_notify_spdif_chstatus_update_work_fn(struct work_struct *work)
+{
+	int ret = 0;
+	char event_pri[] = "PRI_SPDIF_TX=CHANNEL_STATUS_CHANGE";
+	char event_sec[] = "SEC_SPDIF_TX=CHANNEL_STATUS_CHANGE";
+
+	if (this_afe.pri_spdif_chstatus_change) {
+		this_afe.pri_spdif_chstatus_change = 0;
+		ret = q6core_send_uevent(this_afe.uevent_data, event_pri);
+		if (ret)
+			pr_err("%s: Send UEvent %s failed :%d\n",
+			       __func__, event_pri, ret);
+	}
+	if (this_afe.sec_spdif_chstatus_change) {
+		this_afe.sec_spdif_chstatus_change = 0;
+		ret = q6core_send_uevent(this_afe.uevent_data, event_sec);
+		if (ret)
+			pr_err("%s: Send UEvent %s failed :%d\n",
+			       __func__, event_sec, ret);
+	}
+
+}
+
 static void afe_notify_spdif_fmt_update(void *payload)
 {
 	struct afe_port_mod_evt_rsp_hdr *evt_pl;
@@ -940,6 +973,19 @@ static void afe_notify_spdif_fmt_update(void *payload)
 		this_afe.sec_spdif_config_change = 1;
 
 	schedule_work(&this_afe.afe_spdif_work);
+}
+
+static void afe_notify_spdif_chstatus_update(void *payload)
+{
+	struct afe_port_mod_evt_rsp_hdr *evt_pl;
+
+	evt_pl = (struct afe_port_mod_evt_rsp_hdr *)payload;
+	if (evt_pl->port_id == AFE_PORT_ID_PRIMARY_SPDIF_TX)
+		this_afe.pri_spdif_chstatus_change = 1;
+	else
+		this_afe.sec_spdif_chstatus_change = 1;
+
+	schedule_work(&this_afe.afe_spdif_chstatus_work);
 }
 
 static bool afe_token_is_valid(uint32_t token)
@@ -1216,6 +1262,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			uint32_t *payload = data->payload;
 			struct afe_port_mod_evt_rsp_hdr *evt_pl =
 				(struct afe_port_mod_evt_rsp_hdr *)payload;
+			void (*cb)(uint32_t, uint32_t, uint32_t *, void *);
+			void *priv_data;
 
 			if (!payload || (data->token >= AFE_MAX_PORTS)) {
 				pr_err("%s: Error: size %d payload %pK token %d\n",
@@ -1251,6 +1299,28 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 				}
 				if (dc_detected)
 					afe_notify_dc_presence();
+			} else if (evt_pl->event_id ==
+				   AFE_PORT_SPDIF_CHSTATUS_UPDATE_EVENT) {
+				cb = NULL;
+				priv_data = NULL;
+				switch (evt_pl->port_id) {
+				case AFE_PORT_ID_PRIMARY_SPDIF_TX:
+					cb = this_afe.pri_spdif_tx_chstatus_cb;
+					priv =
+					    this_afe.pri_spdif_tx_chstatus_priv;
+					break;
+
+				case AFE_PORT_ID_SECONDARY_SPDIF_TX:
+					cb = this_afe.sec_spdif_tx_chstatus_cb;
+					priv =
+					    this_afe.sec_spdif_tx_chstatus_priv;
+					break;
+				}
+
+				if (cb)
+					cb(data->opcode, data->token,
+					   data->payload, priv);
+				afe_notify_spdif_chstatus_update(data->payload);
 			} else if (evt_pl->port_id == AFE_PORT_ID_PRIMARY_SPDIF_TX) {
 				if (this_afe.pri_spdif_tx_cb) {
 					this_afe.pri_spdif_tx_cb(data->opcode,
@@ -4210,7 +4280,7 @@ int afe_send_spdif_ch_status_cfg(struct afe_param_id_spdif_ch_status_cfg
 	memset(&param_hdr, 0, sizeof(param_hdr));
 	param_hdr.module_id = AFE_MODULE_AUDIO_DEV_INTERFACE;
 	param_hdr.instance_id = INSTANCE_ID_0;
-	param_hdr.param_id = AFE_PARAM_ID_SPDIF_CLK_CONFIG;
+	param_hdr.param_id = AFE_PARAM_ID_CH_STATUS_CONFIG;
 	param_hdr.param_size = sizeof(struct afe_param_id_spdif_ch_status_cfg);
 
 	ret = q6afe_pack_and_set_param_in_band(port_id,
@@ -4222,6 +4292,45 @@ int afe_send_spdif_ch_status_cfg(struct afe_param_id_spdif_ch_status_cfg
 	return ret;
 }
 EXPORT_SYMBOL(afe_send_spdif_ch_status_cfg);
+
+/**
+ * afe_send_spdif_chstatus_mask_cfg -
+ *        to configure AFE session with
+ *        specified channel status mask configuration
+ *
+ * @chstatus_mask_cfg: SPDIF channel status mask configutation
+ * @port_id: AFE port id number
+ *
+ * Returns 0 on success or error value on port start failure.
+ */
+int afe_send_spdif_chstatus_mask_cfg(struct afe_spdif_chstatus_mask_config
+		*chstatus_mask_cfg, u16 port_id)
+{
+	struct param_hdr_v3 param_hdr;
+	int ret = 0;
+
+	if (!chstatus_mask_cfg) {
+		pr_err("%s: Error, no configuration data\n", __func__);
+		return -EINVAL;
+	}
+
+	memset(&param_hdr, 0, sizeof(param_hdr));
+	param_hdr.module_id = AFE_MODULE_AUDIO_DEV_INTERFACE;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = AFE_PARAM_ID_CH_STATUS_MASK_CONFIG;
+	param_hdr.param_size =
+		sizeof(struct afe_spdif_chstatus_mask_config);
+
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+					       q6audio_get_port_index(port_id),
+					       param_hdr,
+					       (u8 *)chstatus_mask_cfg);
+	if (ret < 0)
+		pr_err("%s: AFE send chstatus mask port 0x%x failed ret = %d\n",
+				__func__, port_id, ret);
+	return ret;
+}
+EXPORT_SYMBOL(afe_send_spdif_chstatus_mask_cfg);
 
 int afe_send_cmd_wakeup_register(void *handle, bool enable)
 {
@@ -4340,13 +4449,15 @@ int afe_spdif_port_start(u16 port_id, struct afe_spdif_port_config *spdif_port,
 		return -EINVAL;
 	}
 
+	afe_send_custom_topology();
+	afe_send_port_topology_id(port_id);
 	afe_send_cal(port_id);
 	afe_send_hw_delay(port_id, rate);
 
 	param_hdr.module_id = AFE_MODULE_AUDIO_DEV_INTERFACE;
 	param_hdr.instance_id = INSTANCE_ID_0;
 	param_hdr.param_id = AFE_PARAM_ID_SPDIF_CONFIG;
-	param_hdr.param_size = sizeof(struct afe_spdif_port_config);
+	param_hdr.param_size = sizeof(struct afe_param_id_spdif_cfg_v2);
 
 	ret = q6afe_pack_and_set_param_in_band(port_id,
 					       q6audio_get_port_index(port_id),
@@ -4367,10 +4478,19 @@ int afe_spdif_port_start(u16 port_id, struct afe_spdif_port_config *spdif_port,
 	}
 
 	if (afe_get_port_type(port_id) == MSM_AFE_PORT_TYPE_RX) {
-		ret = afe_send_spdif_ch_status_cfg(&spdif_port->ch_status,
+		ret = afe_send_spdif_ch_status_cfg(&spdif_port->ch_status_a,
 						   port_id);
 		if (ret < 0) {
-			pr_err("%s: afe send failed %d\n", __func__, ret);
+			pr_err("%s: afe ch stat A send failed %d\n",
+				__func__, ret);
+			goto fail_cmd;
+		}
+
+		ret = afe_send_spdif_ch_status_cfg(&spdif_port->ch_status_b,
+						   port_id);
+		if (ret < 0) {
+			pr_err("%s: afe ch stat b send failed %d\n",
+				__func__, ret);
 			goto fail_cmd;
 		}
 	}
@@ -4381,6 +4501,130 @@ fail_cmd:
 	return ret;
 }
 EXPORT_SYMBOL(afe_spdif_port_start);
+
+/**
+ * afe_spdif_reg_chstatus_event_cfg -
+ *	Register for channel status update event from AFE spdif port.
+ *
+ * @port_id: Port ID to register event
+ * @reg_flag: register or unregister
+ * @cb: callback function to invoke for channel status update events from AFE
+ * @private_data: private data to sent back in callback function
+ *
+ * Returns 0 on success, error on failure
+ */
+int afe_spdif_reg_chstatus_event_cfg(u16 port_id, u16 reg_flag,
+		void (*cb)(uint32_t opcode,
+		uint32_t token, uint32_t *payload, void *priv),
+		void *private_data)
+{
+	struct afe_port_cmd_event_cfg *config;
+	struct afe_port_cmd_mod_evt_cfg_payload pl;
+	int index;
+	int ret;
+	int num_events = 1;
+	int cmd_size = sizeof(struct afe_port_cmd_event_cfg) +
+		(num_events * sizeof(struct afe_port_cmd_mod_evt_cfg_payload));
+	uint32_t build_major_version = 0;
+	uint32_t build_minor_version = 0;
+	uint32_t build_branch_version = 0;
+	int afe_api_version = 0;
+
+	ret = q6core_get_avcs_avs_build_version_info(&build_major_version,
+				&build_minor_version, &build_branch_version);
+	if (ret < 0)
+		return ret;
+
+	ret = q6core_get_avcs_api_version_per_service(
+				APRV2_IDS_SERVICE_ID_ADSP_AFE_V);
+	if (ret < 0)
+		return ret;
+
+	afe_api_version = ret;
+
+	if ((build_major_version != AVS_BUILD_MAJOR_VERSION_V2) ||
+	    (build_minor_version != AVS_BUILD_MINOR_VERSION_V9) ||
+	    (build_branch_version != AVS_BUILD_BRANCH_VERSION_V3) ||
+	    (afe_api_version < AFE_API_VERSION_V11)) {
+		pr_info("%s: chstatus update evt not supported by AVS\n",
+			__func__);
+		return 0;
+	}
+
+	config = kzalloc(cmd_size, GFP_KERNEL);
+	if (!config)
+		return -ENOMEM;
+
+	if (port_id == AFE_PORT_ID_PRIMARY_SPDIF_TX) {
+		this_afe.pri_spdif_tx_chstatus_cb = cb;
+		this_afe.pri_spdif_tx_chstatus_priv = private_data;
+	} else if (port_id == AFE_PORT_ID_SECONDARY_SPDIF_TX) {
+		this_afe.sec_spdif_tx_chstatus_cb = cb;
+		this_afe.sec_spdif_tx_chstatus_priv = private_data;
+	} else {
+		pr_err("%s: wrong port id 0x%x\n", __func__, port_id);
+		ret = -EINVAL;
+		goto fail_idx;
+	}
+
+	index = q6audio_get_port_index(port_id);
+	if (index < 0) {
+		pr_err("%s: Invalid index number: %d\n", __func__, index);
+		ret = -EINVAL;
+		goto fail_idx;
+	}
+
+	memset(&pl, 0, sizeof(pl));
+	pl.module_id = AFE_MODULE_CUSTOM_EVENTS;
+	pl.event_id = AFE_PORT_SPDIF_CHSTATUS_UPDATE_EVENT;
+	pl.reg_flag = reg_flag;
+
+	config->hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
+				APR_HDR_LEN(APR_HDR_SIZE), APR_PKT_VER);
+	config->hdr.pkt_size = cmd_size;
+	config->hdr.src_port = 1;
+	config->hdr.dest_port = 1;
+	config->hdr.token = index;
+
+	config->hdr.opcode = AFE_PORT_CMD_MOD_EVENT_CFG;
+	config->port_id = q6audio_get_port_id(port_id);
+	config->num_events = num_events;
+	config->version = 1;
+	memcpy(config->payload, &pl, sizeof(pl));
+	atomic_set(&this_afe.state, 1);
+	atomic_set(&this_afe.status, 0);
+	ret = apr_send_pkt(this_afe.apr, (uint32_t *) config);
+	if (ret < 0) {
+		pr_err("%s: port = 0x%x failed %d\n",
+			__func__, port_id, ret);
+		goto fail_cmd;
+	}
+	ret = wait_event_timeout(this_afe.wait[index],
+		(atomic_read(&this_afe.state) == 0),
+		msecs_to_jiffies(TIMEOUT_MS));
+	if (!ret) {
+		pr_err("%s: wait_event timeout\n", __func__);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+	if (atomic_read(&this_afe.status) > 0) {
+		pr_err("%s: config cmd failed [%s]\n",
+			__func__, adsp_err_get_err_str(
+			atomic_read(&this_afe.status)));
+		ret = adsp_err_get_lnx_err_code(
+				atomic_read(&this_afe.status));
+		goto fail_idx;
+	}
+	ret = 0;
+fail_cmd:
+	pr_debug("%s: config.opcode 0x%x status %d\n",
+		__func__, config->hdr.opcode, ret);
+
+fail_idx:
+	kfree(config);
+	return ret;
+}
+EXPORT_SYMBOL(afe_spdif_reg_chstatus_event_cfg);
 
 /**
  * afe_spdif_reg_event_cfg -
@@ -4553,11 +4797,13 @@ int afe_send_custom_tdm_header_cfg(
  * @tdm_port: TDM port configutation
  * @rate: sampling rate of port
  * @num_groups: number of TDM groups
+ * @lane_cfg: TDM lane configuration
  *
  * Returns 0 on success or error value on port start failure.
  */
 int afe_tdm_port_start(u16 port_id, struct afe_tdm_port_config *tdm_port,
-		       u32 rate, u16 num_groups)
+		       u32 rate, u16 num_groups,
+		       struct afe_param_id_tdm_lane_cfg *lane_cfg)
 {
 	struct param_hdr_v3 param_hdr;
 	int index = 0;
@@ -4642,6 +4888,17 @@ int afe_tdm_port_start(u16 port_id, struct afe_tdm_port_config *tdm_port,
 		pr_err("%s: AFE enable for port 0x%x failed ret = %d\n",
 				__func__, port_id, ret);
 		goto fail_cmd;
+	}
+
+	if (num_groups == 1 && lane_cfg != NULL) {
+		if (lane_cfg->lane_mask != AFE_LANE_MASK_INVALID) {
+			ret = afe_port_tdm_lane_config_v2(port_id, lane_cfg);
+			if (ret < 0) {
+				pr_err("%s: afe send lane config failed %d\n",
+					__func__, ret);
+				goto fail_cmd;
+			}
+		}
 	}
 
 	port_index = afe_get_port_index(port_id);
@@ -4953,17 +5210,53 @@ exit:
 	return ret;
 }
 
+static uint32_t q6afe_port_media_sample_rate(struct afe_dec_config *cfg, union afe_port_config *afe_config)
+{
+	uint32_t sample_rate;
+
+	switch (cfg->format) {
+	case ASM_MEDIA_FMT_AAC_V2:
+		sample_rate = cfg->data.aac_config.sample_rate;
+		break;
+	case ASM_MEDIA_FMT_SBC:
+		sample_rate = cfg->data.sbc_config.sample_rate;
+		break;
+	case ASM_MEDIA_FMT_APTX:
+		sample_rate = cfg->data.aptx_classic_config.sample_rate;
+		break;
+	case ASM_MEDIA_FMT_APTX_HD:
+		sample_rate = cfg->data.aptx_hd_config.sample_rate;
+		break;
+	case ASM_MEDIA_FMT_APTX_ADAPTIVE:
+		if (!cfg->abr_dec_cfg.is_abr_enabled) {
+			sample_rate =
+			(cfg->data.aptx_ad_config.sample_rate == APTX_44_1) ?
+				AFE_PORT_SAMPLE_RATE_44_1K :
+				AFE_PORT_SAMPLE_RATE_48K;
+			break;
+		}
+		/* fall through for abr enabled case */
+	default:
+		sample_rate = afe_config->slim_sch.sample_rate;
+	}
+
+	return sample_rate;
+}
+
 static int q6afe_send_ttp_config(u16 port_id,
 			union afe_port_config afe_config,
-			struct afe_ttp_config *ttp_cfg)
+			struct afe_ttp_config *ttp_cfg,
+			struct afe_dec_config *dec_cfg)
 {
 	struct afe_ttp_gen_enable_t ttp_gen_enable;
 	struct afe_ttp_gen_cfg_t ttp_gen_cfg;
+	struct afe_ttp_gen_stream_cfg_t ttp_gen_stream_cfg;
 	struct param_hdr_v3 param_hdr;
 	int ret;
 
 	memset(&ttp_gen_enable, 0, sizeof(ttp_gen_enable));
 	memset(&ttp_gen_cfg, 0, sizeof(ttp_gen_cfg));
+	memset(&ttp_gen_stream_cfg, 0, sizeof(ttp_gen_stream_cfg));
 	memset(&param_hdr, 0, sizeof(param_hdr));
 
 	param_hdr.module_id = AFE_MODULE_ID_DECODER;
@@ -4991,8 +5284,22 @@ static int q6afe_send_ttp_config(u16 port_id,
 					       q6audio_get_port_index(port_id),
 					       param_hdr,
 					       (u8 *) &ttp_gen_cfg);
-	if (ret)
+	if (ret) {
 		pr_err("%s: AVS_DEPACKETIZER_PARAM_ID_TTP_GEN_CFG for port 0x%x failed %d\n",
+			__func__, port_id, ret);
+		goto exit;
+	}
+
+	ttp_gen_stream_cfg.sample_rate =
+			q6afe_port_media_sample_rate(dec_cfg, &afe_config);
+	param_hdr.param_id = AVS_DEPACKETIZER_PARAM_ID_TTP_GEN_STREAM_CFG;
+	param_hdr.param_size = sizeof(struct afe_ttp_gen_stream_cfg_t);
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+					       q6audio_get_port_index(port_id),
+					       param_hdr,
+					       (u8 *) &ttp_gen_stream_cfg);
+	if (ret)
+		pr_err("%s: AVS_DEPACKETIZER_PARAM_ID_TTP_GEN_STREAM_CFG for port 0x%x failed %d\n",
 			__func__, port_id, ret);
 exit:
 	return ret;
@@ -5002,7 +5309,8 @@ static int q6afe_send_dec_config(u16 port_id,
 			union afe_port_config afe_config,
 			struct afe_dec_config *cfg,
 			u32 format,
-			u16 afe_in_channels, u16 afe_in_bit_width)
+			u16 afe_in_channels, u16 afe_in_bit_width,
+			uint16_t ttp_gen_enable)
 {
 	struct afe_dec_media_fmt_t dec_media_fmt;
 	struct avs_dec_depacketizer_id_param_t dec_depkt_id_param;
@@ -5061,7 +5369,13 @@ static int q6afe_send_dec_config(u16 port_id,
 	case ASM_MEDIA_FMT_MP3:
 		if (port_id == SLIMBUS_9_TX) {
 			dec_buffer_id_param.max_nr_buffers  = 200;
-			dec_buffer_id_param.pre_buffer_size = 200;
+			/*
+			 * TTP generator do not require pre buffer.
+			 */
+			if (ttp_gen_enable)
+				dec_buffer_id_param.pre_buffer_size = 0;
+			else
+				dec_buffer_id_param.pre_buffer_size = 200;
 		} else {
 			dec_buffer_id_param.max_nr_buffers  = 0;
 			dec_buffer_id_param.pre_buffer_size = 0;
@@ -5084,6 +5398,8 @@ static int q6afe_send_dec_config(u16 port_id,
 		}
 		break;
 	case ASM_MEDIA_FMT_APTX_ADAPTIVE:
+	case ASM_MEDIA_FMT_APTX_HD:
+	case ASM_MEDIA_FMT_APTX:
 		if (!cfg->abr_dec_cfg.is_abr_enabled) {
 			pr_debug("%s: sending aptx adaptive congestion buffer size to dsp\n",
 				__func__);
@@ -5093,7 +5409,13 @@ static int q6afe_send_dec_config(u16 port_id,
 			   sizeof(struct avs_dec_congestion_buffer_param_t);
 			dec_buffer_id_param.version = 0;
 			dec_buffer_id_param.max_nr_buffers  = 226;
-			dec_buffer_id_param.pre_buffer_size = 226;
+			/*
+			 * TTP generator do not require pre buffer.
+			 */
+			if (ttp_gen_enable)
+				dec_buffer_id_param.pre_buffer_size = 0;
+			else
+				dec_buffer_id_param.pre_buffer_size = 226;
 			ret = q6afe_pack_and_set_param_in_band(port_id,
 						q6audio_get_port_index(port_id),
 						param_hdr,
@@ -5131,34 +5453,8 @@ static int q6afe_send_dec_config(u16 port_id,
 	param_hdr.param_id = AFE_PARAM_ID_PORT_MEDIA_TYPE;
 	param_hdr.param_size = sizeof(struct afe_port_media_type_t);
 	media_type.minor_version = AFE_API_VERSION_PORT_MEDIA_TYPE;
-	switch (cfg->format) {
-	case ASM_MEDIA_FMT_AAC_V2:
-		media_type.sample_rate =
-			cfg->data.aac_config.sample_rate;
-		break;
-	case ASM_MEDIA_FMT_SBC:
-		media_type.sample_rate =
-			cfg->data.sbc_config.sample_rate;
-		break;
-	case ASM_MEDIA_FMT_APTX_ADAPTIVE:
-		if (!cfg->abr_dec_cfg.is_abr_enabled) {
-			media_type.sample_rate =
-			(cfg->data.aptx_ad_config.sample_rate == APTX_AD_44_1) ?
-				AFE_PORT_SAMPLE_RATE_44_1K :
-				AFE_PORT_SAMPLE_RATE_48K;
-			break;
-		}
-		/* fall through for abr enabled case */
-	case ASM_MEDIA_FMT_APTX_AD_SPEECH:
-		media_type.sample_rate = AFE_PORT_SAMPLE_RATE_32K;
-		break;
-	case ASM_MEDIA_FMT_LC3:
-		media_type.sample_rate = AFE_PORT_SAMPLE_RATE_48K;
-		break;
-	default:
-		media_type.sample_rate =
-			afe_config.slim_sch.sample_rate;
-	}
+	media_type.sample_rate = q6afe_port_media_sample_rate(cfg, &afe_config);
+
 	if (afe_in_bit_width)
 		media_type.bit_width = afe_in_bit_width;
 	else
@@ -5183,7 +5479,8 @@ static int q6afe_send_dec_config(u16 port_id,
 	if (format != ASM_MEDIA_FMT_SBC && format != ASM_MEDIA_FMT_AAC_V2 &&
 		format != ASM_MEDIA_FMT_APTX_ADAPTIVE &&
 		format != ASM_MEDIA_FMT_APTX_AD_SPEECH &&
-		format != ASM_MEDIA_FMT_LC3) {
+		format != ASM_MEDIA_FMT_LC3 &&
+		format != ASM_MEDIA_FMT_APTX && format != ASM_MEDIA_FMT_APTX_HD) {
 		pr_debug("%s:Unsuppported dec format. Ignore AFE config %u\n",
 				__func__, format);
 		goto exit;
@@ -5303,6 +5600,8 @@ static int q6afe_send_dec_config(u16 port_id,
 	switch (cfg->format) {
 	case ASM_MEDIA_FMT_AAC_V2:
 	case ASM_MEDIA_FMT_APTX_ADAPTIVE:
+	case ASM_MEDIA_FMT_APTX:
+	case ASM_MEDIA_FMT_APTX_HD:
 		param_hdr.param_size = sizeof(struct afe_dec_media_fmt_t);
 
 		pr_debug("%s:send AVS_DECODER_PARAM_ID DEC_MEDIA_FMT to DSP payload\n",
@@ -5856,6 +6155,7 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 	uint16_t port_index;
 	u32 power_mode = 0;
 	u16 i;
+	uint16_t ttp_gen_enable = 0;
 
 	memset(&param_hdr, 0, sizeof(param_hdr));
 	memset(&port_cfg, 0, sizeof(port_cfg));
@@ -6179,6 +6479,9 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 		goto fail_cmd;
 	}
 
+	if (ttp_cfg != NULL)
+		ttp_gen_enable = ttp_cfg->ttp_gen_enable.enable;
+
 	if ((codec_format != ASM_MEDIA_FMT_NONE) &&
 	    (cfg_type == AFE_PARAM_ID_SLIMBUS_CONFIG)) {
 		if (enc_cfg != NULL) {
@@ -6236,16 +6539,16 @@ static int __afe_port_start(u16 port_id, union afe_port_config *afe_config,
 			ret = q6afe_send_dec_config(port_id, *afe_config,
 						    dec_cfg, codec_format,
 						    afe_in_channels,
-						    afe_in_bit_width);
+						    afe_in_bit_width, ttp_gen_enable);
 			if (ret) {
 				pr_err("%s: AFE decoder config for port 0x%x failed %d\n",
 					 __func__, port_id, ret);
 				goto fail_cmd;
 			}
 		}
-		if (ttp_cfg != NULL) {
+		if (ttp_cfg != NULL && dec_cfg != NULL) {
 			ret = q6afe_send_ttp_config(port_id, *afe_config,
-						    ttp_cfg);
+						    ttp_cfg, dec_cfg);
 			if (ret) {
 				pr_err("%s: AFE TTP config for port 0x%x failed %d\n",
 					 __func__, port_id, ret);
@@ -7458,6 +7761,55 @@ static int afe_port_tdm_lane_config(u16 group_id,
 
 	return ret;
 }
+
+/**
+ * afe_port_tdm_lane_config_v2 -
+ * to configure group TDM lane mask with specified configuration
+ *
+ * @port_id: AFE port id number
+ * @lane_cfg: TDM lane mask configuration
+ *
+ * Returns 0 on success or error value on failure.
+ */
+int afe_port_tdm_lane_config_v2(u16 port_id,
+	struct afe_param_id_tdm_lane_cfg *lane_cfg)
+{
+	struct param_hdr_v3 param_hdr;
+	int ret = 0;
+
+	if (lane_cfg == NULL ||
+		lane_cfg->lane_mask == AFE_LANE_MASK_INVALID) {
+		pr_debug("%s: lane cfg not supported for group id: 0x%x\n",
+			__func__, port_id);
+		return ret;
+	}
+
+	pr_debug("%s: port id: 0x%x group id: 0x%x lane mask 0x%x\n", __func__,
+		port_id, lane_cfg->port_id, lane_cfg->lane_mask);
+
+	memset(&param_hdr, 0, sizeof(param_hdr));
+
+	ret = afe_q6_interface_prepare();
+	if (ret != 0) {
+		pr_err("%s: Q6 interface prepare failed %d\n", __func__, ret);
+		return ret;
+	}
+
+	param_hdr.module_id = AFE_MODULE_AUDIO_DEV_INTERFACE;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = AFE_PARAM_ID_TDM_LANE_CONFIG;
+	param_hdr.param_size = sizeof(struct afe_param_id_tdm_lane_cfg);
+
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+			q6audio_get_port_index(port_id),
+			param_hdr, (u8 *)lane_cfg);
+	if (ret)
+		pr_err("%s: AFE_PARAM_ID_TDM_LANE_CONFIG failed %d\n",
+			__func__, ret);
+
+	return ret;
+}
+EXPORT_SYMBOL(afe_port_tdm_lane_config_v2);
 
 /**
  * afe_port_group_enable -
@@ -9321,7 +9673,7 @@ int afe_close(int port_id)
 			    (port_id == RT_PROXY_DAI_001_TX) ||
 		 	   (port_id == RT_PROXY_DAI_003_TX))
 				proxy_afe_instance[port_id & 0x3] = 0;
-			afe_close_done[port_id & 0x3] = true;
+			afe_close_done[port_id & 0x2] = true;
 		}
 		return -EINVAL;
 	}
@@ -11920,6 +12272,8 @@ int __init afe_init(void)
 	INIT_WORK(&this_afe.afe_dc_work, afe_notify_dc_presence_work_fn);
 	INIT_WORK(&this_afe.afe_spdif_work,
 		  afe_notify_spdif_fmt_update_work_fn);
+	INIT_WORK(&this_afe.afe_spdif_chstatus_work,
+		  afe_notify_spdif_chstatus_update_work_fn);
 
 	this_afe.event_notifier.notifier_call  = afe_aud_event_notify;
 	msm_aud_evt_blocking_register_client(&this_afe.event_notifier);
@@ -11977,9 +12331,9 @@ EXPORT_SYMBOL(afe_cal_init_hwdep);
  * afe_vote_lpass_core_hw -
  *        Voting for lpass core hardware
  *
- * @hw_block_id: id of the hardware block
- * @client_name: client name
- * @client_handle: client handle
+ * @hw_block_id: ID of hw block to vote for
+ * @client_name: Name of the client
+ * @client_handle: Handle for the client
  *
  */
 int afe_vote_lpass_core_hw(uint32_t hw_block_id, char *client_name,
@@ -12002,7 +12356,7 @@ int afe_vote_lpass_core_hw(uint32_t hw_block_id, char *client_name,
 	}
 
 	ret = afe_q6_interface_prepare();
-	if(ret) {
+	if (ret != 0) {
 		pr_err("%s: Q6 interface prepare failed %d\n", __func__, ret);
 		return ret;
 	}
@@ -12046,8 +12400,8 @@ EXPORT_SYMBOL(afe_vote_lpass_core_hw);
  * afe_unvote_lpass_core_hw -
  *        unvoting for lpass core hardware
  *
- * @hw_block_id: id of the hardware block
- * @client_handle: client handle
+ * @hw_block_id: ID of hw block to vote for
+ * @client_handle: Handle for the client
  *
  */
 int afe_unvote_lpass_core_hw(uint32_t hw_block_id, uint32_t client_handle)
@@ -12058,7 +12412,7 @@ int afe_unvote_lpass_core_hw(uint32_t hw_block_id, uint32_t client_handle)
 	int ret = 0;
 
 	ret = afe_q6_interface_prepare();
-	if(ret) {
+	if (ret != 0) {
 		pr_err("%s: Q6 interface prepare failed %d\n", __func__, ret);
 		return ret;
 	}

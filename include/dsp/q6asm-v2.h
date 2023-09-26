@@ -52,6 +52,7 @@
 #define FORMAT_TRUEHD       0x0020
 #define FORMAT_IEC61937     0x0021
 #define FORMAT_BESPOKE      0x0022
+#define FORMAT_MAT          0x0023
 
 #define ENCDEC_SBCBITRATE   0x0001
 #define ENCDEC_IMMEDIATE_DECODE 0x0002
@@ -92,6 +93,7 @@
 
 #define NO_TIMESTAMP    0xFF00
 #define SET_TIMESTAMP   0x0000
+#define SET_CONTINUE_FLAG  0x20000000
 
 #define SOFT_PAUSE_ENABLE	1
 #define SOFT_PAUSE_DISABLE	0
@@ -358,6 +360,11 @@ int q6asm_open_read_write(struct audio_client *ac,
 			uint32_t wr_format);
 
 int q6asm_open_read_write_v2(struct audio_client *ac, uint32_t rd_format,
+			     uint32_t wr_format, bool is_meta_data_mode,
+			     uint32_t bits_per_sample, bool overwrite_topology,
+			     int topology);
+
+int q6asm_open_read_write_v5(struct audio_client *ac, uint32_t rd_format,
 			     uint32_t wr_format, bool is_meta_data_mode,
 			     uint32_t bits_per_sample, bool overwrite_topology,
 			     int topology);
@@ -713,8 +720,8 @@ int q6asm_get_session_time_legacy(struct audio_client *ac, uint64_t *tstamp);
 int q6asm_send_stream_cmd(struct audio_client *ac,
 			  struct msm_adsp_event_data *data);
 
-int q6asm_send_ion_fd(struct audio_client *ac, int fd);
-
+int q6asm_audio_map_shm_fd(struct audio_client *ac, void **mem_hdl,
+			   int fd);
 int q6asm_send_rtic_event_ack(struct audio_client *ac,
 			      void *param, uint32_t params_length);
 
@@ -743,9 +750,13 @@ int q6asm_send_mtmx_strtr_window(struct audio_client *ac,
 		struct asm_session_mtmx_strtr_param_window_v2_t *window_param,
 		uint32_t param_id);
 
+int q6asm_send_mtmx_strtr_ttp_offset(struct audio_client *ac,
+		struct asm_session_mtmx_strtr_param_ttp_offset_t *ttp_offset,
+		uint32_t param_id, int dir);
+
 /* Configure DSP render mode */
 int q6asm_send_mtmx_strtr_render_mode(struct audio_client *ac,
-		uint32_t render_mode);
+		uint32_t render_mode, int dir);
 
 /* Configure DSP clock recovery mode */
 int q6asm_send_mtmx_strtr_clk_rec_mode(struct audio_client *ac,
@@ -770,4 +781,9 @@ int q6asm_adjust_session_clock(struct audio_client *ac,
 /* Provide default asm channel mapping for given channel count */
 int q6asm_map_channels(u8 *channel_mapping, uint32_t channels,
 		bool use_back_flavor);
+
+/* Set MAT-THD parameters to DSP*/
+int q6asm_thd_stream_endp_params(struct audio_client *ac,
+                                 int param_id, int param_value,
+                                 int stream_id);
 #endif /* __Q6_ASM_H__ */

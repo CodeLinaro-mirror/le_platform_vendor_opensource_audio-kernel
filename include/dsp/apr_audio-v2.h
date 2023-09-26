@@ -30,6 +30,11 @@ struct param_outband {
 /* Instance ID definitions */
 #define INSTANCE_ID_0 0x0000
 
+struct adm_register_event {
+	struct apr_hdr	hdr;
+	__u8 payload[0];
+} __packed;
+
 struct mem_mapping_hdr {
 	/*
 	 * LSW of parameter data payload address. Supported values: any.
@@ -135,6 +140,10 @@ struct module_instance_info {
 
 #define ADM_CMD_MATRIX_MAP_ROUTINGS_V5 0x00010325
 #define ADM_CMD_STREAM_DEVICE_MAP_ROUTINGS_V5 0x0001033D
+
+#define ADM_CMD_REGISTER_EVENT  0x00010365
+#define ADM_PP_EVENT            0x00010366
+
 /* Enumeration for an audio Rx matrix ID.*/
 #define ADM_MATRIX_ID_AUDIO_RX              0
 
@@ -668,6 +677,27 @@ struct dsp_stream_callback_prtd {
 	struct list_head event_queue;
 	spinlock_t prtd_spin_lock;
 };
+
+#define DSP_ADM_CALLBACK "ADSP COPP Callback Event"
+#define DSP_ADM_CALLBACK_QUEUE_SIZE 1024
+
+struct dsp_adm_callback_list {
+	struct list_head list;
+	struct msm_adsp_event_data event;
+};
+
+struct adm_usr_info {
+	u32 service_id;
+	u32 reserved;
+	u32 token_coppidx;
+};
+
+struct dsp_adm_callback_prtd {
+	uint16_t event_count;
+	struct list_head event_queue;
+	spinlock_t prtd_spin_lock;
+};
+
 
 /* set customized mixing on matrix mixer */
 #define ADM_CMD_SET_PSPD_MTMX_STRTR_PARAMS_V5                        0x00010344
@@ -1325,6 +1355,7 @@ struct adm_cmd_connect_afe_port_v5 {
 #define RSVD_2 9
 #define RSVD_3 10
 #define DIGI_MIC_TX 11
+
 #define VOICE2_PLAYBACK_TX 0x8002
 #define VOICE_RECORD_RX 0x8003
 #define VOICE_RECORD_TX 0x8004
@@ -2951,7 +2982,14 @@ struct afe_param_id_meta_i2s_cfg {
 #define AFE_PORT_STATUS_AUDIO_ACTIVE        1
 #define AFE_PORT_STATUS_AUDIO_EOS           2
 
+#define AFE_PORT_SPDIF_CHSTATUS_UPDATE_EVENT  0x00010110
+#define SPDIF_CHSTATUS_SIZE                 24
+
+#define AFE_PARAM_ID_CH_STATUS_MASK_CONFIG  0x000102EB
+#define AFE_API_VERSION_CH_STATUS_MASK_CONFIG 0x1
+
 struct afe_param_id_spdif_cfg_v2 {
+
 /* Minor version used for tracking the version of the SPDIF
  * configuration interface.
  * Supported values: #AFE_API_VERSION_SPDIF_CONFIG,
@@ -3074,9 +3112,32 @@ struct afe_event_fmt_update {
 	u8 channel_status[6];
 } __packed;
 
+struct afe_event_chstatus_update {
+	/* Tracks the configuration of this event. */
+	u32 minor_version;
+
+	/* channel status bytes */
+	u8 chstatus_a[SPDIF_CHSTATUS_SIZE];
+	u8 chstatus_b[SPDIF_CHSTATUS_SIZE];
+} __packed;
+
+struct afe_spdif_chstatus_mask_config {
+	/* for tracking the version of channel status configuration */
+	u32 minor_version;
+
+	/*
+	 * channel status mask.
+	 * channel status update event will only be raised for bits which
+	 * are 1.
+	 */
+	u8 chstatus_mask_a[SPDIF_CHSTATUS_SIZE];
+	u8 chstatus_mask_b[SPDIF_CHSTATUS_SIZE];
+} __packed;
+
 struct afe_spdif_port_config {
 	struct afe_param_id_spdif_cfg_v2         cfg;
-	struct afe_param_id_spdif_ch_status_cfg  ch_status;
+	struct afe_param_id_spdif_ch_status_cfg  ch_status_a;
+	struct afe_param_id_spdif_ch_status_cfg  ch_status_b;
 } __packed;
 
 #define AFE_PARAM_ID_PCM_CONFIG        0x0001020E
@@ -4987,6 +5048,32 @@ struct asm_aptx_ad_speech_dec_cfg_t {
 	struct asm_aptx_ad_speech_mode_cfg_t speech_mode;
 };
 
+/*
+ * Payload of the APTX CLASSIC decoder configuration parameters in the
+ * #ASM_MEDIA_FMT_APTX_CLASSIC media format.
+ */
+struct asm_aptx_classic_dec_cfg_t {
+	uint32_t          sample_rate;
+	/*
+	 * Number of samples per second.
+	 *
+	 * @values 0x0(48000Hz), 0x1(44100Hz)
+	 */
+} __packed;
+
+/*
+ * Payload of the APTX HD decoder configuration parameters in the
+ * #ASM_MEDIA_FMT_APTX_HD media format
+ */
+struct asm_aptx_hd_dec_cfg_t {
+	uint32_t          sample_rate;
+	/*
+	 * Number of samples per second.
+	 *
+	 * @values 0x0(48000Hz), 0x1(44100Hz)
+	 */
+} __packed;
+
 union afe_enc_config_data {
 	struct asm_sbc_enc_cfg_t sbc_config;
 	struct asm_aac_enc_cfg_t aac_config;
@@ -5015,6 +5102,10 @@ struct afe_enc_config {
  * Configure TTP generator params in AFE.
  */
 #define AVS_DEPACKETIZER_PARAM_ID_TTP_GEN_CFG           0x000132F0
+/*
+ * Configure TTP generator i stream config params.
+ */
+#define AVS_DEPACKETIZER_PARAM_ID_TTP_GEN_STREAM_CFG           0x000132FF
 #define MAX_TTP_OFFSET_PAIRS  4
 struct afe_ttp_gen_enable_t {
 	uint16_t enable;
@@ -5057,6 +5148,13 @@ struct afe_ttp_config {
 	struct afe_ttp_gen_cfg_t ttp_gen_cfg;
 };
 
+struct afe_ttp_gen_stream_cfg_t {
+	uint32_t sample_rate;
+	/*
+	 * afeport media sample rate
+	 */
+} __packed;
+
 union afe_dec_config_data {
 	struct asm_sbc_dec_cfg_t sbc_config;
 	struct asm_aac_dec_cfg_v2_t aac_config;
@@ -5064,6 +5162,8 @@ union afe_dec_config_data {
 	struct asm_aptx_ad_dec_cfg_t aptx_ad_config;
 	struct asm_aptx_ad_speech_dec_cfg_t aptx_ad_speech_config;
 	struct asm_lc3_dec_cfg_t lc3_dec_config;
+	struct asm_aptx_classic_dec_cfg_t aptx_classic_config;
+	struct asm_aptx_hd_dec_cfg_t aptx_hd_config;
 };
 
 struct afe_dec_config {
@@ -6506,6 +6606,14 @@ struct asm_dec_ddp_endp_param_v2 {
 	int endp_param_value;
 } __packed;
 
+/* @brief Dolby TrueHD end point configuration structure
+ */
+struct asm_dec_dolby_thd_endp_param_v2 {
+	struct apr_hdr hdr;
+	struct asm_stream_cmd_set_encdec_param  encdec;
+	int endp_param_value;
+} __packed;
+
 /*
  * Payload of the multichannel PCM encoder configuration parameters in
  * the ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V5 media format.
@@ -7898,6 +8006,8 @@ struct asm_data_cmd_iec_60958_frame_rate {
 #define ASM_SESSION_CMD_RUN_STARTIME_RUN_AT_ABSOLUTEIME 1
 #define ASM_SESSION_CMD_RUN_STARTIME_RUN_AT_RELATIVEIME 2
 #define ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_DELAY     3
+#define ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP       4
+#define ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP_PASS_THROUGH 5
 
 #define ASM_BIT_MASK_RUN_STARTIME                 (0x00000003UL)
 
@@ -7921,6 +8031,8 @@ struct asm_session_cmd_run_v2 {
  *- #ASM_SESSION_CMD_RUN_STARTIME_RUN_AT_ABSOLUTEIME
  *- #ASM_SESSION_CMD_RUN_STARTIME_RUN_AT_RELATIVEIME
  *- #ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_DELAY
+ *- #ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP
+ *- #ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP_PASS_THROUGH
  *
  *All other bits are reserved; clients must set them to zero.
  */
@@ -8737,6 +8849,30 @@ struct avs_rtic_shared_mem_addr {
 	struct avs_shared_map_region_payload map_region;
 	/* memory map region*/
 } __packed;
+
+struct adm_event_shm {
+	u32                 shm_buf_addr_lsw;
+	/* Lower 32 bit of the RTIC shared memory */
+
+	u32                 shm_buf_addr_msw;
+	/* Upper 32 bit of the RTIC shared memory */
+
+	u32                 buf_size;
+	/* Size of buffer */
+
+	u16                 shm_buf_mem_pool_id;
+	/* ADSP_MEMORY_MAP_SHMEM8_4K_POOL */
+
+	u16                 shm_buf_num_regions;
+	/* number of regions to map */
+
+	u32                 shm_buf_flag;
+	/* buffer property flag */
+
+	struct avs_shared_map_region_payload adm_map_region;
+	/* memory map region*/
+
+};
 
 #define AVS_PARAM_ID_RTIC_EVENT_ACK           0x00013238
 
@@ -13117,6 +13253,12 @@ struct afe_av_dev_drift_get_param_resp {
  */
 #define ASM_SESSION_MTMX_STRTR_PARAM_RENDER_WINDOW_END_V2   0x00010DD2
 
+/* Parameter used by #ASM_SESSION_MTMX_STRTR_MODULE_ID_AVSYNC to specify the
+ * ttp offset value. This parameter is supported only for a Set
+ * command (not a Get command) in the Tx direction
+ */
+#define ASM_SESSION_MTMX_STRTR_PARAM_TTP_OFFSET 0x00013228
+
 /* Generic payload of the window parameters in the
  * #ASM_SESSION_MTMX_STRTR_MODULE_ID_AVSYNC module.
  * This payload is supported only for a Set command
@@ -13225,6 +13367,26 @@ struct asm_session_mtmx_strtr_param_render_mode_t {
 	u32                  flags;
 } __packed;
 
+struct asm_session_mtmx_strtr_param_ttp_offset_t {
+	uint32_t                  ttp_offset_lsw;
+	/* Lower 32 bits of the ttp_offset in microseconds. */
+
+	uint32_t                  ttp_offset_msw;
+	/* Upper 32 bits of the ttp_offset in microseconds.
+	 *
+	 * Internal default value is 0 for both values. The 64-bit number
+	 * formed by ttp_offset_lsw and ttp_offset_lsw is treated as unsigned.
+	 * In case of local DSP loopback when using start flag
+	 * ASM_SESSION_CMD_RUN_START_TIME_RUN_WITH_TTP the max. ttp_offset
+	 * value is limited by internal buffer constraints. Currently the
+	 * limit is 200ms.
+
+	 * This parameter can be set before or while an ASM stream is running,
+	 * allowing “at-run-time” changes of the overall latency.
+	 */
+
+} __packed;
+
 /* Parameter used by #ASM_SESSION_MTMX_STRTR_MODULE_ID_AVSYNC which allows the
  * audio client to specify the clock recovery mechanism that the audio DSP
  * should use.
@@ -13296,6 +13458,7 @@ union asm_session_mtmx_strtr_param_config {
 	struct asm_session_mtmx_strtr_param_render_mode_t render_param;
 	struct asm_session_mtmx_strtr_param_clk_rec_t clk_rec_param;
 	struct asm_session_mtmx_param_adjust_session_time_ctl_t adj_time_param;
+	struct asm_session_mtmx_strtr_param_ttp_offset_t ttp_offset;
 } __packed;
 
 struct asm_mtmx_strtr_params {
