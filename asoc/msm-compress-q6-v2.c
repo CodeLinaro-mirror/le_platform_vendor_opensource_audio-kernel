@@ -50,6 +50,8 @@
 #define AAC_OUTPUT_FRAME_SZ		1024
 #define AC3_OUTPUT_FRAME_SZ		1536
 #define EAC3_OUTPUT_FRAME_SZ		1536
+#define MAT_OUTPUT_FRAME_SZ		512
+#define THD_OUTPUT_FRAME_SZ		512
 #define DSP_NUM_OUTPUT_FRAME_BUFFERED	2
 #define FLAC_BLK_SIZE_LIMIT		65535
 
@@ -60,6 +62,7 @@
 /* decoder parameter length */
 #define DDP_DEC_MAX_NUM_PARAM		18
 
+#define THD_DEC_MAX_NUM_PARAMS		8
 /* Default values used if user space does not set */
 #define COMPR_PLAYBACK_MIN_FRAGMENT_SIZE (8 * 1024)
 #define COMPR_PLAYBACK_MAX_FRAGMENT_SIZE (128 * 1024)
@@ -76,6 +79,7 @@ static const DECLARE_TLV_DB_LINEAR(msm_compr_vol_gain, 0,
 #define STREAM_ARRAY_INDEX(stream_id) (stream_id - 1)
 
 #define MAX_NUMBER_OF_STREAMS 2
+#define NUM_PRE_BUFFERS 2
 
 #ifndef COMPRESSED_PERF_MODE_FLAG
 #define COMPRESSED_PERF_MODE_FLAG 0
@@ -166,6 +170,9 @@ struct msm_compr_audio {
 	uint32_t start_delay_lsw;
 	uint32_t start_delay_msw;
 
+	int32_t shm_ion_fd;
+	void *mem_hdl_shmfd;
+
 	uint64_t marker_timestamp;
 
 	struct msm_compr_gapless_state gapless_state;
@@ -177,6 +184,7 @@ struct msm_compr_audio {
 	atomic_t partial_drain;
 #endif
 	atomic_t xrun;
+	atomic_t fill_pre_buffer;
 	atomic_t close;
 	atomic_t wait_on_close;
 	atomic_t error;
@@ -185,6 +193,8 @@ struct msm_compr_audio {
 	wait_queue_head_t drain_wait;
 	wait_queue_head_t close_wait;
 	wait_queue_head_t wait_for_stream_avail;
+
+	bool enable_pre_buffering;
 
 	spinlock_t lock;
 };
@@ -213,6 +223,7 @@ struct msm_compr_audio_effects {
 
 struct msm_compr_dec_params {
 	struct snd_dec_ddp ddp_params;
+	struct snd_dec_thd truehd;
 };
 
 struct msm_compr_ch_map {
@@ -225,25 +236,39 @@ static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 				     int stream_id);
 
 static int msm_compr_set_render_mode(struct msm_compr_audio *prtd,
-				     uint32_t render_mode) {
+				     uint32_t render_mode, int dir) {
 	int ret = -EINVAL;
 	struct audio_client *ac = prtd->audio_client;
 
 	pr_debug("%s, got render mode %u\n", __func__, render_mode);
 
-	if (render_mode == SNDRV_COMPRESS_RENDER_MODE_AUDIO_MASTER) {
+	switch (render_mode) {
+	case SNDRV_COMPRESS_RENDER_MODE_AUDIO_MASTER:
 		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_DEFAULT;
-	} else if (render_mode == SNDRV_COMPRESS_RENDER_MODE_STC_MASTER) {
+		break;
+	case SNDRV_COMPRESS_RENDER_MODE_STC_MASTER:
 		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_LOCAL_STC;
 		prtd->run_mode = ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_DELAY;
-	} else {
+		break;
+	case SNDRV_COMPRESS_RENDER_MODE_TTP:
+		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_LOCAL_STC;
+		prtd->run_mode = ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP;
+		if (prtd->audio_client->perf_mode == LOW_LATENCY_PCM_MODE)
+			prtd->enable_pre_buffering = true;
+		break;
+	case SNDRV_COMPRESS_RENDER_MODE_TTP_PASS_THROUGH:
+		render_mode = ASM_SESSION_MTMX_STRTR_PARAM_RENDER_LOCAL_STC;
+		prtd->run_mode =
+			ASM_SESSION_CMD_RUN_STARTIME_RUN_WITH_TTP_PASS_THROUGH;
+		break;
+	default:
 		pr_err("%s, Invalid render mode %u\n", __func__,
 			render_mode);
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	ret = q6asm_send_mtmx_strtr_render_mode(ac, render_mode);
+	ret = q6asm_send_mtmx_strtr_render_mode(ac, render_mode, dir);
 	if (ret) {
 		pr_err("%s, Render mode can't be set error %d\n", __func__,
 			ret);
@@ -314,6 +339,29 @@ static int msm_compr_set_render_window(struct audio_client *ac,
 	}
 
 exit:
+	return ret;
+}
+
+static int msm_compr_set_ttp_offset(struct audio_client *ac,
+		uint32_t offset_lsw, uint32_t offset_msw, int dir)
+{
+	int ret = -EINVAL;
+	struct asm_session_mtmx_strtr_param_ttp_offset_t ttp_offset;
+	uint32_t param_id;
+
+	pr_debug("%s, ttp offset lsw 0x%x  ttp offset msw 0x%x\n",
+		 __func__, offset_lsw, offset_msw);
+
+	memset(&ttp_offset, 0,
+	       sizeof(struct asm_session_mtmx_strtr_param_ttp_offset_t));
+	ttp_offset.ttp_offset_lsw = offset_lsw;
+	ttp_offset.ttp_offset_msw = offset_msw;
+	param_id = ASM_SESSION_MTMX_STRTR_PARAM_TTP_OFFSET;
+	ret = q6asm_send_mtmx_strtr_ttp_offset(ac, &ttp_offset, param_id, dir);
+	if (ret)
+		pr_err("%s, ttp offset can't be set error %d\n", __func__,
+			ret);
+
 	return ret;
 }
 
@@ -447,32 +495,32 @@ static int msm_compr_send_ddp_cfg(struct audio_client *ac,
 	return 0;
 }
 
-static int msm_compr_send_buffer(struct msm_compr_audio *prtd)
+static int msm_compr_send_thd_cfg(struct audio_client *ac,
+				  struct snd_dec_thd *truehd,
+				  int stream_id)
+{
+	int i, rc;
+
+	pr_debug("%s\n", __func__);
+	for (i = 0; i < truehd->params_length; i++) {
+		rc = q6asm_thd_stream_endp_params(ac, truehd->params_id[i],
+						      truehd->params_value[i],
+						      stream_id);
+		if (rc) {
+			pr_err("sending params_id: %d failed\n",
+				truehd->params_id[i]);
+			return rc;
+		}
+	}
+	return 0;
+}
+
+static void msm_compr_send_buffer_v2(struct msm_compr_audio *prtd)
 {
 	int buffer_length;
 	uint64_t bytes_available;
 	struct audio_aio_write_param param;
 	struct snd_codec_metadata *buff_addr;
-
-	if (!atomic_read(&prtd->start)) {
-		pr_err("%s: stream is not in started state\n", __func__);
-		return -EINVAL;
-	}
-
-
-	if (atomic_read(&prtd->xrun)) {
-		WARN(1, "%s called while xrun is true", __func__);
-		return -EPERM;
-	}
-
-	pr_debug("%s: bytes_received = %llu copied_total = %llu\n",
-		__func__, prtd->bytes_received, prtd->copied_total);
-	if (prtd->first_buffer &&  prtd->gapless_state.use_dsp_gapless_mode &&
-		prtd->compr_passthr == LEGACY_PCM)
-		q6asm_stream_send_meta_data(prtd->audio_client,
-				prtd->audio_client->stream_id,
-				prtd->gapless_state.initial_samples_drop,
-				prtd->gapless_state.trailing_samples_drop);
 
 	buffer_length = prtd->codec_param.buffer.fragment_size;
 	bytes_available = prtd->bytes_received - prtd->copied_total;
@@ -501,7 +549,10 @@ static int msm_compr_send_buffer(struct msm_compr_audio *prtd)
 			((buff_addr->timestamp & 0xFFFFFFFF00000000LL) >> 32);
 		param.lsw_ts = (uint32_t) (buff_addr->timestamp & 0xFFFFFFFFLL);
 		param.paddr += prtd->ts_header_offset;
-		param.flags = SET_TIMESTAMP;
+		if (buff_addr->flags == SNDRV_COMPRESS_TIMESTAMP_CONTINUE) //To Check usage
+			param.flags = SET_CONTINUE_FLAG;
+		else
+			param.flags = SET_TIMESTAMP;
 		param.metadata_len = prtd->ts_header_offset;
 	} else {
 		param.msw_ts = 0;
@@ -512,14 +563,63 @@ static int msm_compr_send_buffer(struct msm_compr_audio *prtd)
 	param.uid	= buffer_length;
 	param.last_buffer = prtd->last_buffer;
 
-	pr_debug("%s: sending %d bytes to DSP byte_offset = %d\n",
-		__func__, param.len, prtd->byte_offset);
+	pr_debug("%s: sending %d bytes to DSP byte_offset = %d flags 0x%x\n",
+		__func__, param.len, prtd->byte_offset, param.flags);
 	if (q6asm_async_write(prtd->audio_client, &param) < 0) {
 		pr_err("%s:q6asm_async_write failed\n", __func__);
 	} else {
 		prtd->bytes_sent += buffer_length;
 		if (prtd->first_buffer)
 			prtd->first_buffer = 0;
+	}
+}
+
+static int msm_compr_send_buffer(struct msm_compr_audio *prtd)
+{
+	uint32_t buffers_available = 0, i = 0;
+	uint64_t bytes_available = 0;
+
+	if (!atomic_read(&prtd->start)) {
+		pr_err("%s: stream is not in started state\n", __func__);
+		return -EINVAL;
+	}
+
+	if (atomic_read(&prtd->xrun)) {
+		WARN(1, "%s called while xrun is true", __func__);
+		return -EPERM;
+	}
+
+	pr_debug("%s: bytes_received = %llu copied_total = %llu\n",
+		__func__, prtd->bytes_received, prtd->copied_total);
+	if (prtd->first_buffer &&  prtd->gapless_state.use_dsp_gapless_mode &&
+		prtd->compr_passthr == LEGACY_PCM)
+		q6asm_stream_send_meta_data(prtd->audio_client,
+				prtd->audio_client->stream_id,
+				prtd->gapless_state.initial_samples_drop,
+				prtd->gapless_state.trailing_samples_drop);
+
+	bytes_available = prtd->bytes_received - prtd->copied_total;
+	buffers_available = (uint32_t)div_u64(bytes_available,
+				prtd->codec_param.buffer.fragment_size);
+
+	pr_debug("%s: bytes_available = %llu available_buffers = %d\n",
+		  __func__, bytes_available, buffers_available);
+	if ((prtd->enable_pre_buffering == true) && (prtd->first_buffer)) {
+		if (buffers_available < NUM_PRE_BUFFERS) {
+			pr_err("%s: pre_buffers are not filled\n", __func__);
+			atomic_set(&prtd->fill_pre_buffer, 1);
+			return 0;
+		}
+
+		for (i = 0; i < NUM_PRE_BUFFERS; i++) {
+			if (i > 0)
+				prtd->byte_offset +=
+					prtd->codec_param.buffer.fragment_size;
+
+			msm_compr_send_buffer_v2(prtd);
+		}
+	} else {
+		msm_compr_send_buffer_v2(prtd);
 	}
 
 	return 0;
@@ -581,7 +681,7 @@ static void compr_event_handler(uint32_t opcode,
 	struct audio_client *ac;
 	uint32_t chan_mode = 0;
 	uint32_t sample_rate = 0;
-	uint64_t bytes_available = 0;
+	uint64_t bytes_available, buffer_bytes_available;
 	int stream_id;
 	uint32_t stream_index;
 	unsigned long flags;
@@ -589,6 +689,7 @@ static void compr_event_handler(uint32_t opcode,
 	uint32_t *buff_addr;
 	struct snd_soc_pcm_runtime *rtd;
 	int ret = 0;
+	uint32_t num_buffers_available = 0;
 
 	if (!prtd) {
 		pr_err("%s: prtd is NULL\n", __func__);
@@ -629,14 +730,17 @@ static void compr_event_handler(uint32_t opcode,
 				wake_up(&prtd->drain_wait);
 #endif
 				prtd->last_buffer = 0;
-			} else {
-				atomic_set(&prtd->start, 0);
 			}
 		} else {
 			pr_debug("ASM_DATA_EVENT_WRITE_DONE_V2 offset %d, length %d\n",
 				 prtd->byte_offset, token);
 		}
 
+		buffer_bytes_available =
+			prtd->bytes_received - prtd->copied_total;
+		num_buffers_available =
+			(uint32_t)div_u64(buffer_bytes_available,
+			prtd->codec_param.buffer.fragment_size);
 		/*
 		 * Token for WRITE command represents the amount of data
 		 * written to ADSP in the last write, update offset and
@@ -780,6 +884,11 @@ static void compr_event_handler(uint32_t opcode,
 		if (bytes_available < cstream->runtime->fragment_size) {
 			pr_debug("WRITE_DONE Insufficient data to send. break out\n");
 			atomic_set(&prtd->xrun, 1);
+			if (prtd->enable_pre_buffering == true) {
+				prtd->first_buffer = 1;
+				prtd->byte_offset = 0;
+				prtd->app_pointer = 0;
+			}
 
 			if (prtd->last_buffer)
 				prtd->last_buffer = 0;
@@ -795,6 +904,14 @@ static void compr_event_handler(uint32_t opcode,
 			prtd->last_buffer = 1;
 			msm_compr_send_buffer(prtd);
 			prtd->last_buffer = 0;
+		} else if ((prtd->enable_pre_buffering == true) &&
+			   (num_buffers_available <= NUM_PRE_BUFFERS)) {
+			/**
+			 * Avoid sending older data if buffers available
+			 * is same as number of fragments
+			 */
+			pr_debug("avoid sending old data, send updated data from copy call\n");
+			atomic_set(&prtd->fill_pre_buffer, 1);
 		} else
 			msm_compr_send_buffer(prtd);
 
@@ -955,10 +1072,25 @@ static void compr_event_handler(uint32_t opcode,
 			if (!prtd->bytes_sent) {
 				bytes_available = prtd->bytes_received -
 						  prtd->copied_total;
+				num_buffers_available =
+					(uint32_t)div_u64(bytes_available,
+					prtd->codec_param.buffer.fragment_size);
 				if (bytes_available <
 				    cstream->runtime->fragment_size) {
 					pr_debug("CMD_RUN_V2 Insufficient data to send. break out\n");
 					atomic_set(&prtd->xrun, 1);
+				} else if ((prtd->enable_pre_buffering == true)
+					&& (num_buffers_available <
+					NUM_PRE_BUFFERS)) {
+					/**
+					 * Make sure pre buffers are filled.
+					 * Once the prebuffers are filled,
+					 * buffers are transferred to DSP
+					 * from copy call.
+					 */
+					pr_debug("CMD_RUN_V2 buffers available %d pre buffers not filled, break out\n",
+						  num_buffers_available);
+					atomic_set(&prtd->fill_pre_buffer, 1);
 				} else {
 					msm_compr_send_buffer(prtd);
 				}
@@ -1103,17 +1235,26 @@ static void populate_codec_list(struct msm_compr_audio *prtd)
 			COMPR_PLAYBACK_MIN_NUM_FRAGMENTS;
 	prtd->compr_cap.max_fragments =
 			COMPR_PLAYBACK_MAX_NUM_FRAGMENTS;
-	prtd->compr_cap.num_codecs = 10;
+	prtd->compr_cap.num_codecs = 19;
 	prtd->compr_cap.codecs[0] = SND_AUDIOCODEC_MP3;
 	prtd->compr_cap.codecs[1] = SND_AUDIOCODEC_AAC;
 	prtd->compr_cap.codecs[2] = SND_AUDIOCODEC_AC3;
 	prtd->compr_cap.codecs[3] = SND_AUDIOCODEC_EAC3;
 	prtd->compr_cap.codecs[4] = SND_AUDIOCODEC_MP2;
 	prtd->compr_cap.codecs[5] = SND_AUDIOCODEC_PCM;
-	prtd->compr_cap.codecs[6] = SND_AUDIOCODEC_DTS;
-	prtd->compr_cap.codecs[7] = SND_AUDIOCODEC_TRUEHD;
-	prtd->compr_cap.codecs[8] = SND_AUDIOCODEC_IEC61937;
-	prtd->compr_cap.codecs[9] = SND_AUDIOCODEC_BESPOKE;
+	prtd->compr_cap.codecs[6] = SND_AUDIOCODEC_WMA;
+	prtd->compr_cap.codecs[7] = SND_AUDIOCODEC_WMA_PRO;
+	prtd->compr_cap.codecs[8] = SND_AUDIOCODEC_FLAC;
+	prtd->compr_cap.codecs[9] = SND_AUDIOCODEC_VORBIS;
+	prtd->compr_cap.codecs[10] = SND_AUDIOCODEC_ALAC;
+	prtd->compr_cap.codecs[11] = SND_AUDIOCODEC_APE;
+	prtd->compr_cap.codecs[12] = SND_AUDIOCODEC_DTS;
+	prtd->compr_cap.codecs[13] = SND_AUDIOCODEC_DSD;
+	prtd->compr_cap.codecs[14] = SND_AUDIOCODEC_APTX;
+	prtd->compr_cap.codecs[15] = SND_AUDIOCODEC_TRUEHD;
+	prtd->compr_cap.codecs[16] = SND_AUDIOCODEC_IEC61937;
+	prtd->compr_cap.codecs[17] = SND_AUDIOCODEC_MAT;
+	prtd->compr_cap.codecs[18] = SND_AUDIOCODEC_BESPOKE;
 }
 
 static int msm_compr_get_decoder_format(struct msm_compr_audio *prtd,
@@ -1237,6 +1378,12 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 			bit_width = 16;
 			sample_word_size = 16;
 			break;
+		}
+
+		/* overwrite the values in gapless*/
+		if (use_gapless_codec_options && (codec_options != NULL)) {
+			prtd->num_channels = codec_options->pcm_dec.num_channels;
+			chmap = codec_options->pcm_dec.ch_map;
 		}
 
 		if (q6core_get_avcs_api_version_per_service(
@@ -1521,6 +1668,10 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 			pr_err("%s: CMD AMRWBPLUS Format block failed ret %d\n",
 				__func__, ret);
 		break;
+	case FORMAT_MAT:
+		pr_debug("SND_AUDIOCODEC_MAT\n");
+		/* no media format block needed */
+		break;
 	default:
 		pr_debug("%s, unsupported format, skip", __func__);
 		break;
@@ -1558,7 +1709,8 @@ static int msm_compr_configure_dsp_for_playback
 	struct msm_compr_audio *prtd = runtime->private_data;
 	struct snd_soc_pcm_runtime *soc_prtd = cstream->private_data;
 	uint16_t bits_per_sample = 16;
-	int dir = IN, ret = 0;
+	int dir = IN, ret = 0, port_id, copp_idx;
+	bool tmp = false;
 	struct audio_client *ac = prtd->audio_client;
 	uint32_t stream_index;
 	struct asm_softpause_params softpause = {
@@ -1725,6 +1877,11 @@ static int msm_compr_configure_dsp_for_playback
 	if (ret < 0)
 		pr_err("%s, failed to send media format block\n", __func__);
 
+	tmp = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
+				SESSION_TYPE_RX, &port_id, &copp_idx);
+	if (tmp)
+		q6adm_update_rtd_info(soc_prtd, port_id, copp_idx,
+					soc_prtd->dai_link->id, 1);
 	return ret;
 }
 
@@ -1965,6 +2122,7 @@ static int msm_compr_playback_open(struct snd_compr_stream *cstream)
 	prtd->first_buffer = 1;
 	prtd->partial_drain_delay = 0;
 	prtd->next_stream = 0;
+	prtd->enable_pre_buffering = false;
 	memset(&prtd->gapless_state, 0, sizeof(struct msm_compr_gapless_state));
 	/*
 	 * Update the use_dsp_gapless_mode from gapless struture with the value
@@ -1986,6 +2144,7 @@ static int msm_compr_playback_open(struct snd_compr_stream *cstream)
 	atomic_set(&prtd->close, 0);
 	atomic_set(&prtd->wait_on_close, 0);
 	atomic_set(&prtd->error, 0);
+	atomic_set(&prtd->fill_pre_buffer, 0);
 
 	init_waitqueue_head(&prtd->eos_wait);
 	init_waitqueue_head(&prtd->drain_wait);
@@ -2011,6 +2170,7 @@ static int msm_compr_playback_open(struct snd_compr_stream *cstream)
 	prtd->audio_client->perf_mode = false;
 	prtd->session_id = prtd->audio_client->session;
 	msm_adsp_init_mixer_ctl_pp_event_queue(rtd);
+	msm_adsp_init_mixer_ctl_adm_pp_event_queue(rtd);
 	pdata->is_in_use[rtd->dai_link->id] = true;
 	return 0;
 }
@@ -2115,9 +2275,13 @@ static int msm_compr_playback_free(struct snd_compr_stream *cstream)
 	struct snd_soc_component *component = NULL;
 	struct msm_compr_pdata *pdata;
 	struct audio_client *ac;
-	int dir = IN, ret = 0, stream_id;
+	int dir = IN, ret = 0, stream_id, sec_key = 0, port_id = 0;
+	int copp_idx = 0;
+	bool tmp = false;
 	unsigned long flags;
 	uint32_t stream_index;
+	dma_addr_t paddr;
+	size_t pa_len = 0;
 
 	pr_debug("%s\n", __func__);
 
@@ -2172,6 +2336,12 @@ static int msm_compr_playback_free(struct snd_compr_stream *cstream)
 	spin_lock_irqsave(&prtd->lock, flags);
 	stream_id = ac->stream_id;
 	stream_index = STREAM_ARRAY_INDEX(NEXT_STREAM_ID(stream_id));
+	tmp = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
+				SESSION_TYPE_RX, &port_id, &copp_idx);
+	if (tmp)
+		q6adm_update_rtd_info(soc_prtd, port_id, copp_idx,
+				soc_prtd->dai_link->id, 0);
+
 
 	if ((stream_index < MAX_NUMBER_OF_STREAMS) &&
 	    (prtd->gapless_state.stream_opened[stream_index])) {
@@ -2201,9 +2371,29 @@ static int msm_compr_playback_free(struct snd_compr_stream *cstream)
 	}
 
 	q6asm_audio_client_buf_free_contiguous(dir, ac);
+	if (prtd->shm_ion_fd > 0) {
+		ret = msm_audio_is_hypervisor_supported();
+
+		if (!ret) {
+			ret = q6core_get_unlock_key(DOLBY_ASM_SHM_SUB_SYSTEM,
+				       &sec_key, &paddr, &pa_len);
+			if (ret) {
+				pr_err("%s Failed to get the key\n", __func__);
+				goto shm_ion_free_done;
+			}
+		}
+
+		ret = msm_audio_ion_phys_free(prtd->mem_hdl_shmfd, &paddr,
+						&pa_len, ADSP_TO_HLOS,
+					DOLBY_ASM_SHM_SUB_SYSTEM, sec_key);
+		prtd->shm_ion_fd = 0;
+	}
+
+shm_ion_free_done:
 
 	q6asm_audio_client_free(ac);
 	msm_adsp_clean_mixer_ctl_pp_event_queue(soc_prtd);
+	msm_adsp_clean_mixer_ctl_adm_pp_event_queue(soc_prtd);
 	if (pdata->audio_effects[soc_prtd->dai_link->id] != NULL) {
 		kfree(pdata->audio_effects[soc_prtd->dai_link->id]);
 		pdata->audio_effects[soc_prtd->dai_link->id] = NULL;
@@ -2422,6 +2612,7 @@ static int msm_compr_set_params(struct snd_soc_component *component,
 	case SND_AUDIOCODEC_TRUEHD: {
 		pr_debug("%s: SND_AUDIOCODEC_TRUEHD\n", __func__);
 		prtd->codec = FORMAT_TRUEHD;
+		frame_sz = THD_OUTPUT_FRAME_SZ;
 		break;
 	}
 
@@ -2456,6 +2647,13 @@ static int msm_compr_set_params(struct snd_soc_component *component,
 	case SND_AUDIOCODEC_AMRWBPLUS: {
 		pr_debug("%s:SND_AUDIOCODEC_AMRWBPLUS\n", __func__);
 		prtd->codec = FORMAT_AMR_WB_PLUS;
+		break;
+	}
+
+	case SND_AUDIOCODEC_MAT: {
+		pr_debug("%s: SND_AUDIOCODEC_MAT\n", __func__);
+		prtd->codec = FORMAT_MAT;
+		frame_sz = MAT_OUTPUT_FRAME_SZ;
 		break;
 	}
 
@@ -2688,6 +2886,7 @@ static int msm_compr_trigger(struct snd_soc_component *component,
 		prtd->marker_timestamp = 0;
 
 		atomic_set(&prtd->xrun, 0);
+		atomic_set(&prtd->fill_pre_buffer, 0);
 		spin_unlock_irqrestore(&prtd->lock, flags);
 		break;
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
@@ -3026,7 +3225,8 @@ static int msm_compr_trigger(struct snd_soc_component *component,
 			break;
 		}
 
-		if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE)
+		if ((prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE) ||
+			(prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_3LE))
 			bits_per_sample = 24;
 		else if (prtd->codec_param.codec.format ==
 			 SNDRV_PCM_FORMAT_S32_LE)
@@ -3218,11 +3418,14 @@ static int msm_compr_playback_copy(struct snd_compr_stream *cstream,
 	struct snd_compr_runtime *runtime = cstream->runtime;
 	struct msm_compr_audio *prtd = runtime->private_data;
 	void *dstn;
-	size_t copy;
+	size_t copy = 0;
 	uint64_t bytes_available = 0;
 	unsigned long flags;
+	uint32_t num_buffers_available = 0;
+	bool count_check;
 
-	pr_debug("%s: count = %zd\n", __func__, count);
+	pr_debug("%s: count = %zd, app pointer = %d\n", __func__, count,
+		  prtd->app_pointer);
 	if (!prtd->buffer) {
 		pr_err("%s: Buffer is not allocated yet ??", __func__);
 		return 0;
@@ -3234,20 +3437,23 @@ static int msm_compr_playback_copy(struct snd_compr_stream *cstream,
 		spin_unlock_irqrestore(&prtd->lock, flags);
 		return -ENETRESET;
 	}
-	spin_unlock_irqrestore(&prtd->lock, flags);
-
 	dstn = prtd->buffer + prtd->app_pointer;
 	if (count < prtd->buffer_size - prtd->app_pointer) {
-		if (copy_from_user(dstn, buf, count))
-			return -EFAULT;
-		prtd->app_pointer += count;
+		count_check = true;
 	} else {
 		copy = prtd->buffer_size - prtd->app_pointer;
+		count_check = false;
+	}
+	spin_unlock_irqrestore(&prtd->lock, flags);
+
+	if (count_check) {
+		if (copy_from_user(dstn, buf, count))
+			return -EFAULT;
+	} else {
 		if (copy_from_user(dstn, buf, copy))
 			return -EFAULT;
 		if (copy_from_user(prtd->buffer, buf + copy, count - copy))
 			return -EFAULT;
-		prtd->app_pointer = count - copy;
 	}
 
 	/*
@@ -3256,9 +3462,34 @@ static int msm_compr_playback_copy(struct snd_compr_stream *cstream,
 	 * right away.
 	 */
 	spin_lock_irqsave(&prtd->lock, flags);
+
+	if (count < prtd->buffer_size - prtd->app_pointer) {
+		prtd->app_pointer += count;
+	} else {
+		prtd->app_pointer = count - copy;
+	}
 	prtd->bytes_received += count;
 	if (atomic_read(&prtd->start)) {
-		if (atomic_read(&prtd->xrun)) {
+		if (prtd->enable_pre_buffering == true) {
+			if ((atomic_read(&prtd->xrun)) ||
+			    (atomic_read(&prtd->fill_pre_buffer))) {
+				pr_debug("%s: in %s, count = %zd\n",
+					  __func__, (atomic_read(&prtd->xrun))
+					 ? "xrun" : "fill pre buffers", count);
+				bytes_available = prtd->bytes_received -
+						  prtd->copied_total;
+				num_buffers_available =
+					(uint32_t)div_u64(bytes_available,
+					prtd->codec_param.buffer.fragment_size);
+				if (num_buffers_available >= NUM_PRE_BUFFERS) {
+					pr_debug("%s: bytes_to_write = %llu\n",
+						 __func__, bytes_available);
+					atomic_set(&prtd->xrun, 0);
+					atomic_set(&prtd->fill_pre_buffer, 0);
+					msm_compr_send_buffer(prtd);
+				} /* else not sufficient data */
+			}
+		} else if (atomic_read(&prtd->xrun)) {
 			pr_debug("%s: in xrun, count = %zd\n", __func__, count);
 			bytes_available = prtd->bytes_received -
 					  prtd->copied_total;
@@ -3395,6 +3626,8 @@ static int msm_compr_get_codec_caps(struct snd_soc_component *component,
 	case SND_AUDIOCODEC_TRUEHD:
 	case SND_AUDIOCODEC_IEC61937:
 	case SND_AUDIOCODEC_BESPOKE:
+	case SND_AUDIOCODEC_APTX:
+	case SND_AUDIOCODEC_MAT:
 		break;
 	default:
 		pr_err("%s: Unsupported audio codec %d\n",
@@ -3440,7 +3673,8 @@ static int msm_compr_set_metadata(struct snd_soc_component *component,
 			 __func__, metadata->value[0]);
 		prtd->gapless_state.initial_samples_drop = metadata->value[0];
 	} else if (metadata->key == SNDRV_COMPRESS_RENDER_MODE) {
-		return msm_compr_set_render_mode(prtd, metadata->value[0]);
+		return msm_compr_set_render_mode(prtd, metadata->value[0],
+				cstream->direction);
 	} else if (metadata->key == SNDRV_COMPRESS_CLK_REC_MODE) {
 		return msm_compr_set_clk_rec_mode(ac, metadata->value[0]);
 	} else if (metadata->key == SNDRV_COMPRESS_RENDER_WINDOW) {
@@ -3461,6 +3695,9 @@ static int msm_compr_set_metadata(struct snd_soc_component *component,
 		return msm_compr_adjust_session_clock(ac,
 				metadata->value[0],
 				metadata->value[1]);
+	} else if (metadata->key == SNDRV_COMPRESS_IN_TTP_OFFSET) {
+		return msm_compr_set_ttp_offset(ac, metadata->value[0],
+				metadata->value[1], cstream->direction);
 	}
 
 	return 0;
@@ -3574,6 +3811,7 @@ static int msm_compr_set_next_track_param(struct snd_compr_stream *cstream,
 	case FORMAT_AMRNB:
 	case FORMAT_AMRWB:
 	case FORMAT_AMR_WB_PLUS:
+	case FORMAT_LINEAR_PCM:
 		memcpy(&(prtd->gapless_state.codec_options),
 			codec_options,
 			sizeof(union snd_codec_options));
@@ -3891,6 +4129,7 @@ static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 	int rc = 0;
 	struct msm_compr_audio *prtd = NULL;
 	struct snd_dec_ddp *ddp = &dec_params->ddp_params;
+	struct snd_dec_thd *truehd = &dec_params->truehd;
 
 	if (!cstream || !dec_params) {
 		pr_err("%s: stream or dec_params inactive\n", __func__);
@@ -3906,11 +4145,17 @@ static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 	switch (prtd->codec) {
 	case FORMAT_MP3:
 	case FORMAT_MPEG4_AAC:
-	case FORMAT_TRUEHD:
 	case FORMAT_IEC61937:
 	case FORMAT_APTX:
 		pr_debug("%s: no runtime parameters for codec: %d\n", __func__,
 			 prtd->codec);
+		break;
+	case FORMAT_MAT:
+	case FORMAT_TRUEHD:
+		rc = msm_compr_send_thd_cfg(prtd->audio_client, truehd, stream_id);
+		if (rc < 0) {
+			pr_err("%s: Dolby TrueHD CMD CFG failed %d\n", __func__, rc);
+		}
 		break;
 	case FORMAT_AC3:
 	case FORMAT_EAC3:
@@ -3973,7 +4218,6 @@ static int msm_compr_dec_params_put(struct snd_kcontrol *kcontrol,
 	case FORMAT_APE:
 	case FORMAT_DTS:
 	case FORMAT_DSD:
-	case FORMAT_TRUEHD:
 	case FORMAT_IEC61937:
 	case FORMAT_APTX:
 	case FORMAT_AMRNB:
@@ -4005,6 +4249,37 @@ static int msm_compr_dec_params_put(struct snd_kcontrol *kcontrol,
 			ddp->params_value[cnt] = *values++;
 		}
 		prtd = cstream->runtime->private_data;
+		if (prtd && prtd->audio_client)
+			rc = msm_compr_send_dec_params(cstream, dec_params,
+						prtd->audio_client->stream_id);
+		break;
+	}
+	case FORMAT_MAT:
+	case FORMAT_TRUEHD: {
+		struct snd_dec_thd *truehd = &dec_params->truehd;
+		int cnt;
+
+		if (prtd->compr_passthr != LEGACY_PCM) {
+			pr_err("%s: No THD param for compr_type[%d]\n",
+				__func__, prtd->compr_passthr);
+			break;
+		}
+
+		truehd->params_length = (*values++);
+
+		if (truehd->params_length > THD_DEC_MAX_NUM_PARAMS) {
+			pr_err("%s: invalid num of params:: %d\n", __func__,
+				truehd->params_length);
+			rc = -EINVAL;
+			goto end;
+		}
+
+		for (cnt = 0; cnt < truehd->params_length; cnt++) {
+			truehd->params_id[cnt] = *values++;
+			truehd->params_value[cnt] = *values++;
+		}
+		prtd = cstream->runtime->private_data;
+
 		if (prtd && prtd->audio_client)
 			rc = msm_compr_send_dec_params(cstream, dec_params,
 						prtd->audio_client->stream_id);
@@ -4264,7 +4539,7 @@ done:
 	return ret;
 }
 
-static int msm_compr_ion_fd_map_put(struct snd_kcontrol *kcontrol,
+static int msm_compr_shm_ion_fd_map_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *comp = snd_kcontrol_chip(kcontrol);
@@ -4273,7 +4548,6 @@ static int msm_compr_ion_fd_map_put(struct snd_kcontrol *kcontrol,
 				snd_soc_component_get_drvdata(comp);
 	struct snd_compr_stream *cstream = NULL;
 	struct msm_compr_audio *prtd;
-	int fd;
 	int ret = 0;
 
 	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
@@ -4301,10 +4575,12 @@ static int msm_compr_ion_fd_map_put(struct snd_kcontrol *kcontrol,
 		goto done;
 	}
 
-	memcpy(&fd, ucontrol->value.bytes.data, sizeof(fd));
-	ret = q6asm_send_ion_fd(prtd->audio_client, fd);
+	memcpy(&prtd->shm_ion_fd, ucontrol->value.bytes.data,
+		sizeof(prtd->shm_ion_fd));
+	ret = q6asm_audio_map_shm_fd(prtd->audio_client,
+			&prtd->mem_hdl_shmfd, prtd->shm_ion_fd);
 	if (ret < 0)
-		pr_err("%s: failed to register ion fd\n", __func__);
+		pr_err("%s: failed to map shm ion fd\n", __func__);
 done:
 	mutex_unlock(&pdata->lock);
 	return ret;
@@ -4997,7 +5273,7 @@ static int msm_compr_add_io_fd_cmd_control(struct snd_soc_pcm_runtime *rtd)
 		.name = "?",
 		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
 		.info = msm_adsp_stream_cmd_info,
-		.put = msm_compr_ion_fd_map_put,
+		.put = msm_compr_shm_ion_fd_map_put,
 		.private_value = 0,
 		}
 	};
@@ -5187,7 +5463,7 @@ static int msm_compr_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 		if (prtd && prtd->audio_client) {
 			stream_id = prtd->audio_client->session;
 			be_id = chmixer_pspd->port_idx;
-			msm_pcm_routing_set_channel_mixer_runtime(be_id,
+			msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 					stream_id, session_type, chmixer_pspd);
 		}
 	}

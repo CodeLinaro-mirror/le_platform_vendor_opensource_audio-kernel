@@ -109,8 +109,10 @@
 
 #define AUDIO_PM_AWAKE      _IOW(AUDIO_IOCTL_MAGIC, 105, unsigned int)
 #define AUDIO_PM_RELAX      _IOW(AUDIO_IOCTL_MAGIC, 106, unsigned int)
+#define AUDIO_SET_EFFECTS_CONFIG_V2   _IOW(AUDIO_IOCTL_MAGIC, 107, \
+				struct msm_hwacc_effects_config)
 
-#define	AUDIO_MAX_COMMON_IOCTL_NUM	107
+#define	AUDIO_MAX_COMMON_IOCTL_NUM	108
 
 
 #define HANDSET_MIC			0x01
@@ -463,11 +465,35 @@ struct msm_hwacc_effects_config {
 #define ADSP_STREAM_ENCDEC_EVENT			1
 #define ADSP_STREAM_IEC_61937_FMT_UPDATE_EVENT		2
 #define ADSP_STREAM_EVENT_MAX				3
+#define ADSP_ADM_SERVICE_ID				3
 
 struct msm_adsp_event_data {
 	__u32 event_type;
 	__u32 payload_len;
 	__u8 payload[0];
+};
+
+struct module_info {
+	__u32 module_id;
+	__u32 instance_id;
+	__u32 be_id;
+	__u32 fe_id;
+};
+
+struct msm_adm_event_data {
+	__u32 event_type;
+	__u32 payload_length;
+	struct module_info mod_info;
+	__u8 payload[0];
+};
+
+struct msm_adm_ack {
+	__u32 param_size;
+	__u32 token;
+	__u32 status;
+	__u32 module_id;
+	__u32 instance_id;
+	__u32 adm_token;
 };
 
 #endif
