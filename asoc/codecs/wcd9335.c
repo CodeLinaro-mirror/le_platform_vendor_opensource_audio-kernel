@@ -13817,6 +13817,14 @@ static int tasha_post_reset_cb(struct wcd9xxx *wcd9xxx)
 		snd_soc_component_update_bits(component,
 				WCD9335_CODEC_RPM_CLK_MCLK_CFG,
 				0x03, 0x01);
+
+	if (control->mclk_div_by_2)
+		snd_soc_component_update_bits(component, WCD9335_ANA_CLK_TOP,
+				    0x10, 0x10);
+	else
+		snd_soc_component_update_bits(component, WCD9335_ANA_CLK_TOP,
+				    0x10, 0x00);
+
 	tasha_codec_init_reg(component);
 
 	wcd_resmgr_post_ssr_v2(tasha->resmgr);
@@ -13969,6 +13977,14 @@ static int tasha_codec_probe(struct snd_soc_component *component)
 		snd_soc_component_update_bits(component,
 					WCD9335_CODEC_RPM_CLK_MCLK_CFG,
 					0x03, 0x01);
+
+	if (control->mclk_div_by_2)
+		snd_soc_component_update_bits(component, WCD9335_ANA_CLK_TOP,
+				    0x10, 0x10);
+	else
+		snd_soc_component_update_bits(component, WCD9335_ANA_CLK_TOP,
+				    0x10, 0x00);
+
 	tasha_codec_init_reg(component);
 
 	tasha_enable_efuse_sensing(component);
