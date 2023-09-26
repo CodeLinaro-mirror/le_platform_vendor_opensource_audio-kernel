@@ -1339,7 +1339,7 @@ static int rx_macro_mclk_enable(struct rx_macro_priv *rx_priv,
 							   true);
 			rx_macro_core_vote(rx_priv, false);
 			if (ret < 0) {
-				dev_err(rx_priv->dev,
+				dev_err_ratelimited(rx_priv->dev,
 					"%s: rx request clock enable failed\n",
 					__func__);
 				goto exit;
@@ -3849,7 +3849,7 @@ static int rx_swrm_clock(void *handle, bool enable)
 			if (ret < 0) {
 				msm_cdc_pinctrl_select_sleep_state(
 						rx_priv->rx_swr_gpio_p);
-				dev_err(rx_priv->dev,
+				dev_err_ratelimited(rx_priv->dev,
 					"%s: rx request clock enable failed\n",
 					__func__);
 				pm_runtime_mark_last_busy(rx_priv->dev);

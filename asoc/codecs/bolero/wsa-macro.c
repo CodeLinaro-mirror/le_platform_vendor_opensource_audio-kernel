@@ -1013,6 +1013,9 @@ static int wsa_macro_event_handler(struct snd_soc_component *component,
 	if (!wsa_macro_get_data(component, &wsa_dev, &wsa_priv, __func__))
 		return -EINVAL;
 
+	if (!(wsa_priv->swr_ctrl_data))
+		return -EINVAL;
+
 	switch (event) {
 	case BOLERO_MACRO_EVT_SSR_DOWN:
 		trace_printk("%s, enter SSR down\n", __func__);
