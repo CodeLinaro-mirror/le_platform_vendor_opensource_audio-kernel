@@ -18,7 +18,6 @@ SND_SOC_DAILINK_DEFS(csvoice,
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-voice")));
 
-#ifdef mdm9607daisupport
 SND_SOC_DAILINK_DEFS(voicemmode1,
 	DAILINK_COMP_ARRAY(COMP_CPU("VoiceMMode1")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
@@ -224,7 +223,6 @@ SND_SOC_DAILINK_DEFS(sec_auxpcm_tx,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-auxpcm.2")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-tx")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
-#endif
 SND_SOC_DAILINK_DEFS(tomtom_i2s_rx1,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-mi2s.0")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("tomtom_codec", "tomtom_i2s_rx1")),
