@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -910,7 +910,7 @@ struct adm_cmd_set_pp_params_v5 {
 } __packed;
 
 /* Maximum number of channels supported by MFC media fmt params */
-#define AUDPROC_MFC_OUT_CHANNELS_MAX 8
+#define AUDPROC_MFC_OUT_CHANNELS_MAX 16
 
 struct audproc_mfc_param_media_fmt {
 	uint32_t sampling_rate;
