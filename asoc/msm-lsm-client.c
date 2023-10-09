@@ -851,6 +851,13 @@ static int msm_lsm_reg_model(struct snd_pcm_substream *substream,
 
 		q6lsm_sm_set_param_data(client, p_info, &offset, sm);
 
+		if ((sm->size - offset) < p_info->param_size) {
+			dev_err(rtd->dev, "%s: user buff size is greater than expected\n",
+				__func__);
+			rc = -EINVAL;
+			goto err_copy;
+		}
+
 		/*
 		 * For set_param, advance the sound model data with the
 		 * number of bytes required by param_data.
@@ -2387,6 +2394,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 	case SNDRV_LSM_GET_MODULE_PARAMS_32: {
 		struct lsm_params_get_info_32 p_info_32, *param_info_rsp = NULL;
 		struct lsm_params_get_info *p_info = NULL;
+		prtd->lsm_client->get_param_payload = NULL;
 
 		memset(&p_info_32, 0 , sizeof(p_info_32));
 		if (!prtd->lsm_client->use_topology) {
@@ -2437,6 +2445,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 				__func__, err);
 			kfree(p_info);
 			kfree(prtd->lsm_client->get_param_payload);
+			prtd->lsm_client->get_param_payload = NULL;
 			goto done;
 		}
 
@@ -2447,6 +2456,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 			err = -ENOMEM;
 			kfree(p_info);
 			kfree(prtd->lsm_client->get_param_payload);
+			prtd->lsm_client->get_param_payload = NULL;
 			goto done;
 		}
 
@@ -2471,6 +2481,7 @@ free:
 		kfree(p_info);
 		kfree(param_info_rsp);
 		kfree(prtd->lsm_client->get_param_payload);
+		prtd->lsm_client->get_param_payload = NULL;
 		break;
 	}
 	case SNDRV_LSM_REG_SND_MODEL_V2:
@@ -2697,6 +2708,7 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 
 	case SNDRV_LSM_GET_MODULE_PARAMS: {
 		struct lsm_params_get_info temp_p_info, *p_info = NULL;
+		prtd->lsm_client->get_param_payload = NULL;
 
 		memset(&temp_p_info, 0, sizeof(temp_p_info));
 		if (!prtd->lsm_client->use_topology) {
@@ -2715,6 +2727,15 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 			err = -EFAULT;
 			goto done;
 		}
+
+		if (temp_p_info.param_size > 0 &&
+			((INT_MAX - sizeof(temp_p_info)) <
+				temp_p_info.param_size)) {
+			pr_err("%s: Integer overflow\n", __func__);
+			err = -EINVAL;
+			goto done;
+		}
+
 		size = sizeof(temp_p_info) +  temp_p_info.param_size;
 		p_info = kzalloc(size, GFP_KERNEL);
 
@@ -2768,6 +2789,7 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 free:
 		kfree(p_info);
 		kfree(prtd->lsm_client->get_param_payload);
+		prtd->lsm_client->get_param_payload = NULL;
 		break;
 	}
 	case SNDRV_LSM_EVENT_STATUS:
@@ -3580,12 +3602,15 @@ static int msm_lsm_add_app_type_controls(struct snd_soc_pcm_runtime *rtd)
 	const char *deviceNo		= "NN";
 	const char *suffix		= "App Type Cfg";
 	int ctl_len, ret = 0;
+	char kctl_name[SNDRV_CTL_ELEM_ID_NAME_MAXLEN] = {0};
 
 	ctl_len = strlen(mixer_ctl_name) + 1 +
 			strlen(deviceNo) + 1 + strlen(suffix) + 1;
+	snprintf(kctl_name, ctl_len, "%s %d %s",
+		mixer_ctl_name, rtd->pcm->device, suffix);
 	pr_debug("%s: Listen app type cntrl add\n", __func__);
 	ret = snd_pcm_add_usr_ctls(pcm, SNDRV_PCM_STREAM_CAPTURE,
-				NULL, 1, ctl_len, rtd->dai_link->id,
+				NULL, 1, kctl_name, rtd->dai_link->id,
 				&app_type_info);
 	if (ret < 0) {
 		pr_err("%s: Listen app type cntrl add failed: %d\n",
@@ -3593,8 +3618,6 @@ static int msm_lsm_add_app_type_controls(struct snd_soc_pcm_runtime *rtd)
 		return ret;
 	}
 	kctl = app_type_info->kctl;
-	snprintf(kctl->id.name, ctl_len, "%s %d %s",
-		mixer_ctl_name, rtd->pcm->device, suffix);
 	kctl->put = msm_lsm_app_type_cfg_ctl_put;
 	kctl->get = msm_lsm_app_type_cfg_ctl_get;
 	return 0;
@@ -3643,12 +3666,15 @@ static int msm_lsm_add_afe_data_controls(struct snd_soc_pcm_runtime *rtd)
 	const char *deviceNo		= "NN";
 	const char *suffix		= "Unprocessed Data";
 	int ctl_len, ret = 0;
+	char kctl_name[SNDRV_CTL_ELEM_ID_NAME_MAXLEN] = {0};
 
 	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1 +
 		  strlen(suffix) + 1;
+	snprintf(kctl_name, ctl_len, "%s %d %s",
+		 mixer_ctl_name, rtd->pcm->device, suffix);
 	pr_debug("%s: Adding Listen afe data cntrls\n", __func__);
 	ret = snd_pcm_add_usr_ctls(pcm, SNDRV_PCM_STREAM_CAPTURE,
-				   NULL, 1, ctl_len, rtd->dai_link->id,
+				   NULL, 1, kctl_name, rtd->dai_link->id,
 				   &afe_data_info);
 	if (ret < 0) {
 		pr_err("%s: Adding Listen afe data cntrls failed: %d\n",
@@ -3656,8 +3682,6 @@ static int msm_lsm_add_afe_data_controls(struct snd_soc_pcm_runtime *rtd)
 		return ret;
 	}
 	kctl = afe_data_info->kctl;
-	snprintf(kctl->id.name, ctl_len, "%s %d %s",
-		 mixer_ctl_name, rtd->pcm->device, suffix);
 	kctl->put = msm_lsm_afe_data_ctl_put;
 	kctl->get = msm_lsm_afe_data_ctl_get;
 

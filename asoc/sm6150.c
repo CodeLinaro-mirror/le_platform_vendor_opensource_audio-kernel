@@ -45,6 +45,7 @@
 #include "msm_talos_dailink.h"
 #include "talos-port-config.h"
 #include "msm_common.h"
+#include "msm-dai-q6-v2.h"
 
 #define DRV_NAME "sm6150-asoc-snd"
 
@@ -105,15 +106,6 @@ enum {
 	SLIM_TX_7,
 	SLIM_TX_8,
 	SLIM_TX_MAX,
-};
-
-enum {
-	PRIM_MI2S = 0,
-	SEC_MI2S,
-	TERT_MI2S,
-	QUAT_MI2S,
-	QUIN_MI2S,
-	MI2S_MAX,
 };
 
 enum {
@@ -201,23 +193,6 @@ enum {
 struct msm_wsa881x_dev_info {
 	struct device_node *of_node;
 	u32 index;
-};
-
-struct msm_asoc_mach_data {
-	struct snd_info_entry *codec_root;
-	int usbc_en2_gpio; /* used by gpio driver API */
-	struct device_node *mi2s_gpio_p[MI2S_MAX]; /* used by pinctrl API */
-	int hph_en1_gpio;
-	int hph_en0_gpio;
-	struct device_node *dmic01_gpio_p; /* used by pinctrl API */
-	struct device_node *dmic23_gpio_p; /* used by pinctrl API */
-	struct device_node *us_euro_gpio_p; /* used by pinctrl API */
-	struct pinctrl *usbc_en2_gpio_p; /* used by pinctrl API */
-	struct device_node *hph_en1_gpio_p; /* used by pinctrl API */
-	struct device_node *hph_en0_gpio_p; /* used by pinctrl API */
-	bool is_afe_config_done;
-	struct device_node *fsa_handle;
-	u32 wsa_max_devs;
 };
 
 struct msm_asoc_wcd93xx_codec {
@@ -631,13 +606,12 @@ static struct msm_asoc_wcd93xx_codec msm_codec_fn;
 static int dmic_0_1_gpio_cnt;
 static int dmic_2_3_gpio_cnt;
 
-#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
-     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static void *def_wcd_mbhc_cal(void);
-#endif
 static int msm_snd_enable_codec_ext_clk(struct snd_soc_component *component,
 					int enable, bool dapm);
 static int msm_wsa881x_init(struct snd_soc_pcm_runtime *rtd);
+
+static int wcd_index;
 
 /*
  * Need to report LINEIN
@@ -5199,7 +5173,7 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 	bolero_register_wake_irq(component, false);
 
 	bolero_set_port_map(bolero_component,
-				ARRAY_SIZE(sm_port_map), sm_port_map);
+				ARRAY_SIZE(sm_port_map_wcd937x), sm_port_map_wcd937x);
 
 	codec_reg_done = true;
 	return 0;
@@ -5217,8 +5191,6 @@ static int msm_wcn_init(struct snd_soc_pcm_runtime *rtd)
 					   tx_ch, ARRAY_SIZE(rx_ch), rx_ch);
 }
 
-#if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
-     IS_ENABLED(CONFIG_SND_SOC_WCD9335))
 static void *def_wcd_mbhc_cal(void)
 {
 	void *wcd_mbhc_cal;
@@ -5252,7 +5224,6 @@ static void *def_wcd_mbhc_cal(void)
 
 	return wcd_mbhc_cal;
 }
-#endif
 
 #if (IS_ENABLED(CONFIG_SND_SOC_WCD934X) || \
      IS_ENABLED(CONFIG_SND_SOC_WCD9335))
@@ -7752,6 +7723,49 @@ err_pcm_runtime:
 }
 #endif
 
+static int msm_snd_card_late_probe(struct snd_soc_card *card)
+{
+	struct snd_soc_component *component = NULL;
+	struct snd_soc_pcm_runtime *rtd;
+	struct msm_asoc_mach_data *pdata;
+	int ret = 0;
+	void *mbhc_calibration;
+
+	pdata = snd_soc_card_get_drvdata(card);
+	if (!pdata)
+		return -EINVAL;
+
+	rtd = snd_soc_get_pcm_runtime(card, &card->dai_link[wcd_index]);
+	if (!rtd) {
+		dev_err(card->dev,
+			"%s: snd_soc_get_pcm_runtime for %s failed!\n",
+			__func__, card->dai_link[wcd_index]);
+		return -EINVAL;
+	}
+
+	component = snd_soc_rtdcom_lookup(rtd, WCD937X_DRV_NAME);
+	if (!component) {
+		pr_err("%s component is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	mbhc_calibration = def_wcd_mbhc_cal();
+	if (!mbhc_calibration)
+		return -ENOMEM;
+	wcd_mbhc_cfg.calibration = mbhc_calibration;
+	ret = wcd937x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
+	if (ret) {
+		dev_err(component->dev, "%s: mbhc hs detect failed, err:%d\n",
+			__func__, ret);
+		goto err_hs_detect;
+	}
+	return 0;
+
+err_hs_detect:
+	kfree(mbhc_calibration);
+	return ret;
+}
+
 static int msm_populate_dai_link_component_of_node(
 					struct snd_soc_card *card)
 {
@@ -8081,6 +8095,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				ARRAY_SIZE(msm_tasha_fe_dai_links);
 #endif
 		} else {
+			card->late_probe = msm_snd_card_late_probe;
 			memcpy(msm_sm6150_dai_links + total_links,
 				msm_bolero_fe_dai_links,
 				sizeof(msm_bolero_fe_dai_links));
@@ -8120,6 +8135,9 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			       sizeof(msm_wsa_cdc_dma_be_dai_links));
 			total_links +=
 				ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links);
+
+			/* late probe uses dai link at index wcd_index to get wcd component */
+			wcd_index = total_links;
 
 			memcpy(msm_sm6150_dai_links + total_links,
 			       msm_rx_tx_cdc_dma_be_dai_links,
@@ -8235,7 +8253,7 @@ static int msm_wsa881x_init(struct snd_soc_pcm_runtime *rtd)
 
 
 	if (pdata->wsa_max_devs > 0) {
-			component = snd_soc_rtdcom_lookup(rtd, "wsa-codec.1");
+		component = snd_soc_rtdcom_lookup(rtd, "wsa-codec.1");
 		if (!component) {
 			pr_err("%s: wsa-codec.1 component is NULL\n", __func__);
 			return -EINVAL;

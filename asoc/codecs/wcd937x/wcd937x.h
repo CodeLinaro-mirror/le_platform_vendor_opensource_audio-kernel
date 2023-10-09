@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2018, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _WCD937X_H
@@ -8,7 +8,7 @@
 
 #include <bindings/audio-codec-port-types.h>
 
-#define WCD937X_MAX_SLAVE_CH_TYPES 10
+#define WCD937X_MAX_SLAVE_CH_TYPES 24
 #define ZERO 0
 
 #define WCD937X_DRV_NAME "wcd937x_codec"
@@ -51,6 +51,16 @@ static int wcd937x_swr_master_ch_map[] = {
 	SWRM_TX3_CH3,
 	SWRM_TX3_CH4,
 	SWRM_PCM_IN,
+	ADC1,
+	ADC3,
+	ADC4,
+	DMIC0,
+	DMIC1,
+	DMIC2,
+	DMIC4,
+	DMIC5,
+	DMIC6,
+	DMIC7,
 };
 
 #ifdef CONFIG_SND_SOC_WCD937X

@@ -27,7 +27,7 @@
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
 #define AFE_NOWAIT_TOKEN	2048
-
+#define MAX_VOC_SESSIONS	8
 #define SP_V4_NUM_MAX_SPKRS SP_V2_NUM_MAX_SPKRS
 #define MAX_LSM_SESSIONS 8
 
@@ -218,6 +218,7 @@ struct afe_ctl {
 	u32 afe_cal_mode[AFE_MAX_PORTS];
 
 	u16 dtmf_gen_rx_portid;
+	u16 dtmf_gen_rx_session_portid[MAX_VOC_SESSIONS];
 	struct audio_cal_info_spk_prot_cfg	prot_cfg;
 	struct afe_spkr_prot_calib_get_resp	calib_data;
 	struct audio_cal_info_sp_th_vi_ftm_cfg	th_ftm_cfg;
@@ -4957,6 +4958,31 @@ int afe_port_send_logging_cfg(u16 port_id,
 }
 EXPORT_SYMBOL(afe_port_send_logging_cfg);
 
+int afe_port_send_afe_limiter_param(u16 port_id,
+	struct afe_param_id_port_afe_limiter_disable_t *disable_limiter)
+{
+	struct param_hdr_v3 param_hdr;
+	int ret = -EINVAL;
+
+	pr_debug("%s: enter, port: 0x%x logging flag: %x\n", __func__, port_id,
+		disable_limiter->disable_afe_limiter);
+	memset(&param_hdr, 0, sizeof(param_hdr));
+
+	param_hdr.module_id = AFE_MODULE_LIMITER;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = AFE_PARAM_ID_ENABLE;
+	param_hdr.param_size = sizeof(struct afe_param_id_port_afe_limiter_disable_t);
+
+	ret = q6afe_pack_and_set_param_in_band(port_id,
+		q6audio_get_port_index(port_id), param_hdr, (u8*)disable_limiter);
+	if (ret)
+		pr_err("%s: AFE port logging setting for port 0x%x failed %d\n",
+			__func__, port_id, ret);
+
+	return ret;
+}
+EXPORT_SYMBOL(afe_port_send_afe_limiter_param);
+
 int afe_port_send_usb_dev_param(u16 port_id, union afe_port_config *afe_config)
 {
 	struct afe_param_id_usb_audio_dev_params usb_dev;
@@ -8576,6 +8602,24 @@ void afe_set_dtmf_gen_rx_portid(u16 port_id, int set)
 EXPORT_SYMBOL(afe_set_dtmf_gen_rx_portid);
 
 /**
+ * afe_set_dtmf_gen_rx_portid_session -
+ *         Set port_id for DTMF tone generation
+ *
+ * @port_id: AFE port id
+ * @set: set or reset port id value for dtmf gen
+ * @session_idx: session index of voice call
+ *
+ */
+void afe_set_dtmf_gen_rx_portid_session(u16 port_id, int set, int session_idx)
+{
+	if (set)
+		this_afe.dtmf_gen_rx_session_portid[session_idx] = port_id;
+	else if (this_afe.dtmf_gen_rx_session_portid[session_idx] == port_id)
+		this_afe.dtmf_gen_rx_session_portid[session_idx] = -1;
+}
+EXPORT_SYMBOL(afe_set_dtmf_gen_rx_portid_session);
+
+/**
  * afe_dtmf_generate_rx - command to generate AFE DTMF RX
  *
  * @duration_in_ms: Duration in ms for dtmf tone
@@ -8650,6 +8694,105 @@ fail_cmd:
 	return ret;
 }
 EXPORT_SYMBOL(afe_dtmf_generate_rx);
+
+/**
+ * afe_dtmf_generate_rx_session - command to generate AFE DTMF RX
+ *
+ * @duration_in_ms: Duration in ms for dtmf tone
+ * @high_freq: Higher frequency for dtmf
+ * @low_freq: lower frequency for dtmf
+ * @gain: Gain value for DTMF tone
+ * @session_idx: Session index of voice call
+ *
+ * Returns 0 on success, appropriate error code otherwise
+ */
+int afe_dtmf_generate_rx_session(int64_t duration_in_ms,
+				  uint16_t high_freq,
+				  uint16_t low_freq, uint16_t gain, int session_idx)
+{
+	int ret = 0;
+	int index = 0;
+	struct afe_dtmf_generation_command cmd_dtmf;
+
+	pr_debug("%s: DTMF AFE Gen\n", __func__);
+
+	memset(&cmd_dtmf, 0, sizeof(cmd_dtmf));
+
+	if (afe_validate_port(this_afe.dtmf_gen_rx_session_portid[session_idx]) < 0) {
+		pr_err("%s: Failed : Invalid Port id = 0x%x\n",
+		       __func__, this_afe.dtmf_gen_rx_session_portid[session_idx]);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+
+	if (this_afe.apr == NULL) {
+		this_afe.apr = apr_register("ADSP", "AFE", afe_callback,
+					    0xFFFFFFFF, &this_afe);
+		pr_debug("%s: Register AFE\n", __func__);
+		if (this_afe.apr == NULL) {
+			pr_err("%s: Unable to register AFE\n", __func__);
+			ret = -ENODEV;
+			return ret;
+		}
+		rtac_set_afe_handle(this_afe.apr);
+	}
+
+	pr_debug("%s: dur=%lld: hfreq=%d lfreq=%d gain=%d portid=0x%x\n",
+		__func__,
+		duration_in_ms, high_freq, low_freq, gain,
+		this_afe.dtmf_gen_rx_session_portid[session_idx]);
+
+	cmd_dtmf.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
+				APR_HDR_LEN(APR_HDR_SIZE), APR_PKT_VER);
+	cmd_dtmf.hdr.pkt_size = sizeof(cmd_dtmf);
+	cmd_dtmf.hdr.src_port = 0;
+	cmd_dtmf.hdr.dest_port = 0;
+	cmd_dtmf.hdr.token = 0;
+	cmd_dtmf.hdr.opcode = AFE_PORTS_CMD_DTMF_CTL;
+	cmd_dtmf.duration_in_ms = duration_in_ms;
+	cmd_dtmf.high_freq = high_freq;
+	cmd_dtmf.low_freq = low_freq;
+	cmd_dtmf.gain = gain;
+	cmd_dtmf.num_ports = 1;
+	cmd_dtmf.port_ids = q6audio_get_port_id(this_afe.dtmf_gen_rx_session_portid[session_idx]);
+
+	atomic_set(&this_afe.state, 1);
+	atomic_set(&this_afe.status, 0);
+	ret = apr_send_pkt(this_afe.apr, (uint32_t *) &cmd_dtmf);
+	if (ret < 0) {
+		pr_err("%s: AFE DTMF failed for num_ports:%d ids:0x%x\n",
+		       __func__, cmd_dtmf.num_ports, cmd_dtmf.port_ids);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+	index = q6audio_get_port_index(this_afe.dtmf_gen_rx_session_portid[session_idx]);
+	if (index < 0 || index >= AFE_MAX_PORTS) {
+		pr_err("%s: AFE port index[%d] invalid!\n",
+				__func__, index);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+	ret = wait_event_timeout(this_afe.wait[index],
+		(atomic_read(&this_afe.state) == 0),
+			msecs_to_jiffies(TIMEOUT_MS));
+	if (!ret) {
+		pr_err("%s: wait_event timeout\n", __func__);
+		ret = -EINVAL;
+		goto fail_cmd;
+	}
+	if (atomic_read(&this_afe.status) > 0) {
+		pr_err("%s: config cmd failed [%s]\n",
+			__func__, adsp_err_get_err_str(
+			atomic_read(&this_afe.status)));
+		ret = adsp_err_get_lnx_err_code(
+				atomic_read(&this_afe.status));
+		goto fail_cmd;
+	}
+	return 0;
+fail_cmd:
+	return ret;
+}
+EXPORT_SYMBOL(afe_dtmf_generate_rx_session);
 
 static int afe_sidetone_iir(u16 tx_port_id)
 {
@@ -10818,6 +10961,7 @@ static int afe_spv4_get_calib_data(
 	struct param_hdr_v3 param_hdr;
 	int port = SLIMBUS_4_TX;
 	int ret = -EINVAL;
+	uint32_t th_vi_ca_state;
 
 	if (!calib_resp) {
 		pr_err("%s: Invalid params\n", __func__);
@@ -10839,6 +10983,12 @@ static int afe_spv4_get_calib_data(
 		       __func__, port, param_hdr.param_id, ret);
 		goto get_params_fail;
 	}
+	th_vi_ca_state = this_afe.spv4_calib_data.res_cfg.th_vi_ca_state;
+	if (th_vi_ca_state < FBSP_INCORRECT_OP_MODE ||
+		th_vi_ca_state > MAX_FBSP_STATE) {
+		pr_err("%s: invalid fbsp state %d\n", __func__, th_vi_ca_state);
+		goto get_params_fail;
+	}
 	memcpy(&calib_resp->res_cfg, &this_afe.spv4_calib_data.res_cfg,
 		sizeof(this_afe.calib_data.res_cfg));
 	pr_info("%s: state %s resistance %d %d\n", __func__,
@@ -10857,6 +11007,7 @@ int afe_spk_prot_get_calib_data(struct afe_spkr_prot_get_vi_calib *calib_resp)
 	struct param_hdr_v3 param_hdr;
 	int port = SLIMBUS_4_TX;
 	int ret = -EINVAL;
+	uint32_t th_vi_ca_state;
 
 	if (!calib_resp) {
 		pr_err("%s: Invalid params\n", __func__);
@@ -10876,6 +11027,12 @@ int afe_spk_prot_get_calib_data(struct afe_spkr_prot_get_vi_calib *calib_resp)
 	if (ret < 0) {
 		pr_err("%s: get param port 0x%x param id[0x%x]failed %d\n",
 		       __func__, port, param_hdr.param_id, ret);
+		goto get_params_fail;
+	}
+	th_vi_ca_state = this_afe.calib_data.res_cfg.th_vi_ca_state;
+	if (th_vi_ca_state < FBSP_INCORRECT_OP_MODE ||
+		th_vi_ca_state > MAX_FBSP_STATE) {
+		pr_err("%s: invalid fbsp state %d\n", __func__, th_vi_ca_state);
 		goto get_params_fail;
 	}
 	memcpy(&calib_resp->res_cfg, &this_afe.calib_data.res_cfg,
@@ -11956,7 +12113,7 @@ int __init afe_init(void)
 	atomic_set(&this_afe.clk_status, 0);
 	atomic_set(&this_afe.mem_map_cal_index, -1);
 	this_afe.apr = NULL;
-	this_afe.dtmf_gen_rx_portid = -1;
+	this_afe.dtmf_gen_rx_portid = AFE_PORT_ID_PRIMARY_MI2S_RX;
 	this_afe.mmap_handle = 0;
 	this_afe.vi_tx_port = -1;
 	this_afe.vi_rx_port = -1;
