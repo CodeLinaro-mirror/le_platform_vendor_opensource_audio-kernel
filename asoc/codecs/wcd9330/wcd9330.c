@@ -703,8 +703,6 @@ int tomtom_enable_qfuse_sensing(struct snd_soc_component *component)
 	 * before checking the status.
 	 */
 	usleep_range(5000, 5500);
-	if ((snd_soc_component_read32(component, TOMTOM_A_QFUSE_STATUS) & (0x03)) != 0x03)
-		WARN(1, "%s: Qfuse sense is not complete\n", __func__);
 
 	if (tomtom->wcd_ext_clk)
 		tomtom_codec_mclk_enable(component, false, false);
