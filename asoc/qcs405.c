@@ -10565,6 +10565,7 @@ static int msm_detect_ep92_dev(struct platform_device *pdev,
 				__func__);
 			dai->codecs->name = ep92_name;
 			dai->codecs->dai_name = "ep92-hdmi";
+			dai->codecs->of_node = NULL;
 			break;
 		}
 		dai++;
@@ -10579,6 +10580,7 @@ static int msm_detect_ep92_dev(struct platform_device *pdev,
 				__func__);
 			dai->codecs->name = ep92_name;
 			dai->codecs->dai_name = "ep92-arc";
+			dai->codecs->of_node = NULL;
 			break;
 		}
 		dai++;
