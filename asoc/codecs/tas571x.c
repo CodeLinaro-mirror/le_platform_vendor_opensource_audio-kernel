@@ -1148,8 +1148,10 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 
 disable_regs:
 	dev_err(dev, "%s: exited due to %d\n", __func__, ret);
-	regulator_disable(priv->vdd_pa);
-	regulator_put(priv->vdd_pa);
+	if (priv->vdd_pa) {
+		regulator_disable(priv->vdd_pa);
+		regulator_put(priv->vdd_pa);
+	}
 	regulator_bulk_disable(priv->chip->num_supply_names, priv->supplies);
 	return ret;
 }
