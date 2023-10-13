@@ -2549,7 +2549,16 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 				__func__, data->payload_size);
 		break;
 	case ASM_SESSION_CMDRSP_GET_MTMX_STRTR_PARAMS_V2:
-		q6asm_process_mtmx_get_param_rsp(ac, (void *) payload);
+		payload_size = sizeof(struct asm_mtmx_strtr_get_params_cmdrsp);
+		if (data->payload_size < payload_size) {
+			pr_err("%s: insufficient payload size = %d\n",
+				__func__, data->payload_size);
+			spin_unlock_irqrestore(
+				&(session[session_id].session_lock), flags);
+			return -EINVAL;
+		}
+		q6asm_process_mtmx_get_param_rsp(ac,
+			(struct asm_mtmx_strtr_get_params_cmdrsp *) payload);
 		break;
 	case ASM_STREAM_PP_EVENT:
 	case ASM_STREAM_CMD_ENCDEC_EVENTS:
@@ -3375,7 +3384,12 @@ static int __q6asm_open_read(struct audio_client *ac,
 	if (ac->perf_mode == LOW_LATENCY_PCM_MODE) {
 		open.mode_flags |= ASM_LOW_LATENCY_TX_STREAM_SESSION <<
 			ASM_SHIFT_STREAM_PERF_MODE_FLAG_IN_OPEN_READ;
-	} else {
+	} 
+	else if (ac->perf_mode == LOW_LATENCY_PCM_NOPROC_MODE) {
+		open.mode_flags |= ASM_LOW_LATENCY_NPROC_TX_STREAM_SESSION <<
+			ASM_SHIFT_STREAM_PERF_MODE_FLAG_IN_OPEN_READ;
+	}
+	else {
 		open.mode_flags |= ASM_LEGACY_STREAM_SESSION <<
 			ASM_SHIFT_STREAM_PERF_MODE_FLAG_IN_OPEN_READ;
 	}
@@ -3747,6 +3761,8 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		open.mode_flags |= ASM_ULTRA_LOW_LATENCY_STREAM_SESSION;
 	else if (ac->perf_mode == LOW_LATENCY_PCM_MODE)
 		open.mode_flags |= ASM_LOW_LATENCY_STREAM_SESSION;
+	else if (ac->perf_mode == LOW_LATENCY_PCM_NOPROC_MODE)
+		open.mode_flags |= ASM_ULTRA_LOW_LATENCY_NPROC_STREAM_SESSION;
 	else {
 		open.mode_flags |= ASM_LEGACY_STREAM_SESSION;
 		if (is_gapless_mode)

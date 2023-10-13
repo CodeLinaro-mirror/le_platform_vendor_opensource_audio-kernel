@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef __Q6AFE_V2_H__
 #define __Q6AFE_V2_H__
@@ -481,9 +481,15 @@ int afe_cmd_memory_map_nowait(int port_id, phys_addr_t dma_addr_p,
 int afe_cmd_memory_unmap(u32 dma_addr_p);
 int afe_cmd_memory_unmap_nowait(u32 dma_addr_p);
 void afe_set_dtmf_gen_rx_portid(u16 rx_port_id, int set);
+void afe_set_dtmf_gen_rx_portid_session(u16 rx_port_id, int set,
+			int session_idx);
 int afe_dtmf_generate_rx(int64_t duration_in_ms,
 			 uint16_t high_freq,
 			 uint16_t low_freq, uint16_t gain);
+int afe_dtmf_generate_rx_session(int64_t duration_in_ms,
+				 uint16_t high_freq,
+				 uint16_t low_freq, uint16_t gain,
+				 int session_idx);
 int afe_register_get_events(u16 port_id,
 		void (*cb)(uint32_t opcode,
 		uint32_t token, uint32_t *payload, void *priv),
@@ -591,6 +597,8 @@ int afe_tdm_port_start(u16 port_id, struct afe_tdm_port_config *tdm_port,
 void afe_set_routing_callback(routing_cb cb);
 int afe_port_send_logging_cfg(u16 port_id,
 	struct afe_param_id_port_data_log_disable_t *log_disable);
+int afe_port_send_afe_limiter_param(u16 port_id,
+	struct afe_param_id_port_afe_limiter_disable_t *disable_limiter);
 int afe_get_av_dev_drift(struct afe_param_id_dev_timing_stats *timing_stats,
 		u16 port);
 int afe_set_lpass_clk_cfg_ext_mclk_v2(int index,

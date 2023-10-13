@@ -246,23 +246,32 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif #TRINKET check
 ########################### WCD938x CODEC  ################################
-#include $(CLEAR_VARS)
-#LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
-#LOCAL_MODULE              := wcd938x_dlkm.ko
-#LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/wcd938x/wcd938x_dlkm.ko
-#LOCAL_MODULE_TAGS         := optional
-#LOCAL_MODULE_DEBUG_ENABLE := true
-#LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
-#include $(DLKM_DIR)/Build_external_kernelmodule.mk
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := wcd938x_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/wcd938x/wcd938x_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
 ###########################################################
-#include $(CLEAR_VARS)
-#LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
-#LOCAL_MODULE              := wcd938x_slave_dlkm.ko
-#LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/wcd938x/wcd938x_slave_dlkm.ko
-#LOCAL_MODULE_TAGS         := optional
-#LOCAL_MODULE_DEBUG_ENABLE := true
-#LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
-#include $(DLKM_DIR)/Build_external_kernelmodule.mk
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := wcd938x_slave_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/wcd938x/wcd938x_slave_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+############################ MBHC ###############################
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := mbhc_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/mbhc_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
 ############################ BOLERO CODEC  ###############################
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
