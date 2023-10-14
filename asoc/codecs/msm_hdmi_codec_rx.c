@@ -9,6 +9,7 @@
 #include <linux/err.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
+#include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <linux/soc/qcom/msm_ext_display.h>
 
@@ -59,6 +60,27 @@ enum {
 static const char *const ext_disp_audio_type_text[] = {"None", "HDMI", "DP"};
 static const char *const ext_disp_audio_ack_text[] = {"Disconnect",  "Connect",
 						      "Ack_Enable"};
+static const char *const ext_disp_format[] = {
+	"LPCM",
+	"Compr",
+	"LPCM-60958",
+	"Compr-60958",
+};
+
+struct msm_ext_disp_dai_data {
+	u16 data_format;
+	/* data format
+	 * Supported values:
+	 * - #LINEAR_PCM_DATA
+	 * - #NON_LINEAR_DATA
+	 * - #LINEAR_PCM_DATA_PACKED_IN_60958
+	 * - #NON_LINEAR_DATA_PACKED_IN_60958
+	 */
+};
+
+static const struct soc_enum ext_disp_config_enum[] = {
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(ext_disp_format), ext_disp_format),
+};
 
 SOC_EXT_DISP_AUDIO_TYPE(1);
 SOC_EXT_DISP_AUDIO_ACK_STATE(1);
@@ -74,6 +96,34 @@ struct msm_ext_disp_audio_codec_rx_data {
 	int cable_status[DP_DAI_MAX];
 	int stream[DP_DAI_MAX];
 	int ctl[DP_DAI_MAX];
+};
+
+static int msm_ext_disp_dai_format_put(struct snd_kcontrol *kcontrol,
+				      struct snd_ctl_elem_value *ucontrol)
+{
+	struct msm_ext_disp_dai_data *dai_data = kcontrol->private_data;
+	int value = ucontrol->value.integer.value[0];
+
+	pr_debug("%s: value = %d\n", __func__, value);
+	dai_data->data_format = value;
+
+	return 0;
+}
+
+static int msm_ext_disp_dai_format_get(struct snd_kcontrol *kcontrol,
+				      struct snd_ctl_elem_value *ucontrol)
+{
+	struct msm_ext_disp_dai_data *dai_data = kcontrol->private_data;
+
+	ucontrol->value.integer.value[0] = dai_data->data_format;
+
+	return 0;
+}
+
+static const struct snd_kcontrol_new ext_disp_config_controls[] = {
+	SOC_ENUM_EXT("HDMI_CODEC RX Format", ext_disp_config_enum[0],
+			msm_ext_disp_dai_format_get,
+			msm_ext_disp_dai_format_put),
 };
 
 static int msm_ext_disp_edid_ctl_info(struct snd_kcontrol *kcontrol,
@@ -571,12 +621,14 @@ static int msm_ext_disp_audio_codec_rx_dai_hw_params(
 	u32 level_shift  = 0; /* 0dB */
 	bool down_mix = 0;
 	u32 num_channels = params_channels(params);
-	struct msm_ext_disp_codec_id codec_info;
+	u32 bit_width = params_width(params);
 	int rc = 0;
-	struct msm_ext_disp_audio_setup_params audio_setup_params = {0};
 	int type;
+	struct msm_ext_disp_codec_id codec_info;
+	struct msm_ext_disp_audio_setup_params audio_setup_params = {0};
 	struct msm_ext_disp_audio_codec_rx_data *codec_data =
 			dev_get_drvdata(dai->component->dev);
+	struct msm_ext_disp_dai_data *dai_data = dev_get_drvdata(dai->dev);
 
 	if (!codec_data) {
 		dev_err(dai->dev, "%s() codec_data is null\n",
@@ -661,6 +713,8 @@ static int msm_ext_disp_audio_codec_rx_dai_hw_params(
 	audio_setup_params.channel_allocation = channel_allocation;
 	audio_setup_params.level_shift = level_shift;
 	audio_setup_params.down_mix = down_mix;
+	audio_setup_params.bit_width = bit_width;
+	audio_setup_params.data_format = dai_data->data_format;
 
 	mutex_lock(&codec_data->dp_ops_lock);
 	if (dai->id == HDMI_DAI)
@@ -802,6 +856,70 @@ static struct snd_soc_dai_ops msm_ext_disp_audio_codec_rx_dai_ops = {
 	.shutdown  = msm_ext_disp_audio_codec_rx_dai_shutdown
 };
 
+static inline void msm_ext_disp_set_dai_id(struct snd_soc_dai *dai)
+{
+	if (!dai->driver) {
+		dev_err(dai->dev, "DAI driver is not set\n");
+		return;
+	}
+	if (!dai->driver->id) {
+		dev_dbg(dai->dev, "DAI driver id is not set\n");
+		return;
+	}
+	dai->id = dai->driver->id;
+}
+
+static int msm_ext_disp_dai_probe(struct snd_soc_dai *dai)
+{
+	struct msm_ext_disp_dai_data *dai_data;
+	int rc = 0;
+
+	if (!dai) {
+		pr_err("%s: dai not found!!\n", __func__);
+		return -EINVAL;
+	}
+	if (!dai->dev) {
+		pr_err("%s: Invalid params dai dev\n", __func__);
+		return -EINVAL;
+	}
+
+	dai_data = devm_kzalloc(dai->dev, sizeof(struct msm_ext_disp_dai_data),
+			GFP_KERNEL);
+
+	if (!dai_data)
+		return -ENOMEM;
+
+	memset(dai_data, 0, sizeof(*dai_data));
+	dai_data->data_format = LINEAR_PCM_DATA;
+	dev_set_drvdata(dai->dev, dai_data);
+
+	msm_ext_disp_set_dai_id(dai);
+	switch (dai->id) {
+	case HDMI_DAI:
+		rc = snd_ctl_add(dai->component->card->snd_card,
+			 snd_ctl_new1(&ext_disp_config_controls[0],
+			 dai_data));
+		break;
+	}
+
+	if (rc < 0)
+		dev_err(dai->dev,
+			"%s: err add config ctl, DAI = %s\n",
+			__func__, dai->name);
+
+	return rc;
+}
+
+static int msm_ext_disp_dai_remove(struct snd_soc_dai *dai)
+{
+	struct msm_ext_disp_dai_data *dai_data;
+
+	dai_data = dev_get_drvdata(dai->dev);
+	kfree(dai_data);
+
+	return 0;
+}
+
 static struct snd_soc_dai_driver msm_ext_disp_audio_codec_rx_dais[] = {
 	{
 		.name = "msm_hdmi_audio_codec_rx_dai",
@@ -816,6 +934,8 @@ static struct snd_soc_dai_driver msm_ext_disp_audio_codec_rx_dais[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 		},
 		.ops = &msm_ext_disp_audio_codec_rx_dai_ops,
+		.probe = msm_ext_disp_dai_probe,
+		.remove = msm_ext_disp_dai_remove,
 	},
 	{
 		.name = "msm_hdmi_ms_audio_codec_rx_dai",
