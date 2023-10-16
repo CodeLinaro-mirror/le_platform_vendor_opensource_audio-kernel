@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2014, 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -19,6 +19,8 @@
 #include <linux/slab.h>
 #include <linux/remoteproc.h>
 #include <linux/remoteproc/qcom_rproc.h>
+#include <linux/remoteproc.h>
+#include <linux/version.h>
 #include <soc/qcom/boot_stats.h>
 
 
@@ -177,7 +179,11 @@ load_adsp:
 			goto fail;
 		adsp_state = apr_get_q6_state();
 		if (adsp_state == APR_SUBSYS_DOWN) {
+#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
 			place_marker("M - Start ADSP");
+#else
+			pr_err("boot_kpi: M - Start ADSP\n");
+#endif
 			rc = rproc_boot(priv->pil_h);
 
 			if (rc) {
