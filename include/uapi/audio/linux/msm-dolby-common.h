@@ -7,9 +7,6 @@
 #ifndef _UAPI_MSM_DOLBY_COMMON_H_
 #define _UAPI_MSM_DOLBY_COMMON_H_
 
-#include <sound/soc.h>
-
-
 #define DOLBY_BUNDLE_MODULE_ID		0x00010723
 #define DOLBY_VISUALIZER_MODULE_ID	0x0001072B
 

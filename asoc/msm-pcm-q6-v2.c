@@ -11,6 +11,7 @@
 #include <linux/wait.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -923,8 +924,12 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (first_time) {
+#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
 #ifdef CONFIG_MSM_BOOT_STATS
 			place_marker("K - Early chime");
+#endif
+#else
+			pr_err("boot_kpi: K - Early chime\n");
 #endif
 			first_time = 0;
 		}
