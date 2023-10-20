@@ -1218,7 +1218,7 @@ static struct msm_dai_stream_aif_name msm_dai_q6_dai_stream_aif_names[] = {
 	{"AFE Playback","PCM_RX"},
 	{"AFE Playback1","PCM_RX1"},
 	{"PCM_RX1","AFE Loopback Capture"},
-	{"AFE_LOOPBACK_TX","AFE Capture"},
+	{"AFE Loopback Capture", "AFE_LOOPBACK_TX"},
 	{"PCM_TX","AFE-PROXY TX"},
 	{"Internal BT-SCO Playback","INT_BT_SCO_RX"},
 	{"Internal BT-A2DP Playback","INT_BT_A2DP_RX"},
