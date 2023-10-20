@@ -7,7 +7,6 @@
 #ifndef _UAPI_MSM_DOLBY_DAP_CONFIG_H_
 #define _UAPI_MSM_DOLBY_DAP_CONFIG_H_
 
-#include <sound/soc.h>
 #include <linux/msm-dolby-common.h>
 
 /* DOLBY DOLBY GUIDS */

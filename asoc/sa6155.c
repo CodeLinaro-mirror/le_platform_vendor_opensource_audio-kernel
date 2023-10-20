@@ -39,6 +39,7 @@
 #include <linux/input.h>
 #include <linux/of_device.h>
 #include <linux/pm_qos.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -7410,7 +7411,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	static int first_probe = 1;
 
 	if (first_probe) {
+#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
 		place_marker("M - DRIVER Audio Init");
+#else
+		pr_err("boot_kpi: M - DRIVER Audio Init\n");
+#endif
 		first_probe = 0;
 	}
 
@@ -7492,7 +7497,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		pr_err("%s: Registration with SND event FWK failed ret = %d\n",
 			__func__, ret);
 
+#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
 	place_marker("M - DRIVER Audio Ready");
+#else
+	pr_err("boot_kpi: M - DRIVER Audio Ready\n");
+#endif
 	return 0;
 err:
 	msm_release_pinctrl(pdev);

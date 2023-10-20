@@ -7,7 +7,6 @@
 #ifndef _UAPI_MSM_DS2_DAP_CONFIG_H__
 #define _UAPI_MSM_DS2_DAP_CONFIG_H__
 
-#include <sound/soc.h>
 #include <linux/msm-dolby-common.h>
 #include <sound/hwdep.h>
 #include <uapi/audio/sound/devdep_params.h>
