@@ -851,6 +851,19 @@ static int32_t sp_make_afe_callback(uint32_t opcode, uint32_t *payload,
 		break;
 	case AFE_PARAM_ID_SP_V4_TH_VI_V_VALI_PARAMS:
 		num_ch = data_start[0];
+		if (num_ch > SP_V2_NUM_MAX_SPKRS) {
+			pr_err("%s: Error: num_ch %d is greater than expected\n",
+					__func__,num_ch);
+			return -EINVAL;
+		}
+		if (param_hdr.param_size != (sizeof(struct afe_sp_v4_param_th_vi_v_vali_params) +
+					(num_ch *
+				sizeof(struct afe_sp_v4_channel_v_vali_params)))) {
+			pr_err("%s: Error: param_size %d is greater than expected\n",
+				__func__,param_hdr.param_size);
+			return -EINVAL;
+		}
+
 		this_afe.spv4_v_vali_rcvd_param_size = param_hdr.param_size;
 		data_dest = (u32 *)&this_afe.spv4_v_vali_resp;
 		expected_size +=
@@ -860,6 +873,18 @@ static int32_t sp_make_afe_callback(uint32_t opcode, uint32_t *payload,
 		break;
 	case AFE_PARAM_ID_SP_V4_EX_VI_FTM_PARAMS:
 		num_ch = data_start[0];
+		if (num_ch > SP_V2_NUM_MAX_SPKRS) {
+			pr_err("%s: Error: num_ch %d is greater than expected\n",
+				__func__,num_ch);
+			return -EINVAL;
+		}
+		if (param_hdr.param_size !=  (sizeof(struct afe_sp_v4_param_ex_vi_ftm_params) +
+				(num_ch *
+				sizeof(struct afe_sp_v4_channel_ex_vi_ftm_params)))) {
+			pr_err("%s: Error: param_size %d is greater than expected\n",
+				__func__,param_hdr.param_size);
+			return -EINVAL;
+		}
 		this_afe.spv4_ex_vi_ftm_rcvd_param_size = param_hdr.param_size;
 		data_dest = (u32 *)&this_afe.spv4_ex_vi_ftm_resp;
 		expected_size +=
@@ -868,6 +893,18 @@ static int32_t sp_make_afe_callback(uint32_t opcode, uint32_t *payload,
 		break;
 	case AFE_PARAM_ID_SP_V4_RX_TMAX_XMAX_LOGGING:
 		num_ch = data_start[0];
+		if (num_ch > SP_V2_NUM_MAX_SPKRS) {
+			pr_err("%s: Error: num_ch %d is greater than expected\n",
+					__func__,num_ch);
+			return -EINVAL;
+		}
+		if (param_hdr.param_size != (sizeof(struct afe_sp_v4_param_tmax_xmax_logging) +
+				(num_ch * sizeof(struct afe_sp_v4_channel_tmax_xmax_params)))) {
+			pr_err("%s: Error: param_size %d is greater than expected\n",
+					__func__,param_hdr.param_size);
+			return -EINVAL;
+		}
+
 		this_afe.spv4_max_log_rcvd_param_size = param_hdr.param_size;
 		data_dest = (u32 *)&this_afe.spv4_max_log_resp;
 		expected_size +=
