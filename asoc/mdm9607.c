@@ -36,6 +36,7 @@
 //#include "codecs/wcd9306/wcd9306.h"
 #include "msm-pcm-routing-v2.h"
 #include "mdm9607_dailink.h"
+#include "soc/qcom/boot_stats.h"
 
 /* Spk control */
 #define MDM_SPK_ON 1
@@ -3341,6 +3342,7 @@ static int mdm_asoc_machine_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
 		goto err7;
 	}
+	place_marker("M - DRIVER Audio Ready");
 
 	return 0;
 err7:
