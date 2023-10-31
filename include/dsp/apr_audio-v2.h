@@ -910,7 +910,7 @@ struct adm_cmd_set_pp_params_v5 {
 } __packed;
 
 /* Maximum number of channels supported by MFC media fmt params */
-#define AUDPROC_MFC_OUT_CHANNELS_MAX 16
+#define AUDPROC_MFC_OUT_CHANNELS_MAX 8
 
 struct audproc_mfc_param_media_fmt {
 	uint32_t sampling_rate;
