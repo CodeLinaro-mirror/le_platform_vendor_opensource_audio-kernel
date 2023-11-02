@@ -5051,6 +5051,10 @@ static int __q6asm_run_nowait(struct audio_client *ac, uint32_t flags,
 int q6asm_run_nowait(struct audio_client *ac, uint32_t flags,
 			uint32_t msw_ts, uint32_t lsw_ts)
 {
+	if (!ac) {
+		pr_err("%s audio_client is NULL\n", __func__);
+		return -EINVAL;
+	}
 	return __q6asm_run_nowait(ac, flags, msw_ts, lsw_ts, ac->stream_id);
 }
 EXPORT_SYMBOL(q6asm_run_nowait);
@@ -10913,6 +10917,11 @@ fail_cmd:
 
 int q6asm_cmd_nowait(struct audio_client *ac, int cmd)
 {
+	if (!ac) {
+		pr_err("%s audio_client is NULL\n", __func__);
+		return -EINVAL;
+	}
+
 	pr_debug("%s: stream_id: %d\n", __func__, ac->stream_id);
 	return __q6asm_cmd_nowait(ac, cmd, ac->stream_id);
 }
