@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2016, 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -1161,7 +1161,7 @@ static int wsa881x_probe(struct snd_soc_component *component)
 	}
 	mutex_init(&wsa_pdata[wsa881x_index].bg_lock);
 	mutex_init(&wsa_pdata[wsa881x_index].res_lock);
-	snprintf(wsa_pdata[wsa881x_index].tz_pdata.name, 100, "%s",
+	snprintf(wsa_pdata[wsa881x_index].tz_pdata.name, 80, "%s",
 		wsa_tz_names[wsa881x_index]);
 	wsa_pdata[wsa881x_index].component = component;
 	wsa_pdata[wsa881x_index].spk_pa_gain = SPK_GAIN_12DB;
