@@ -8115,12 +8115,22 @@ static void tomtom_zdet_error_approx(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 	u64 rl = 0, rr = 0;
 	const int mult_factor = TOMTOM_ZDET_ERROR_APPROX_MUL_FACTOR;
 	const int shift = TOMTOM_ZDET_ERROR_APPROX_SHIFT;
-	struct snd_soc_component *component = mbhc->component;
-	struct tomtom_priv *tomtom = snd_soc_component_get_drvdata(component);	
+	struct snd_soc_component *component = NULL;
+	struct tomtom_priv *tomtom = NULL;
 
 	if (!zl || !zr || !mbhc) {
 		pr_err("%s: Invalid parameters zl = %pK zr = %pK, mbhc = %pK\n",
 			__func__, zl, zr, mbhc);
+		return;
+	}
+	component = mbhc->component;
+	if (!component) {
+		pr_err("%s: mbhc->component data is NULL\n", __func__);
+		return;
+	}
+	tomtom = snd_soc_component_get_drvdata(component);
+	if (!tomtom) {
+		pr_err("%s: tomtom not initialized\n", __func__);
 		return;
 	}
 
