@@ -2640,7 +2640,9 @@ static int slim_rx_mux_put(struct snd_kcontrol *kcontrol,
 	 */
 	switch (tomtom_p->rx_port_value) {
 	case 0:
-		list_del_init(&core->rx_chs[port_id].list);
+		if(!&core->rx_chs[port_id].list) {
+			list_del_init(&core->rx_chs[port_id].list);
+		}
 		break;
 	case 1:
 		if (wcd9xxx_rx_vport_validation(port_id +
