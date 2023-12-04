@@ -431,7 +431,7 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		pr_debug("%s: %s Trigger start\n", __func__,
 			 dir == 0 ? "P" : "C");
-		ret = q6asm_run(prtd->audio_client, 0, 0, 0);
+		ret = q6asm_run_nowait(prtd->audio_client, 0, 0, 0);
 		if (ret)
 			break;
 		atomic_set(&prtd->start, 1);
@@ -439,8 +439,8 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	case SNDRV_PCM_TRIGGER_STOP:
 		pr_debug("%s: SNDRV_PCM_TRIGGER_STOP\n", __func__);
 		atomic_set(&prtd->start, 0);
-		q6asm_cmd(prtd->audio_client, CMD_PAUSE);
-		q6asm_cmd(prtd->audio_client, CMD_FLUSH);
+		q6asm_cmd_nowait(prtd->audio_client, CMD_PAUSE);
+		q6asm_cmd_nowait(prtd->audio_client, CMD_FLUSH);
 		buf = q6asm_shared_io_buf(prtd->audio_client, dir);
 		if (buf == NULL) {
 			pr_err("%s: shared IO buffer is null\n", __func__);
@@ -1340,7 +1340,6 @@ static int msm_pcm_add_hwdep_dev(struct snd_soc_pcm_runtime *runtime)
 static int msm_asoc_pcm_new(struct snd_soc_component *component, struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_card *card = rtd->card->snd_card;
-	struct snd_pcm *pcm = rtd->pcm;
 	int ret;
 
 	pr_debug("%s , register new control\n", __func__);
@@ -1376,7 +1375,6 @@ static int msm_asoc_pcm_new(struct snd_soc_component *component, struct snd_soc_
 	ret = msm_pcm_add_hwdep_dev(rtd);
 	if (ret)
 		pr_err("%s: Could not add hw dep node\n", __func__);
-	pcm->nonatomic = true;
 
 	return ret;
 }
