@@ -54,8 +54,7 @@ AUDIO_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/q6_notifier_dlkm.ko\
 	$(KERNEL_MODULES_OUT)/usf_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/pinctrl_wcd_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/pinctrl_lpi_dlkm.ko \
-	$(KERNEL_MODULES_OUT)/wsa881x_dlkm.ko \
-	$(KERNEL_MODULES_OUT)/hdmi_dlkm.ko
+	$(KERNEL_MODULES_OUT)/wsa881x_dlkm.ko
 else
 AUDIO_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/q6_notifier_dlkm.ko\
 	$(KERNEL_MODULES_OUT)/q6_dlkm.ko \
