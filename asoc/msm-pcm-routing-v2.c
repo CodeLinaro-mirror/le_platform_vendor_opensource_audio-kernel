@@ -1250,6 +1250,12 @@ static struct msm_pcm_routing_fdai_data
 	/* MULTIMEDIA34 */
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
+	/* MULTIMEDIA35 */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
+	/* MULTIMEDIA36 */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
 	/* VOIP */
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
@@ -1304,6 +1310,12 @@ static struct msm_pcm_routing_fdai_data
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
 	/* VOICEMMODE2 */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
+	/* CS-VOICE */
+	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
+	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
+	/* VOLTE */
 	{{0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM},
 	 {0, INVALID_SESSION, LEGACY_PCM_MODE, {NULL, NULL}, LEGACY_PCM} },
 };
@@ -2236,6 +2248,9 @@ static u32 msm_pcm_routing_get_voc_sessionid(u16 val)
 		break;
 	case MSM_FRONTEND_DAI_VOICEMMODE2:
 		session_id = voc_get_session_id(VOICEMMODE2_NAME);
+		break;
+	case MSM_FRONTEND_DAI_CS_VOICE:
+		session_id = voc_get_session_id(VOICE_SESSION_NAME);
 		break;
 	default:
 		session_id = 0;
@@ -6379,6 +6394,8 @@ struct msm_asm_config loopback_cfg[] = {
 	[MSM_FRONTEND_DAI_MULTIMEDIA32] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_MULTIMEDIA33] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_MULTIMEDIA34] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA35] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA36] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOIP] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_AFE_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_AFE_TX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
@@ -6397,6 +6414,8 @@ struct msm_asm_config loopback_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 struct msm_asm_config playback_cfg[] = {
@@ -6434,6 +6453,8 @@ struct msm_asm_config playback_cfg[] = {
 	[MSM_FRONTEND_DAI_MULTIMEDIA32] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_MULTIMEDIA33] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_MULTIMEDIA34] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA35] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA36] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOIP] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_AFE_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_AFE_TX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
@@ -6452,6 +6473,8 @@ struct msm_asm_config playback_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 struct msm_asm_config capture_cfg[] = {
@@ -6489,6 +6512,8 @@ struct msm_asm_config capture_cfg[] = {
 	[MSM_FRONTEND_DAI_MULTIMEDIA32] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_MULTIMEDIA33] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_MULTIMEDIA34] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA35] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_MULTIMEDIA36] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOIP] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_AFE_RX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_AFE_TX] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
@@ -6507,6 +6532,8 @@ struct msm_asm_config capture_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 int msm_pcm_asm_cfg_get(int fe_id, int mode)
@@ -29256,6 +29283,10 @@ static const struct snd_kcontrol_new pri_mi2s_rx_voice_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_RX,
 	MSM_FRONTEND_DAI_VOICEMMODE2, 1, 0, msm_routing_get_voice_mixer,
 	msm_routing_put_voice_mixer),
+	SOC_DOUBLE_EXT("CSVoice", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_I2S_RX,
+	MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
+	msm_routing_put_voice_mixer),
 };
 
 #ifndef CONFIG_SA410M_DISABLE
@@ -29761,6 +29792,12 @@ static const struct snd_kcontrol_new rx_cdc_dma_rx_2_voice_mixer_controls[] = {
 	SOC_DOUBLE_EXT("VoiceMMode2", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_RX_CDC_DMA_RX_2,
 	MSM_FRONTEND_DAI_VOICEMMODE2, 1, 0, msm_routing_get_voice_mixer,
+	msm_routing_put_voice_mixer),
+};
+static const struct snd_kcontrol_new tx_voice_mixer_controls[] = {
+	SOC_DOUBLE_EXT("PRI_MI2S_TX_Voice", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_PRI_MI2S_TX,
+	MSM_FRONTEND_DAI_CS_VOICE, 1, 0, msm_routing_get_voice_mixer,
 	msm_routing_put_voice_mixer),
 };
 
@@ -33216,6 +33253,8 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_DAPM_AIF_OUT("MM_UL32", "MultiMedia32 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL33", "MultiMedia33 Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("MM_UL34", "MultiMedia34 Capture", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_IN("CS-VOICE_DL1", "CS-VOICE Playback", 0, 0, 0, 0),
+	SND_SOC_DAPM_AIF_OUT("CS-VOICE_UL1", "CS-VOICE Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("VOIP_UL", "VoIP Capture", 0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("VOICEMMODE1_DL",
 		"VoiceMMode1 Playback", 0, 0, 0, 0),
@@ -33631,9 +33670,12 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 			   SND_SOC_NOPM, 0, 0,
 			   rx_cdc_dma_rx_1_voice_mixer_controls,
 			   ARRAY_SIZE(rx_cdc_dma_rx_1_voice_mixer_controls)),
+	SND_SOC_DAPM_MIXER("Voice_Tx Mixer",
+			   SND_SOC_NOPM, 0, 0, tx_voice_mixer_controls,
+			   ARRAY_SIZE(tx_voice_mixer_controls)),
 	SND_SOC_DAPM_MIXER("Voip_Tx Mixer",
-				SND_SOC_NOPM, 0, 0, tx_voip_mixer_controls,
-				ARRAY_SIZE(tx_voip_mixer_controls)),
+			   SND_SOC_NOPM, 0, 0, tx_voip_mixer_controls,
+			   ARRAY_SIZE(tx_voip_mixer_controls)),
 	SND_SOC_DAPM_MIXER("VoiceMMode1_Tx Mixer",
 			   SND_SOC_NOPM, 0, 0, tx_voicemmode1_mixer_controls,
 			   ARRAY_SIZE(tx_voicemmode1_mixer_controls)),
