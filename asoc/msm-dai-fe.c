@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -236,8 +236,8 @@ static struct fe_dai_stream_aif_name fe_dai_stream_aif_names[] = {
 	{"MultiMedia35 Capture",                "MM_UL35"},
 	{"MultiMedia36 Playback",               "MM_DL36"},
 	{"MultiMedia36 Capture",                "MM_UL36"},
-
-
+	{"CS-VOICE Playback",                   "CS-VOICE_DL1"},
+	{"CS-VOICE Capture",                    "CS-VOICE_UL1"},
 
 };
 
@@ -362,6 +362,29 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia2",
+		.probe = fe_dai_probe,
+	},
+	{
+		.playback = {
+			.stream_name = "CS-VOICE Playback",
+			.rates = SNDRV_PCM_RATE_8000_48000,
+			.formats = SNDRV_PCM_FMTBIT_S16_LE,
+			.channels_min = 1,
+			.channels_max = 2,
+			.rate_min =     8000,
+			.rate_max =     48000,
+		},
+		.capture = {
+			.stream_name = "CS-VOICE Capture",
+			.rates = SNDRV_PCM_RATE_8000_48000,
+			.formats = SNDRV_PCM_FMTBIT_S16_LE,
+			.channels_min = 1,
+			.channels_max = 2,
+			.rate_min =     8000,
+			.rate_max =     48000,
+		},
+		.ops = &msm_fe_dai_ops,
+		.name = "CS-VOICE",
 		.probe = fe_dai_probe,
 	},
 	{
