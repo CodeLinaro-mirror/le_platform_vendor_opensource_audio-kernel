@@ -328,10 +328,15 @@ struct wcd9xxx_pdata *wcd9xxx_populate_dt_data(struct device *dev)
 	pdata->wcd_rst_np = of_parse_phandle(dev->of_node,
 					     "qcom,wcd-rst-gpio-node", 0);
 	if (!pdata->wcd_rst_np) {
-		dev_err(dev, "%s: Looking up %s property in node %s failed\n",
-			__func__, "qcom,wcd-rst-gpio-node",
-			dev->of_node->full_name);
-		goto err_parse_dt_prop;
+		pdata->reset_gpio = of_get_named_gpio(dev->of_node,
+				"qcom,cdc-reset-gpio", 0);
+		if (pdata->reset_gpio < 0) {
+			dev_err(dev, "%s: Looking up %s property in node %s failed\n",
+					__func__, "qcom,cdc-reset-gpio",
+					dev->of_node->full_name, pdata->reset_gpio);
+			goto err_parse_dt_prop;
+		}
+	dev_dbg(dev, "%s: reset gpio %d", __func__, pdata->reset_gpio);
 	}
 
 	pdata->has_buck_vsel_gpio = of_property_read_bool(dev->of_node,
@@ -972,9 +977,8 @@ int wcd9xxx_core_res_init(
 	wcd9xxx_core_res->wlock_holders = 0;
 	wcd9xxx_core_res->pm_state = WCD9XXX_PM_SLEEPABLE;
 	init_waitqueue_head(&wcd9xxx_core_res->pm_wq);
-	pm_qos_add_request(&wcd9xxx_core_res->pm_qos_req,
-				PM_QOS_CPU_DMA_LATENCY,
-				PM_QOS_DEFAULT_VALUE);
+	cpu_latency_qos_add_request(&wcd9xxx_core_res->pm_qos_req,
+				PM_QOS_CPU_DMA_LATENCY);
 
 	wcd9xxx_core_res->num_irqs = num_irqs;
 	wcd9xxx_core_res->num_irq_regs = num_irq_regs;
@@ -999,7 +1003,7 @@ void wcd9xxx_core_res_deinit(struct wcd9xxx_core_resource *wcd9xxx_core_res)
 	if (!wcd9xxx_core_res)
 		return;
 
-	pm_qos_remove_request(&wcd9xxx_core_res->pm_qos_req);
+	cpu_latency_qos_remove_request(&wcd9xxx_core_res->pm_qos_req);
 	mutex_destroy(&wcd9xxx_core_res->pm_lock);
 }
 EXPORT_SYMBOL(wcd9xxx_core_res_deinit);
