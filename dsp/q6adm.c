@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -2383,7 +2383,7 @@ static void send_adm_cal_type(int fedai_id, int cal_index, int path, int port_id
 {
 	struct cal_block_data		*cal_block = NULL;
 	int ret;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT_ULL(VMID_ADSP_HEAP);
 	struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
 		PERM_READ | PERM_WRITE | PERM_EXEC}};
 
@@ -4069,7 +4069,7 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 	int ret = 0, port_idx, app_type;
 	int copp_id = RESET_COPP_ID;
 	bool result = false;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = BIT(VMID_LPASS) | BIT_ULL(VMID_ADSP_HEAP);
         struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
                 PERM_READ | PERM_WRITE | PERM_EXEC}};
 
