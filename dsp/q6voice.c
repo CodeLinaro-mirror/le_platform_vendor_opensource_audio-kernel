@@ -1253,7 +1253,7 @@ static int voice_unmap_cal_block(struct voice_data *v, int cal_index)
 {
 	int result = 0;
 	struct cal_block_data *cal_block;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = U64_BIT(VMID_LPASS) | U64_BIT(VMID_ADSP_HEAP);
         struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
                 PERM_READ | PERM_WRITE | PERM_EXEC}};
 
@@ -1327,7 +1327,7 @@ static int voice_destroy_mvm_cvs_session(struct voice_data *v)
 	void *apr_mvm, *apr_cvs;
 	u16 mvm_handle, cvs_handle;
 	struct cal_block_data *cal_block;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = U64_BIT(VMID_LPASS) | U64_BIT(VMID_ADSP_HEAP);
         struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
                 PERM_READ | PERM_WRITE | PERM_EXEC}};
 
@@ -2758,7 +2758,7 @@ static int voice_get_cal(struct cal_block_data **cal_block,
 			 int col_data_idx, int session_id)
 {
 	int ret = 0;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = U64_BIT(VMID_LPASS) | U64_BIT(VMID_ADSP_HEAP);
 	struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
 		PERM_READ | PERM_WRITE | PERM_EXEC}};
 	*cal_block = cal_utils_get_only_cal_block(
@@ -3381,7 +3381,7 @@ static int voice_send_cvp_deregister_cal_cmd(struct voice_data *v)
 	int ret = 0;
 	int cal_index = CVP_VOCPROC_CAL;
 	struct cal_block_data *cal_block;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = U64_BIT(VMID_LPASS) | U64_BIT(VMID_ADSP_HEAP);
         struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
                 PERM_READ | PERM_WRITE | PERM_EXEC}};
 
@@ -7211,7 +7211,7 @@ int voc_disable_device(uint32_t session_id)
 	struct voice_data *v = voice_get_session(session_id);
 	int ret = 0, result = 0;
 	struct cal_block_data *cal_block;
-	u64 src_vmid_list = BIT(VMID_LPASS) | BIT(VMID_ADSP_HEAP);
+	u64 src_vmid_list = U64_BIT(VMID_LPASS) | U64_BIT(VMID_ADSP_HEAP);
         struct qcom_scm_vmperm dst_vmids[] = {{QCOM_SCM_VMID_HLOS,
                 PERM_READ | PERM_WRITE | PERM_EXEC}};
 
