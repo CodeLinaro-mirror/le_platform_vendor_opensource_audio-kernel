@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.​
- */
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+*/
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/module.h>
@@ -4102,7 +4102,8 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev, "%s: %s: Invalid num_params %d\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				lsm_params.num_params);
-		return -EINVAL;
+		err = -EINVAL;
+		goto err_free_pdata;
 	}
 
 	p_size = lsm_params.num_params *
@@ -4113,12 +4114,15 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 			"%s: %s: Invalid data_size(%u) against expected(%zd)\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				lsm_params.data_size, p_size);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_pdata;
 	}
 
 	params = kzalloc(p_size, GFP_KERNEL);
-	if (!params)
-		return -ENOMEM;
+	if (!params) {
+		err = -ENOMEM;
+		goto err_free_pdata;
+	}
 
 	if (copy_from_user(params, lsm_params.params,
 				lsm_params.data_size)) {
@@ -4126,7 +4130,8 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 				"%s: %s: copy_from_user failed, size = %d\n",
 				__func__, "set module params", lsm_params.data_size);
 		kfree(params);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_pdata;
 	}
 
 	memset(&info_v2, 0, sizeof(info_v2));
@@ -4160,6 +4165,11 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	kfree(p_data);
 	mutex_unlock(&lsm_dev->lock);
 	return 0;
+
+err_free_pdata:
+	kfree(p_data);
+	mutex_unlock(&lsm_dev->lock);
+	return err;
 }
 
 static int msm_lsm_module_params_get_64(struct snd_kcontrol *kcontrol,
@@ -4181,15 +4191,44 @@ static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
 	struct snd_pcm_substream *substream = NULL;
 	struct lsm_params_info_v2 info_v2;
 	struct lsm_params_info_v2 *ptr_info_v2 = NULL, *temp_ptr_info_v2 = NULL;
+	struct lsm_char_dev *lsm_dev;
+	struct snd_soc_component *component = NULL;
 
-	get_substream_info(kcontrol, &substream);
+	if (get_substream_info(kcontrol, &substream))
+		return -ENODEV;
 
 	runtime = substream->runtime;
-	prtd = runtime->private_data;
 	rtd = substream->private_data;
+        component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: invalid component", __func__);
+		return -EINVAL;
+	}
 
-	if (size > sizeof(struct snd_lsm_module_params))
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+
+	if (size > sizeof(struct snd_lsm_module_params)) {
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
+	}
 
 	if (!prtd->lsm_client->use_topology) {
 		dev_err(rtd->dev,
@@ -4206,6 +4245,7 @@ static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev, "%s: %s: Invalid num_params %d\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				p_data.num_params);
+		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 
@@ -4216,12 +4256,15 @@ static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
 			"%s: %s: Invalid data_size(%u) against expected(%zd)\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				p_data.data_size, p_size);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 
 	params = kzalloc(p_size, GFP_KERNEL);
-	if (!params)
+	if (!params) {
+		mutex_unlock(&lsm_dev->lock);
 		return -ENOMEM;
+	}
 
 	if (copy_from_user(params, p_data.params,
 				p_data.data_size)) {
@@ -4229,6 +4272,7 @@ static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
 				"%s: %s: copy_from_user failed, size = %d\n",
 				__func__, "set module params", p_data.data_size);
 		kfree(params);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 
@@ -4260,6 +4304,7 @@ static int msm_lsm_module_params_put_64(struct snd_kcontrol *kcontrol,
 					ptr_info_v2->stage_idx, err);
 	}
 	kfree(params);
+	mutex_unlock(&lsm_dev->lock);
 	return 0;
 }
 
@@ -4791,8 +4836,8 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 					"%s: %s: prtd->event_status is NULL\n",
 					__func__,
 					"SNDRV_LSM_GENERIC_DET_EVENT");
-			mutex_unlock(&prtd->lsm_api_lock);
-			return -EINVAL;
+			err = -EINVAL;
+			goto err_free_user_unlock;
 		}
 
 		if (user->payload_size < payload_size) {
@@ -4802,8 +4847,8 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 					payload_size);
 			spin_unlock_irqrestore(&prtd->event_lock,
 					flags);
-			mutex_unlock(&prtd->lsm_api_lock);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto err_free_user_unlock;
 		}
 
 		user->status = status;
@@ -4831,12 +4876,19 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev,
 				"%s: Failed to copy payload to user, size = %d",
 				__func__, size);
-		kfree(user);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_user;
 	}
 	kfree(user);
 	mutex_unlock(&lsm_dev->lock);
 	return 0;
+
+err_free_user_unlock:
+	mutex_unlock(&prtd->lsm_api_lock);
+err_free_user:
+	kfree(user);
+	mutex_unlock(&lsm_dev->lock);
+	return err;
 }
 
 static int msm_lsm_status_info_put(struct snd_kcontrol *kcontrol,
@@ -5291,7 +5343,14 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 
 	substream = kzalloc(sizeof(*substream), GFP_KERNEL);
 	if (!substream) {
-		pr_err("%s: alloc memory failed\n", __func__);
+		pr_err("%s: substream alloc failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	substream->runtime = kzalloc(sizeof(*substream->runtime), GFP_KERNEL);
+	if (!substream->runtime) {
+		pr_err("%s: runtime alloc failed\n", __func__);
+		kfree(substream);
 		return -ENOMEM;
 	}
 
@@ -5434,9 +5493,11 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 		default:
 		pr_err("Received cmd : 0x%x", ioctl);
 	}
+	kfree(substream->runtime);
 	kfree(substream);
 	return rc;
 done:
+	kfree(substream->runtime);
 	kfree(substream);
 	return -EFAULT;
 }
