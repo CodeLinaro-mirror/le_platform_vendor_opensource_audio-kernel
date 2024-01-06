@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/debugfs.h>
@@ -3061,7 +3061,7 @@ int afe_send_cdc_dma_data_align(u16 port_id, u32 cdc_dma_data_align)
 {
 	struct afe_param_id_cdc_dma_data_align data_align;
 	struct param_hdr_v3 param_info;
-	uint16_t port_index = 0;
+	int port_index = 0;
 	int ret = -EINVAL;
 
 	memset(&data_align, 0, sizeof(data_align));
@@ -3253,7 +3253,7 @@ static int afe_port_topology_deregister(u16 port_id)
 	uint32_t build_major_version = 0;
 	uint32_t build_minor_version = 0;
 	uint32_t build_branch_version = 0;
-	uint32_t afe_api_version = 0;
+	int afe_api_version = 0;
 
 	ret = q6core_get_avcs_avs_build_version_info(&build_major_version,
 						     &build_minor_version,
@@ -4870,7 +4870,7 @@ EXPORT_SYMBOL(afe_set_island_mode_cfg);
  */
 int afe_get_power_mode_cfg(u16 port_id, u32 *enable_flag)
 {
-	uint16_t port_index;
+	int port_index;
 	int ret = 0;
 
 	if (enable_flag) {
@@ -4894,7 +4894,7 @@ EXPORT_SYMBOL(afe_get_power_mode_cfg);
  */
 int afe_set_power_mode_cfg(u16 port_id, u32 enable_flag)
 {
-	uint16_t port_index;
+	int port_index;
 	int  ret= 0;
 
 	port_index = afe_get_port_index(port_id);
@@ -10097,7 +10097,7 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 {
 	int index = 0;
 	int ret = 0;
-	u16 idx = 0;
+	int idx = 0;
 	uint32_t build_major_version = 0;
 	uint32_t build_minor_version = 0;
 	uint32_t build_branch_version = 0;

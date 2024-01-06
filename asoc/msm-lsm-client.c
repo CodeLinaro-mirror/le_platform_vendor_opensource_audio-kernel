@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -3928,7 +3928,8 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev, "%s: %s: Invalid num_params %d\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				lsm_params.num_params);
-		return -EINVAL;
+		err = -EINVAL;
+		goto err_free_pdata;
 	}
 
 #ifdef __LP64__
@@ -3944,12 +3945,15 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 			"%s: %s: Invalid data_size(%u) against expected(%zd)\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				lsm_params.data_size, p_size);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_pdata;
 	}
 
 	params = kzalloc(p_size, GFP_KERNEL);
-	if (!params)
-		return -ENOMEM;
+	if (!params) {
+		err = -ENOMEM;
+		goto err_free_pdata;
+	}
 
 	if (copy_from_user(params, lsm_params.params,
 				lsm_params.data_size)) {
@@ -3957,7 +3961,8 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 				"%s: %s: copy_from_user failed, size = %d\n",
 				__func__, "set module params", lsm_params.data_size);
 		kfree(params);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_pdata;
 	}
 
 	memset(&info_v2, 0, sizeof(info_v2));
@@ -4000,6 +4005,10 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	kfree(params_temp);
 	kfree(p_data);
 	return 0;
+
+err_free_pdata:
+	kfree(p_data);
+	return err;
 }
 
 /*place holder for control get function*/
@@ -4365,7 +4374,8 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 					"%s: %s: prtd->event_status is NULL\n",
 					__func__,
 					"SNDRV_LSM_GENERIC_DET_EVENT");
-			return -EINVAL;
+			err = -EINVAL;
+			goto err_free_user_unlock;
 		}
 
 		if (user->payload_size < payload_size) {
@@ -4375,7 +4385,8 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 					payload_size);
 			spin_unlock_irqrestore(&prtd->event_lock,
 					flags);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto err_free_user_unlock;
 		}
 
 		user->status = status;
@@ -4402,10 +4413,17 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev,
 				"%s: Failed to copy payload to user, size = %d",
 				__func__, size);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_user;
 	}
 	kfree(user);
 	return 0;
+
+err_free_user_unlock:
+	mutex_unlock(&prtd->lsm_api_lock);
+err_free_user:
+	kfree(user);
+	return err;
 }
 
 static int msm_lsm_fwk_info(struct snd_kcontrol *kcontrol,
