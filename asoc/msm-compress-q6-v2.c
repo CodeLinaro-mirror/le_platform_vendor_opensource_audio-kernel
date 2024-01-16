@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -2956,7 +2956,7 @@ static int msm_compr_trigger(struct snd_soc_component *component,
 		}
 #else
 		if ((prtd->bytes_received > prtd->copied_total) &&
-			(prtd->bytes_received < runtime->fragment_size)) {
+			((prtd->bytes_received - prtd->copied_total) < runtime->fragment_size)) {
 			pr_debug("%s: send the only partial buffer to dsp\n",
 					__func__);
 			bytes_to_write = prtd->bytes_received
