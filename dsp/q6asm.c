@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -11402,6 +11402,7 @@ int q6asm_send_cal(struct audio_client *ac)
 	u32 payload_size = 0;
 	int path = 0;
 	int rc = -EINVAL;
+	int result = 0;
 	pr_debug("%s:\n", __func__);
 
 	if (!ac) {
@@ -11475,12 +11476,22 @@ int q6asm_send_cal(struct audio_client *ac)
 	rc = q6asm_set_pp_params(ac, &mem_hdr, NULL, payload_size);
 	if (rc) {
 		pr_err("%s: audio audstrm cal send failed\n", __func__);
-		goto unlock;
+		goto unmap;
 	}
 
 	if (cal_block)
 		cal_utils_mark_cal_used(cal_block);
 	rc = 0;
+
+unmap:
+	if (cal_block){
+		result = q6asm_unmap_cal_data(ASM_AUDSTRM_CAL_TYPE, cal_block);
+		if (result < 0){
+			rc = result;
+			pr_err("%s: error received for unmap ! size = %zd rc %d\n",
+				__func__, cal_block->map_data.map_size, rc);
+		}
+	}
 
 unlock:
 	mutex_unlock(&cal_data[ASM_AUDSTRM_CAL]->lock);
