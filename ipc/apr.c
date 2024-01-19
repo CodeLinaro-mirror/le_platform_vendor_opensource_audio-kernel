@@ -39,6 +39,7 @@
 #define APR_PKT_IPC_LOG_PAGE_CNT 2
 
 static int apr_pkt_cnt_adsp_restart = 20;
+static int apr_reg_initial_bootup = true;
 module_param(apr_pkt_cnt_adsp_restart, int, 0664);
 MODULE_PARM_DESC(apr_pkt_cnt_adsp_restart, "set apr pktcount for adsp restart feature");
 
@@ -518,7 +519,12 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 
 	if (dest_id == APR_DEST_QDSP6) {
 		if (apr_get_q6_state() != APR_SUBSYS_LOADED ) {
-			int rt = rproc_boot(rproc_h);
+			int rt;
+			if(!apr_reg_initial_bootup){
+				pr_err_ratelimited("%s: ADSP is not UP", __func__);
+				return NULL;
+	                  }
+			rt = rproc_boot(rproc_h);
 			if ( rt != 0) {
 				pr_err("%s: adsp not up rproc is NULL\n", __func__);
 				return NULL;
@@ -529,6 +535,7 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 				spin_lock(&apr_priv->apr_lock);
 				apr_priv->is_initial_boot = false;
 				spin_unlock(&apr_priv->apr_lock);
+				apr_reg_initial_bootup = false;
 			}
 		}
 		pr_debug("%s: adsp Up\n", __func__);
@@ -1123,6 +1130,7 @@ static int apr_notifier_service_cb(struct notifier_block *this,
 		spin_lock(&apr_priv->apr_lock);
 		apr_priv->is_initial_boot = false;
 		spin_unlock(&apr_priv->apr_lock);
+		apr_reg_initial_bootup = false;
 		break;
 	default:
 		break;
@@ -1211,6 +1219,25 @@ static int apr_probe(struct platform_device *pdev)
 	spin_lock_init(&apr_priv->apr_lock);
 	INIT_WORK(&apr_priv->add_chld_dev_work, apr_add_child_devices);
 
+	spin_lock(&apr_priv->apr_lock);
+	apr_priv->is_initial_boot = true;
+	spin_unlock(&apr_priv->apr_lock);
+
+	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle", &size);
+	if (!prop) {
+		dev_err(&pdev->dev, "Missing remotproc handle\n");
+		ret = -EINVAL;
+		return ret;
+	}
+	rproc_phandle = be32_to_cpup(prop->value);
+
+	rproc_h = rproc_get_by_phandle(rproc_phandle);
+	if (!rproc_h) {
+		dev_info_ratelimited(&pdev->dev, "remotproc handle NULL\n");
+		ret = -EPROBE_DEFER;
+		return ret;
+	}
+
 	for (i = 0; i < APR_DEST_MAX; i++)
 		for (j = 0; j < APR_CLIENT_MAX; j++) {
 			mutex_init(&client[i][j].m_lock);
@@ -1232,9 +1259,6 @@ static int apr_probe(struct platform_device *pdev)
 	if (!apr_pkt_ctx)
 		pr_err("%s: Unable to create ipc log context\n", __func__);
 
-	spin_lock(&apr_priv->apr_lock);
-	apr_priv->is_initial_boot = true;
-	spin_unlock(&apr_priv->apr_lock);
 	ret = of_property_read_string(pdev->dev.of_node,
 				      "qcom,subsys-name",
 				      (const char **)(&subsys_name));
