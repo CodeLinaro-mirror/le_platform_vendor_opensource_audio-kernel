@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2014, 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -103,6 +103,7 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 	phandle rproc_handle;
 	struct rproc *rproc;
 	void *padsp_restart_cb = &adsp_load_state_notify_cb;
+	const char *image;
 
 	if (!pdev) {
 		dev_err(&pdev->dev, "%s: Platform device null\n", __func__);
@@ -128,24 +129,27 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 			"%s: ADSP state = %x\n", __func__, adsp_state);
 		goto fail;
 	}
-
-	prop = of_find_property(pdev->dev.of_node,
-					"qcom,proc-img-to-load",
-					&size);
-
+	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
+				&size);
 	if (!prop) {
-		dev_dbg(&pdev->dev,
-			"%s: loading default image ADSP\n", __func__);
-		goto load_adsp;
+		dev_err(&pdev->dev, "Missing remoteproc handle\n");
+		goto fail;
 	}
-
 	rproc_handle = be32_to_cpup(prop->value);
 	priv->pil_h = rproc_get_by_phandle(rproc_handle);
 	if (!priv->pil_h)
 		goto fail;
 
 	rproc = priv->pil_h;
-	if (!strcmp(rproc->name, "modem")) {
+	rc = of_property_read_string(pdev->dev.of_node,
+					"qcom,proc-img-to-load",
+					&image);
+	if (rc) {
+		dev_err(&pdev->dev,
+			"%s: loading default image ADSP\n", __func__);
+		goto load_adsp;
+	}
+	if (!strcmp(image, "modem")) {
 		adsp_state = apr_get_modem_state();
 		if (adsp_state == APR_SUBSYS_DOWN) {
 			rc = rproc_boot(priv->pil_h);
@@ -163,20 +167,11 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 		}
 
 		dev_dbg(&pdev->dev, "%s: Q6/MDSP image is loaded\n", __func__);
+		return;
 	}
 
 load_adsp:
 	{
-		prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
-				&size);
-		if(!prop) {
-			dev_err(&pdev->dev, "Missing remoteproc handle\n");
-			goto fail;
-		}
-		rproc_handle = be32_to_cpup(prop->value);
-		priv->pil_h = rproc_get_by_phandle(rproc_handle);
-		if(!priv->pil_h)
-			goto fail;
 		adsp_state = apr_get_q6_state();
 		if (adsp_state == APR_SUBSYS_DOWN) {
 #if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
