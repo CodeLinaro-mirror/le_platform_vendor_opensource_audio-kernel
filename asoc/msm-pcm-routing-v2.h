@@ -827,7 +827,7 @@ int msm_pcm_routing_set_channel_mixer_cfg(
 	struct msm_pcm_channel_mixer *params);
 
 int msm_pcm_routing_set_channel_mixer_runtime(
-	int be_id, int session_id,
+	int fe_id, int be_id, int session_id,
 	int session_type,
 	struct msm_pcm_channel_mixer *params);
 
@@ -905,4 +905,7 @@ int snd_pcm_add_usr_ctls(struct snd_pcm *pcm, int stream,
     unsigned long private_value,
     struct snd_pcm_usr **info_ret);
 #endif
+
+bool msm_pcm_routing_get_portid_copp_idx(int fe_id,
+	int session_type, int *port_id, int *copp_idx);
 #endif /*_MSM_PCM_H*/
