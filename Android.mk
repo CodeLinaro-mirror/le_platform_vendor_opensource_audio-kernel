@@ -44,7 +44,10 @@ KBUILD_OPTIONS += AUDIO_ROOT=$(AUDIO_BLD_DIR)
 KBUILD_OPTIONS += MODNAME=audio_dlkm
 KBUILD_OPTIONS += BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 KBUILD_OPTIONS += $(AUDIO_SELECT)
-KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(PWD)/$(call intermediates-dir-for,DLKM,msm-ext-disp-module-symvers)/Module.symvers
+
+ifneq ($(call is-board-platform-in-list,trinket), true)
+	KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(PWD)/$(call intermediates-dir-for,DLKM,msm-ext-disp-module-symvers)/Module.symvers
+endif
 
 AUDIO_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/*) \
@@ -139,6 +142,7 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 
+ifneq ($(call is-board-platform-in-list,trinket), true)
 ###########################################################
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
@@ -151,6 +155,7 @@ LOCAL_REQUIRED_MODULES    := msm-ext-disp-module-symvers
 LOCAL_ADDITIONAL_DEPENDENCIES := $(call intermediates-dir-for,DLKM,msm-ext-disp-module-symvers)/Module.symvers
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 ###########################################################
+endif
 
 ifeq ($(call is-board-platform-in-list,kona trinket), true)
 ##########################################################
