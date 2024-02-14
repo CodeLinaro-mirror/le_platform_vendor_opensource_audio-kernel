@@ -306,7 +306,7 @@ err:
 	sconfig_tx.chs = NULL;
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wcd9xxx_close_slim_sch);
+EXPORT_SYMBOL_GPL(wcd9xxx_cfg_slim_sch_tx);
 
 int wcd9xxx_get_slave_port(unsigned int ch_num)
 {
