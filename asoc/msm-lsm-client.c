@@ -2448,8 +2448,13 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 			prtd->lsm_client->get_param_payload = NULL;
 			goto done;
 		}
+		if (__builtin_uadd_overflow(sizeof(p_info_32), p_info_32.param_size, &size)) {
+			pr_err("%s: param size exceeds limit of %u bytes.\n",
+				__func__, UINT_MAX);
+			err = -EINVAL;
+			goto done;
+		}
 
-		size = sizeof(p_info_32) + p_info_32.param_size;
 		param_info_rsp = kzalloc(size, GFP_KERNEL);
 
 		if (!param_info_rsp) {
@@ -4449,6 +4454,7 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 					"%s: %s: prtd->event_status is NULL\n",
 					__func__,
 					"SNDRV_LSM_GENERIC_DET_EVENT");
+			mutex_unlock(&prtd->lsm_api_lock);
 			return -EINVAL;
 		}
 
@@ -4459,6 +4465,7 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 					payload_size);
 			spin_unlock_irqrestore(&prtd->event_lock,
 					flags);
+			mutex_unlock(&prtd->lsm_api_lock);
 			return -ENOMEM;
 		}
 
@@ -4486,9 +4493,128 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev,
 				"%s: Failed to copy payload to user, size = %d",
 				__func__, size);
+		kfree(user);
 		return -EFAULT;
 	}
 	kfree(user);
+	return 0;
+}
+
+static int msm_lsm_status_info_put(struct snd_kcontrol *kcontrol,
+		const unsigned int __user *bytes, unsigned int size)
+{
+	return 0;
+}
+
+static int msm_lsm_status_info_get(struct snd_kcontrol *kcontrol,
+		unsigned int __user *bytes, unsigned int size)
+{
+	int err = 0;
+	struct lsm_priv *prtd;
+	unsigned long flags = 0;
+	int user_payload_size = 0;
+	struct snd_pcm_runtime *runtime;
+	struct snd_soc_pcm_runtime *rtd;
+	struct snd_pcm_substream *substream;
+	uint16_t status = 0, payload_size = 0;
+	uint32_t ts_lsw, ts_msw;
+	struct snd_lsm_event_status_v3 *user_v3;
+
+	if (get_substream_info(kcontrol, &substream))
+		return 0;
+
+	runtime = substream->runtime;
+	prtd = runtime->private_data;
+	rtd = substream->private_data;
+
+	dev_dbg(rtd->dev, "%s: Get event status\n", __func__);
+
+	atomic_set(&prtd->event_wait_stop, 0);
+
+	dev_dbg(rtd->dev, "%s: wait event is done\n", __func__);
+	mutex_lock(&prtd->lsm_api_lock);
+
+	dev_dbg(rtd->dev, "%s: New event available %ld\n",
+		__func__, prtd->event_avail);
+
+	spin_lock_irqsave(&prtd->event_lock, flags);
+
+	if (prtd->event_status) {
+		payload_size = prtd->event_status->payload_size;
+		ts_lsw = prtd->event_status->timestamp_lsw;
+		ts_msw = prtd->event_status->timestamp_msw;
+		status = prtd->event_status->status;
+		spin_unlock_irqrestore(&prtd->event_lock,
+				       flags);
+	} else {
+		spin_unlock_irqrestore(&prtd->event_lock,
+				       flags);
+		dev_err(rtd->dev,
+			"%s: prtd->event_status is NULL\n",
+			__func__);
+		mutex_unlock(&prtd->lsm_api_lock);
+		return -EINVAL;
+	}
+
+	user_payload_size = size - sizeof(struct snd_lsm_event_status_v3);
+
+	if (user_payload_size > LISTEN_MAX_STATUS_PAYLOAD_SIZE) {
+		dev_err(rtd->dev,
+			"%s: payload_size %d is invalid, max allowed = %d\n",
+				__func__, user_payload_size,
+				LISTEN_MAX_STATUS_PAYLOAD_SIZE);
+		mutex_unlock(&prtd->lsm_api_lock);
+		return -EFAULT;
+	}
+
+	user_v3 = kzalloc(size, GFP_KERNEL);
+	if (!user_v3) {
+		dev_err(rtd->dev,
+			"%s: Allocation failed event status size %d\n",
+			__func__, user_payload_size);
+		mutex_unlock(&prtd->lsm_api_lock);
+		return -ENOMEM;
+	}
+
+	user_v3->payload_size = payload_size;
+
+	if (user_v3->payload_size < payload_size) {
+		dev_err(rtd->dev,
+			"%s: provided %d bytes isn't enough, needs %d bytes\n",
+			__func__, user_v3->payload_size,
+			payload_size);
+		mutex_unlock(&prtd->lsm_api_lock);
+		return -ENOMEM;
+	} else {
+		user_v3->timestamp_lsw = ts_lsw;
+		user_v3->timestamp_msw = ts_msw;
+		user_v3->status = status;
+		memcpy(user_v3->payload,
+			prtd->event_status->payload,
+			payload_size);
+	}
+
+	err = msm_lsm_start_lab_buffer(prtd, status);
+
+	mutex_unlock(&prtd->lsm_api_lock);
+
+	if (!access_ok(bytes, size)) {
+		dev_err(rtd->dev,
+				"%s: Failed to verify write, size = %d\n",
+				__func__, size);
+		kfree(user_v3);
+		return -EFAULT;
+	}
+
+	if (copy_to_user(bytes, user_v3, size)) {
+		dev_err(rtd->dev,
+				"%s: Failed to copy payload to user, size = %d",
+				__func__, size);
+		kfree(user_v3);
+		return -EFAULT;
+	}
+	kfree(user_v3);
+
 	return 0;
 }
 
@@ -4604,6 +4730,18 @@ static int msm_va_get_det_event_info(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int msm_va_get_status_info(struct snd_kcontrol *kcontrol,
+		struct snd_ctl_elem_info *uinfo)
+{
+	struct soc_bytes_ext *params = (void *)kcontrol->private_value;
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_BYTES;
+	uinfo->count = 512;
+	params->get = msm_lsm_status_info_get;
+	params->put = msm_lsm_status_info_put;
+	params->max = uinfo->count;
+	return 0;
+}
+
 struct snd_kcontrol_new va_mixer_ctl[] = {
 	{
 		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
@@ -4681,6 +4819,14 @@ struct snd_kcontrol_new va_mixer_ctl[] = {
 		.name	= "LSM DET_EVENT_INFO GET",
 		.tlv.c	= snd_soc_bytes_tlv_callback,
 		.info = msm_va_get_det_event_info,
+	},
+	{
+		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+		.access = SNDRV_CTL_ELEM_ACCESS_TLV_READWRITE |
+			SNDRV_CTL_ELEM_ACCESS_TLV_CALLBACK,
+		.name	= "LSM_GET_STATUS_V3_INFO",
+		.tlv.c	= snd_soc_bytes_tlv_callback,
+		.info = msm_va_get_status_info,
 	},
 	{
 		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
@@ -4819,7 +4965,7 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 		generic_det_device = lsm_info.dev_num;
 		rc = msm_lsm_cdev_session_lut(substream, GET_INFO);
 		if (rc) {
-			pr_err(" %s Failed to get the required data", __func__);
+			pr_err(" %s SNDRV_LSM_GENERIC_DET_EVENT: Failed to get the required data", __func__);
 			generic_det_device = -1;
 			break;
 		}
@@ -4835,7 +4981,7 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 							1, 0))));
 		mutex_lock(&prtd->lsm_api_lock);
 
-		dev_dbg(rtd->dev, "%s: wait_event_freezable %d event_wait_stop %d\n",
+		dev_dbg(rtd->dev, "%s: SNDRV_LSM_GENERIC_DET_EVENT: wait_event_freezable %d event_wait_stop %d\n",
 				__func__, rc, xchg);
 
 		if (!rc && !xchg) {
@@ -4877,7 +5023,6 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 		__pm_relax(prtd->ws);
 		break;
 		case LSM_LUT_CLEAR_INFO:
-		{
 			clear_device = (int)arg;
 			rc = msm_lsm_cdev_session_lut(substream, CLEAR_INFO);
 			if (rc) {
@@ -4885,7 +5030,68 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 				clear_device = -1;
 				break;
 			}
+		break;
+	case SNDRV_LSM_EVENT_STATUS_V3:
+		if (copy_from_user(&lsm_info, (void *)arg,sizeof(lsm_info)))
+			goto done;
+
+		generic_det_device = lsm_info.dev_num;
+		rc = msm_lsm_cdev_session_lut(substream, GET_INFO);
+		if (rc) {
+			pr_err(" %s SNDRV_LSM_EVENT_STATUS_V3: Failed to get the required data", __func__);
+			generic_det_device = -1;
+			break;
 		}
+		runtime = substream->runtime;
+		prtd = runtime->private_data;
+		rtd = substream->private_data;
+
+		atomic_set(&prtd->event_wait_stop, 0);
+
+		rc = wait_event_freezable(prtd->event_wait,
+				(cmpxchg(&prtd->event_avail, 1, 0) ||
+				 (xchg = atomic_cmpxchg(&prtd->event_wait_stop,
+							1, 0))));
+		mutex_lock(&prtd->lsm_api_lock);
+
+		dev_dbg(rtd->dev, "%s: SNDRV_LSM_EVENT_STATUS_V3: wait_event_freezable %d event_wait_stop %d\n",
+				__func__, rc, xchg);
+
+		if (!rc && !xchg) {
+			dev_dbg(rtd->dev, "%s: %s: New event available %ld\n",
+					__func__, "SNDRV_LSM_EVENT_STATUS_V3",
+					prtd->event_avail);
+
+			spin_lock_irqsave(&prtd->event_lock, flags);
+
+			if (prtd->event_status) {
+				lsm_info.det_status = prtd->event_status->status;
+				spin_unlock_irqrestore(&prtd->event_lock,
+						flags);
+			} else {
+				spin_unlock_irqrestore(&prtd->event_lock,
+						flags);
+				dev_dbg(rtd->dev,
+					"%s: %s: prtd->event_status is NULL\n",
+						__func__,
+						"SNDRV_LSM_EVENT_STATUS_V3");
+				rc = -EINVAL;
+				mutex_unlock(&prtd->lsm_api_lock);
+				break;
+			}
+
+		} else if (xchg) {
+			lsm_info.det_status = 0;
+			dev_dbg(rtd->dev, "%s: %s: Wait aborted\n",
+					__func__, "SNDRV_LSM_EVENT_STATUS_V3");
+			rc = 0;
+		}
+		mutex_unlock(&prtd->lsm_api_lock);
+
+		if (copy_to_user((void *)arg, &lsm_info, sizeof(lsm_info)))
+			pr_err("%s: SNDRV_LSM_EVENT_STATUS_V3: copy to user failed", __func__);
+
+		__pm_relax(prtd->ws);
 		break;
 		default:
 		pr_err("Received cmd : 0x%x", ioctl);

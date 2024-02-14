@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -101,9 +101,7 @@ static struct regmap_irq_chip wcd937x_regmap_irq_chip = {
 	.mask_base = WCD937X_DIGITAL_INTR_MASK_0,
 	.ack_base = WCD937X_DIGITAL_INTR_CLEAR_0,
 	.use_ack = 1,
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 	.clear_ack = 1,
-#endif
 	.type_base = WCD937X_DIGITAL_INTR_LEVEL_0,
 	.runtime_pm = false,
 	.handle_post_irq = wcd937x_handle_post_irq,
@@ -211,6 +209,8 @@ static int wcd937x_init_reg(struct snd_soc_component *component)
 		snd_soc_component_update_bits(component,
 				WCD937X_RX_BIAS_HPH_LOWPOWER, 0xF0, 0x90);
 	}
+	snd_soc_component_update_bits(component, WCD937X_HPH_OCP_CTL, 0xFF, 0x3A);
+	snd_soc_component_update_bits(component, WCD937X_RX_OCP_CTL, 0x0F, 0x02);
 	return 0;
 }
 
