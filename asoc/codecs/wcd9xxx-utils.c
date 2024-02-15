@@ -27,6 +27,7 @@
  * as 0x00
  */
 #define PAGE_REG_ADDR 0x00
+#define PM_QOS_CPU_DMA_LATENCY 1
 
 static enum wcd9xxx_intf_status wcd9xxx_intf = -1;
 
@@ -333,7 +334,7 @@ struct wcd9xxx_pdata *wcd9xxx_populate_dt_data(struct device *dev)
 		if (pdata->reset_gpio < 0) {
 			dev_err(dev, "%s: Looking up %s property in node %s failed\n",
 					__func__, "qcom,cdc-reset-gpio",
-					dev->of_node->full_name, pdata->reset_gpio);
+					dev->of_node->full_name);
 			goto err_parse_dt_prop;
 		}
 	dev_dbg(dev, "%s: reset gpio %d", __func__, pdata->reset_gpio);
