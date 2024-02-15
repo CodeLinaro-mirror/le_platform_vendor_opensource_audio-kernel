@@ -505,12 +505,12 @@ struct audio_cal_col {
 	__u32		id;
 	__u32		type;
 	union audio_cal_col_na	na_value;
-} __packed;
+} __attribute__((packed));
 
 struct audio_cal_col_data {
 	__u32		num_columns;
 	struct audio_cal_col	column[MAX_VOICE_COLUMNS];
-} __packed;
+} __attribute__((packed));
 
 struct audio_cal_info_voc_col {
 	__s32				table_id;

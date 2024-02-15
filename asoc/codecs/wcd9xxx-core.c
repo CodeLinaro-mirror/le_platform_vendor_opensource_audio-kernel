@@ -13,7 +13,7 @@
 #include <linux/debugfs.h>
 #include <linux/i2c.h>
 #include <linux/regmap.h>
-#include <audio/linux/mfd/wcd9xxx/wcd9xxx_registers.h>
+#include <linux/mfd/wcd9xxx/wcd9xxx_registers.h>
 #include <sound/soc.h>
 #include <asoc/core.h>
 #include <asoc/pdata.h>
@@ -1223,7 +1223,7 @@ fail:
 	return ret;
 }
 
-static int wcd9xxx_i2c_remove(struct i2c_client *client)
+static void wcd9xxx_i2c_remove(struct i2c_client *client)
 {
 	struct wcd9xxx *wcd9xxx;
 	struct wcd9xxx_pdata *pdata = client->dev.platform_data;
@@ -1234,7 +1234,6 @@ static int wcd9xxx_i2c_remove(struct i2c_client *client)
 				 pdata->num_supplies);
 	wcd9xxx_device_exit(wcd9xxx);
 	dev_set_drvdata(&client->dev, NULL);
-	return 0;
 }
 
 static int wcd9xxx_dt_parse_slim_interface_dev_info(struct device *dev,

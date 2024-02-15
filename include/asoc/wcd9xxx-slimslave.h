@@ -5,7 +5,7 @@
 #ifndef __WCD9XXX_SLIMSLAVE_H_
 #define __WCD9XXX_SLIMSLAVE_H_
 
-#include <linux/slimbus/slimbus.h>
+#include <linux/slimbus.h>
 #include "core.h"
 
 
