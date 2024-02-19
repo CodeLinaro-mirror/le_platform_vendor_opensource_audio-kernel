@@ -9,8 +9,8 @@
 #include <linux/device.h>
 #include <linux/mutex.h>
 #include <linux/miscdevice.h>
-#include <sound/audio_slimslave.h>
-#include <linux/slimbus.h>
+#include <audio/sound/audio_slimslave.h>
+#include <linux/slimbus/slimbus.h>
 #include <linux/pm_runtime.h>
 
 static struct slim_device *slim;

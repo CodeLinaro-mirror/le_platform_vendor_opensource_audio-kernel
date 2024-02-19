@@ -21,9 +21,7 @@
 #include <linux/export.h>
 #include <ipc/apr.h>
 #include <dsp/msm_audio_ion.h>
-#include <soc/qcom/secure_buffer.h>
-#include <linux/of_reserved_mem.h>
-#include <linux/qcom_scm.h>
+
 MODULE_IMPORT_NS(DMA_BUF);
 
 #define MSM_AUDIO_ION_PROBED (1 << 0)
@@ -271,41 +269,6 @@ exit:
 	return rc;
 }
 
-static int msm_audio_protect_memory_region(struct platform_device *pdev)
-{
-	int ret = 0;
-	phys_addr_t addr = 0;
-	struct reserved_mem *rmem = NULL;
-	u64 size = 0;
-	struct device_node *node = NULL;
-	u64 srcVM[1] = {VMID_HLOS};
-	struct qcom_scm_vmperm destVM[2] = {{VMID_MSS_MSA, PERM_READ | PERM_WRITE},
-		{VMID_HLOS, PERM_READ | PERM_WRITE}};
-	node = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
-	if (!node) {
-		pr_err("node is NULL\n");
-		ret = -EINVAL;
-		goto exit;
-	}
-	rmem = of_reserved_mem_lookup(node);
-	if (!rmem) {
-		pr_err("unable to acquire memory-region of heap\n");
-		ret = -EINVAL;
-		goto exit;
-	}
-	ret = of_reserved_mem_device_init_by_idx(&pdev->dev, pdev->dev.of_node, 0);
-	of_node_put(node);
-	if (ret) {
-		pr_err("Failed to initialize reserved mem, ret %d\n", ret);
-		goto exit;
-	}
-	addr = rmem->base;
-	size = (size_t)rmem->size;
-	pr_err("%s: addr = %p size = %zu\n", __func__, (void *)(phys_addr_t)addr, (size_t)size);
-	return qcom_scm_assign_mem(addr, size, srcVM, destVM, ARRAY_SIZE(destVM));
-exit:
-	return ret;
-}
 static int msm_audio_ion_unmap_kernel(struct dma_buf *dma_buf)
 {
 	int rc = 0;
@@ -813,9 +776,7 @@ static int msm_audio_ion_probe(struct platform_device *pdev)
 	const char *msm_audio_ion_dt = "qcom,smmu-enabled";
 	const char *msm_audio_ion_smmu = "qcom,smmu-version";
 	const char *msm_audio_ion_smmu_sid_mask = "qcom,smmu-sid-mask";
-	const char *mdm_audio_ion_scm = "qcom,scm-mp-enabled";
 	bool smmu_enabled;
-	bool scm_mp_enabled;
 	enum apr_subsys_state q6_state;
 	struct device *dev = &pdev->dev;
 	struct of_phandle_args iommuspec;
@@ -839,17 +800,6 @@ static int msm_audio_ion_probe(struct platform_device *pdev)
 
 	if (!smmu_enabled) {
 		dev_dbg(dev, "%s: SMMU is Disabled\n", __func__);
-				scm_mp_enabled = of_property_read_bool(dev->of_node,
-						mdm_audio_ion_scm);
-		if (scm_mp_enabled) {
-			dev_dbg(dev, "%s: Calling HYP Assign\n", __func__);
-			rc = msm_audio_protect_memory_region(pdev);
-			if (rc) {
-				dev_err(dev, "%s: HYP ASSIGN Failed\n", __func__);
-				rc = 0;
-			}
-		} else
-			pr_debug("%s: scm mp enabled not found\n", __func__);
 		goto exit;
 	}
 
