@@ -385,21 +385,12 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 		goto err;
 	}
 
-<<<<<<< HEAD   (c22ef3 Audio legacy: Integer overflow in msm_lsm_ioctl_compat durin)
 	if (msm_audio_ion_data.smmu_enabled == true) {
 		pr_debug("%s: system heap is used\n", __func__);
 		heap = dma_heap_find("qcom,system-uncached");
 	} else {
 		pr_debug("%s: audio heap is used\n", __func__);
 		heap = dma_heap_find("qcom,audio");
-=======
-	pr_debug("%s: system heap is used\n", __func__);
-	heap = dma_heap_find("qcom,system-uncached");
-	if (!heap) {
-		pr_err("Unable to find the system-uncached heap\n");
-		kfree(iosys_vmap);
-		goto err;
->>>>>>> CHANGE (aff7e1 audio: Playback noise issue fix)
 	}
 
 	*dma_buf = dma_heap_buffer_alloc(heap, bufsz, 0, 0);
