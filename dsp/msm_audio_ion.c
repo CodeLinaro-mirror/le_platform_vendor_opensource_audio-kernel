@@ -869,6 +869,8 @@ exit:
 		msm_audio_ion_data.device_status |= MSM_AUDIO_ION_PROBED;
 
 	msm_audio_ion_data.cb_dev = dev;
+	INIT_LIST_HEAD(&msm_audio_ion_data.alloc_list);
+	mutex_init(&(msm_audio_ion_data.list_mutex));
 
 	return rc;
 }
