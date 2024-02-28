@@ -36,7 +36,7 @@
 #include "msm-pcm-routing-devdep.h"
 #include "msm-qti-pp-config.h"
 #ifdef CONFIG_DOLBY_DAP
-#include <linux/msm-dolby-dap-config.h>
+#include "msm-dolby-dap-config.h"
 #endif
 #include <linux/msm-ds2-dap-config.h>
 

@@ -1,28 +1,28 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2013-2014, 2017, 2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _UAPI_MSM_DS2_DAP_CONFIG_H__
 #define _UAPI_MSM_DS2_DAP_CONFIG_H__
 
 #include <linux/msm-dolby-common.h>
-#include <sound/hwdep.h>
-#include <uapi/audio/sound/devdep_params.h>
+#include <linux/types.h>
+#include <sound/devdep_params.h>
 
 struct dolby_param_data32 {
-	s32 version;
-	s32 device_id;
-	s32 be_id;
-	s32 param_id;
-	s32 length;
-	compat_uptr_t data;
+	__s32 version;
+	__s32 device_id;
+	__s32 be_id;
+	__s32 param_id;
+	__s32 length;
+	__u32 data;
 };
 
 struct dolby_param_license32 {
-	compat_uptr_t dmid;
-	compat_uptr_t license_key;
+	__u32 dmid;
+	__u32 license_key;
 };
 
 #define SNDRV_DEVDEP_DAP_IOCTL_SET_PARAM32\
@@ -54,30 +54,30 @@ enum {
 
 struct custom_stereo_param {
 	/* Index is 32-bit param in little endian */
-	u16 index;
-	u16 reserved;
+	__u16 index;
+	__u16 reserved;
 
 	/* For stereo mixing, the number of out channels */
-	u16 num_out_ch;
+	__u16 num_out_ch;
 	/* For stereo mixing, the number of in channels */
-	u16 num_in_ch;
+	__u16 num_in_ch;
 
 	/* Out channel map FL/FR*/
-	u16 out_fl;
-	u16 out_fr;
+	__u16 out_fl;
+	__u16 out_fr;
 
 	/* In channel map FL/FR*/
-	u16 in_fl;
-	u16 in_fr;
+	__u16 in_fl;
+	__u16 in_fr;
 
 	/*
 	 * Weighting coefficients. Mixing will be done according to
 	 * these coefficients.
 	 */
-	u16 op_FL_ip_FL_weight;
-	u16 op_FL_ip_FR_weight;
-	u16 op_FR_ip_FL_weight;
-	u16 op_FR_ip_FR_weight;
+	__u16 op_FL_ip_FL_weight;
+	__u16 op_FL_ip_FR_weight;
+	__u16 op_FR_ip_FL_weight;
+	__u16 op_FR_ip_FR_weight;
 };
 
 #define DOLBY_PARAM_INT_ENDP_LENGTH             1
@@ -90,15 +90,15 @@ struct custom_stereo_param {
 #define TOTAL_LENGTH_DS2_PARAM (TOTAL_LENGTH_DOLBY_PARAM + 1)
 
 int msm_ds2_dap_update_port_parameters(struct snd_hwdep *hw,  struct file *file,
-				       bool open);
+				       _Bool open);
 int msm_ds2_dap_ioctl(struct snd_hwdep *hw, struct file *file,
-		      u32 cmd, void *arg);
+		      __u32 cmd, void *arg);
 int msm_ds2_dap_compat_ioctl(struct snd_hwdep *hw,
 			     struct file *file,
-			     u32 cmd, void *arg);
+			     __u32 cmd, void *arg);
 int msm_ds2_dap_init(int port_id, int copp_idx, int channels,
-		     bool is_custom_stereo_on);
+		     _Bool is_custom_stereo_on);
 void msm_ds2_dap_deinit(int port_id);
 int msm_ds2_dap_set_custom_stereo_onoff(int port_id, int copp_idx,
-					bool is_custom_stereo_enabled);
+					_Bool is_custom_stereo_enabled);
 #endif

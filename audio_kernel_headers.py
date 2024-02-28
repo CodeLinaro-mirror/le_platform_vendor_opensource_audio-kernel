@@ -45,8 +45,7 @@ def gen_audio_headers(verbose, gen_dir, headers_install, unifdef, audio_include_
     for h in audio_include_uapi:
         audio_uapi_include_prefix = os.path.join(h.split('/include/uapi/')[0],
                                                  'include',
-                                                 'uapi',
-                                                 'audio') + os.sep
+                                                 'uapi') + os.sep
 
         if not run_headers_install(
                 verbose, gen_dir, headers_install, unifdef,
