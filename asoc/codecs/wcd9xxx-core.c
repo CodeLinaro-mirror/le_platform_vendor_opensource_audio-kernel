@@ -1227,7 +1227,7 @@ fail:
 	return ret;
 }
 
-static int wcd9xxx_i2c_remove(struct i2c_client *client)
+static void wcd9xxx_i2c_remove(struct i2c_client *client)
 {
 	struct wcd9xxx *wcd9xxx;
 	struct wcd9xxx_pdata *pdata = client->dev.platform_data;
@@ -1238,7 +1238,6 @@ static int wcd9xxx_i2c_remove(struct i2c_client *client)
 				 pdata->num_supplies);
 	wcd9xxx_device_exit(wcd9xxx);
 	dev_set_drvdata(&client->dev, NULL);
-	return 0;
 }
 
 static int wcd9xxx_slim_get_laddr(struct slim_device *sb)

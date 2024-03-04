@@ -379,7 +379,7 @@ int snd_pcm_add_va_ctls(struct snd_pcm *pcm, int stream,
 	knew->private_value = private_value;
 	info->kctl = snd_ctl_new1(knew, info);
 	if (!info->kctl) {
-		pr_err("%s: snd_ctl_new1 failed");
+		pr_err("%s: snd_ctl_new1 failed\n", __func__);
 		kfree(info);
 		return -ENOMEM;
 	}

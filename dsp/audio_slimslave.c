@@ -11,7 +11,7 @@
 #include <linux/mutex.h>
 #include <linux/miscdevice.h>
 #include <audio/sound/audio_slimslave.h>
-#include <linux/slimbus/slimbus.h>
+#include <linux/slimbus.h>
 #include <linux/pm_runtime.h>
 
 static struct slim_device *slim;
