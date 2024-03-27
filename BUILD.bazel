@@ -15,19 +15,23 @@ ddk_headers(
         "include/ipc/*.h",
         "include/soc/*.h"
     ]),
-    includes = ["include"]
+    includes = ["include", "include/uapi"]
 )
 ddk_headers(
     name = "audio_uapi_headers",
     hdrs = glob([
-        "include/uapi/audio/**/*.h"
+        "include/uapi/audio/**/*.h",
+	"include/uapi/**/*.h",
+	"include/uapi/**/**/**/*.h",
+	"include/**/**/**/**/*.h"
     ]),
-    includes = ["include/uapi", "include/uapi/audio"]
+    includes = ["include", "include/uapi", "include/uapi/audio"]
 )
 ddk_headers(
     name = "audio_src_headers",
     hdrs = glob([
         "asoc/**/*.h",
+	"asoc/*.h",
         "dsp/**/*.h",
         "ipc/**/*.h",
         "soc/**/*.h"
