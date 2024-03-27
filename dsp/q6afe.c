@@ -27,7 +27,7 @@
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
 #define AFE_NOWAIT_TOKEN	2048
-
+#define MAX_VOC_SESSIONS	8
 #define SP_V4_NUM_MAX_SPKRS SP_V2_NUM_MAX_SPKRS
 #define MAX_LSM_SESSIONS 8
 
@@ -218,6 +218,7 @@ struct afe_ctl {
 	u32 afe_cal_mode[AFE_MAX_PORTS];
 
 	u16 dtmf_gen_rx_portid;
+	u16 dtmf_gen_rx_session_portid[MAX_VOC_SESSIONS];
 	struct audio_cal_info_spk_prot_cfg	prot_cfg;
 	struct afe_spkr_prot_calib_get_resp	calib_data;
 	struct audio_cal_info_sp_th_vi_ftm_cfg	th_ftm_cfg;
@@ -8604,6 +8605,24 @@ void afe_set_dtmf_gen_rx_portid(u16 port_id, int set)
 EXPORT_SYMBOL(afe_set_dtmf_gen_rx_portid);
 
 /**
+ * afe_set_dtmf_gen_rx_portid_session -
+ *         Set port_id for DTMF tone generation
+ *
+ * @port_id: AFE port id
+ * @set: set or reset port id value for dtmf gen
+ * @session_idx: session index of voice call
+ *
+ */
+void afe_set_dtmf_gen_rx_portid_session(u16 port_id, int set, int session_idx)
+{
+	if (set)
+		this_afe.dtmf_gen_rx_session_portid[session_idx] = port_id;
+	else if (this_afe.dtmf_gen_rx_session_portid[session_idx] == port_id)
+		this_afe.dtmf_gen_rx_session_portid[session_idx] = -1;
+}
+EXPORT_SYMBOL(afe_set_dtmf_gen_rx_portid_session);
+
+/**
  * afe_dtmf_generate_rx - command to generate AFE DTMF RX
  *
  * @duration_in_ms: Duration in ms for dtmf tone
@@ -11998,7 +12017,7 @@ int __init afe_init(void)
 	atomic_set(&this_afe.clk_status, 0);
 	atomic_set(&this_afe.mem_map_cal_index, -1);
 	this_afe.apr = NULL;
-	this_afe.dtmf_gen_rx_portid = -1;
+	this_afe.dtmf_gen_rx_portid = AFE_PORT_ID_PRIMARY_MI2S_RX;
 	this_afe.mmap_handle = 0;
 	this_afe.vi_tx_port = -1;
 	this_afe.vi_rx_port = -1;
