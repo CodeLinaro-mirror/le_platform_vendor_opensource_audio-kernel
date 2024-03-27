@@ -4594,43 +4594,46 @@ static int voice_setup_vocproc(struct voice_data *v)
 		goto fail;
 	}
 
-	if (common.is_avcs_version_queried == false)
-		common.cvp_version = voice_get_avcs_version_per_service(
-				     APRV2_IDS_SERVICE_ID_ADSP_CVP_V);
+	if (voice_get_cvd_int_version(common.cvd_version) !=
+			CVD_INT_VERSION_2_3) {
+		if (common.is_avcs_version_queried == false)
+			common.cvp_version = voice_get_avcs_version_per_service(
+					APRV2_IDS_SERVICE_ID_ADSP_CVP_V);
 
-	if (common.cvp_version < 0) {
-		pr_err("%s: Invalid CVP version %d\n",
-		       __func__, common.cvp_version);
-		ret = -EINVAL;
-		goto fail;
-	}
-	pr_debug("%s: CVP Version %d\n", __func__, common.cvp_version);
+		if (common.cvp_version < 0) {
+			pr_err("%s: Invalid CVP version %d\n",
+					__func__, common.cvp_version);
+			ret = -EINVAL;
+			goto fail;
+		}
+		pr_debug("%s: CVP Version %d\n", __func__, common.cvp_version);
 
-	ret = voice_send_cvp_media_fmt_info_cmd(v);
-	if (ret < 0) {
-		pr_err("%s: Set media format info failed err:%d\n", __func__,
-		       ret);
-		goto fail;
+		ret = voice_send_cvp_media_fmt_info_cmd(v);
+		if (ret < 0) {
+			pr_err("%s: Set media format info failed err:%d\n", __func__,
+					ret);
+			goto fail;
+		}
+
+		/* Send MFC config only when the no of channels are more than 1 */
+		if (v->dev_rx.no_of_channels > NUM_CHANNELS_MONO) {
+			ret = voice_send_cvp_mfc_config_cmd(v);
+			if (ret < 0) {
+				pr_warn("%s: Set mfc config failed err:%d\n",
+						__func__, ret);
+			}
+		}
+
+		mod_inst_info.module_id = MODULE_ID_VOICE_MODULE_ST;
+		mod_inst_info.instance_id = INSTANCE_ID_0;
 	}
 
 	ret = voice_send_cvp_topology_commit_cmd(v);
 	if (ret < 0) {
 		pr_err("%s: Set topology commit failed err:%d\n",
-		       __func__, ret);
+			__func__, ret);
 		goto fail;
 	}
-
-	/* Send MFC config only when the no of channels are more than 1 */
-	if (v->dev_rx.no_of_channels > NUM_CHANNELS_MONO) {
-		ret = voice_send_cvp_mfc_config_cmd(v);
-		if (ret < 0) {
-			pr_warn("%s: Set mfc config failed err:%d\n",
-				__func__, ret);
-		}
-	}
-
-	mod_inst_info.module_id = MODULE_ID_VOICE_MODULE_ST;
-	mod_inst_info.instance_id = INSTANCE_ID_0;
 
 	voice_send_cvs_register_cal_cmd(v);
 	voice_send_cvp_register_dev_cfg_cmd(v);
@@ -4786,6 +4789,10 @@ done:
 static int voice_send_cvp_media_fmt_info_cmd(struct voice_data *v)
 {
 	int ret = 0;
+
+	if (voice_get_cvd_int_version(common.cvd_version) ==
+			CVD_INT_VERSION_2_3)
+		goto done;
 
 	if (common.cvp_version < CVP_VERSION_2)
 		ret = voice_send_cvp_device_channels_cmd(v);
@@ -10355,6 +10362,8 @@ int __init voice_init(void)
 		module_initialized = true;
 		hyp_assigned = false;
 	}
+
+	voc_get_cvd_version(common.cvd_version);
 
 	pr_debug("%s: rc=%d\n", __func__, rc);
 	return rc;
