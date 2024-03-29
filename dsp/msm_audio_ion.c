@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -388,20 +388,9 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 	if (msm_audio_ion_data.smmu_enabled == true) {
 		pr_debug("%s: system heap is used\n", __func__);
 		heap = dma_heap_find("qcom,system-uncached");
-		if (!heap) {
-			pr_err("Unable to find the system-uncached heap\n");
-			kfree(iosys_vmap);
-			goto err;
-		}
-
 	} else {
 		pr_debug("%s: audio heap is used\n", __func__);
 		heap = dma_heap_find("qcom,audio");
-		if (!heap) {
-			pr_err("Unable to find the audio heap\n");
-			kfree(iosys_vmap);
-			goto err;
-		}
 	}
 
 	*dma_buf = dma_heap_buffer_alloc(heap, bufsz, 0, 0);
@@ -706,13 +695,8 @@ int msm_audio_ion_mmap(struct audio_buffer *abuff,
 		pr_debug("%s: page is NOT null\n", __func__);
 		for_each_sg(table->sgl, sg, table->orig_nents, i) {
 			unsigned long remainder = vma->vm_end - addr;
-			unsigned long len;
+			unsigned long len = sg->length;
 
-			if (!sg) {
-				pr_err("%s: sg is NULL\n", __func__);
-				return -EINVAL;
-			}
-			len = sg->length;
 			page = sg_page(sg);
 
 			if (offset >= len) {
@@ -869,8 +853,6 @@ exit:
 		msm_audio_ion_data.device_status |= MSM_AUDIO_ION_PROBED;
 
 	msm_audio_ion_data.cb_dev = dev;
-	INIT_LIST_HEAD(&msm_audio_ion_data.alloc_list);
-	mutex_init(&(msm_audio_ion_data.list_mutex));
 
 	return rc;
 }

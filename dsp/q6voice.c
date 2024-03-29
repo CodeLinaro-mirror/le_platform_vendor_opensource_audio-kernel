@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/kthread.h>
@@ -10312,8 +10312,8 @@ int __init voice_init(void)
 		common.voice[i].stream_rx.stream_mute = common.default_mute_val;
 		common.voice[i].stream_tx.stream_mute = common.default_mute_val;
 
-		common.voice[i].dev_tx.port_id = 0x1001;
-		common.voice[i].dev_rx.port_id = 0x1000;
+		common.voice[i].dev_tx.port_id = 0x100B;
+		common.voice[i].dev_rx.port_id = 0x100A;
 		common.voice[i].dev_tx.dev_id = 0;
 		common.voice[i].dev_rx.dev_id = 0;
 		common.voice[i].dev_tx.no_of_channels = 0;
