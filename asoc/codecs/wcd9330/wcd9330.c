@@ -5745,7 +5745,6 @@ static int tomtom_hw_params(struct snd_pcm_substream *substream,
 
 	switch (substream->stream) {
 	case SNDRV_PCM_STREAM_CAPTURE:
-		tomtom->dai[dai->id].direction = substream->stream;
 		if (dai->id != AIF4_VIFEED &&
 		    dai->id != AIF4_MAD_TX) {
 			ret = tomtom_set_decimator_rate(dai, tx_fs_rate,
@@ -5794,7 +5793,6 @@ static int tomtom_hw_params(struct snd_pcm_substream *substream,
 		break;
 
 	case SNDRV_PCM_STREAM_PLAYBACK:
-		tomtom->dai[dai->id].direction = substream->stream;
 		ret = tomtom_set_interpolator_rate(dai, rx_fs_rate,
 						  compander_fs,
 						  params_rate(params));
@@ -6119,27 +6117,25 @@ static int tomtom_codec_enable_slimrx(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
-		dev_dbg(component->dev, "%s: Enabling RX port and channels\n", __func__);
 		dai->bus_down_in_recovery = false;
 		tomtom_codec_enable_int_port(dai, component);
 		(void) tomtom_codec_enable_slim_chmask(dai, true);
 		ret = wcd9xxx_cfg_slim_sch_rx(core, &dai->wcd9xxx_ch_list,
 					      dai->rate, dai->bit_width,
-					      dai->direction);
-		dev_dbg(component->dev, "%s: Enabling RX port and channels done, ret =%d\n",
-				__func__, ret);
+					      &dai->grph);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		dev_dbg(component->dev, "%s: Disabling RX port and channels\n", __func__);
+		ret = wcd9xxx_close_slim_sch_rx(core, &dai->wcd9xxx_ch_list,
+						dai->grph);
 		if (!dai->bus_down_in_recovery)
 			ret = tomtom_codec_enable_slim_chmask(dai, false);
 		else
 			pr_debug("%s: bus in recovery skip enable slim_chmask\n",
 				__func__);
-		dev_dbg(component->dev, "%s: Disabling RX port and channels done, ret=%d\n",
-				__func__, ret);
 		if (ret < 0) {
-			ret = wcd9xxx_disconnect_port_rx(core);
+			ret = wcd9xxx_disconnect_port(core,
+						      &dai->wcd9xxx_ch_list,
+						      dai->grph);
 			pr_debug("%s: Disconnect RX port, ret = %d\n",
 				 __func__, ret);
 		}
@@ -6196,16 +6192,20 @@ static int tomtom_codec_enable_slimvi_feedback(struct snd_soc_dapm_widget *w,
 		(void) tomtom_codec_enable_slim_chmask(dai, true);
 		ret = wcd9xxx_cfg_slim_sch_tx(core, &dai->wcd9xxx_ch_list,
 					dai->rate, dai->bit_width,
-					dai->direction);
+					&dai->grph);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
+		ret = wcd9xxx_close_slim_sch_tx(core, &dai->wcd9xxx_ch_list,
+						dai->grph);
 		if (ret)
 			pr_err("%s error in close_slim_sch_tx %d\n",
 				__func__, ret);
 		if (!dai->bus_down_in_recovery)
 			ret = tomtom_codec_enable_slim_chmask(dai, false);
 		if (ret < 0) {
-			ret = wcd9xxx_disconnect_port_tx(core);
+			ret = wcd9xxx_disconnect_port(core,
+				&dai->wcd9xxx_ch_list,
+				dai->grph);
 			pr_debug("%s: Disconnect TX port, ret = %d\n",
 				__func__, ret);
 		}
@@ -6237,27 +6237,28 @@ static int __tomtom_codec_enable_slimtx(struct snd_soc_component *component,
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
-		dev_dbg(component->dev, "%s: Enabling tx ports and channels \n", __func__);
 		dai_data->bus_down_in_recovery = false;
 		tomtom_codec_enable_int_port(dai_data, component);
 		(void) tomtom_codec_enable_slim_chmask(dai_data, true);
 		ret = wcd9xxx_cfg_slim_sch_tx(core, &dai_data->wcd9xxx_ch_list,
 					      dai_data->rate,
 					      dai_data->bit_width,
-					      dai_data->direction);
-		dev_dbg(component->dev, "%s: Enabling tx ports and channels done\n", __func__);
+					      &dai_data->grph);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		dev_dbg(component->dev, "%s: Disbaling tx ports and channels \n", __func__);
+		ret = wcd9xxx_close_slim_sch_tx(core,
+						&dai_data->wcd9xxx_ch_list,
+						dai_data->grph);
 		if (!dai_data->bus_down_in_recovery)
 			ret = tomtom_codec_enable_slim_chmask(dai_data, false);
 		if (ret < 0) {
-			ret = wcd9xxx_disconnect_port_tx(core);
+			ret = wcd9xxx_disconnect_port(core,
+					&dai_data->wcd9xxx_ch_list,
+					dai_data->grph);
 			dev_dbg(component->dev,
 				"%s: Disconnect TX port, ret = %d\n",
 				 __func__, ret);
 		}
-		dev_dbg(component->dev, "%s: Disbaling RX ports and channels done\n", __func__);
 		break;
 	}
 
