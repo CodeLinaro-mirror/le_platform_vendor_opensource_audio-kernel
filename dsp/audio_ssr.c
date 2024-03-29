@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -18,7 +18,6 @@
  *
  * Returns handle pointer on success or error PTR on failure
  */
-#ifdef CONFIG_MSM_QDSP6_SSR
 void *audio_ssr_legacy_register(const char *domain_name, struct notifier_block *nb)
 {
 	if (domain_name == NULL) {
@@ -44,4 +43,4 @@ int audio_ssr_legacy_deregister(void *handle, struct notifier_block *nb)
 	return qcom_unregister_ssr_notifier(handle, nb);
 }
 EXPORT_SYMBOL(audio_ssr_legacy_deregister);
-#endif
+

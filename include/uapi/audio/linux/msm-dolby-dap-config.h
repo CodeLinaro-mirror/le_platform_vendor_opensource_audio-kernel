@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2013-2014, 2017-2018, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _UAPI_MSM_DOLBY_DAP_CONFIG_H_
 #define _UAPI_MSM_DOLBY_DAP_CONFIG_H_
 
 #include <linux/msm-dolby-common.h>
-#ifdef CONFIG_DOLBY_DAP
+
 /* DOLBY DOLBY GUIDS */
 #define DOLBY_ADM_COPP_TOPOLOGY_ID	0x0001033B
 #define NUM_DOLBY_ENDP_DEVICE                 23
@@ -58,18 +58,4 @@ void msm_dolby_dap_deinit(int port_id);
 void msm_dolby_dap_add_controls(struct snd_soc_platform *platform);
 int dolby_dap_set_custom_stereo_onoff(int port_id, int copp_idx,
 				      bool is_custom_stereo_enabled);
-#else
-int msm_dolby_dap_init(int port_id, int copp_idx, int channels,
-		bool is_custom_stereo_on)
-{
-	return 0;
-}
-void msm_dolby_dap_deinit(int port_id) { }
-void msm_dolby_dap_add_controls(struct snd_soc_component *component) { }
-int dolby_dap_set_custom_stereo_onoff(int port_id, int copp_idx,
-		bool is_custom_stereo_enabled)
-{
-	return 0;
-}
-#endif
 #endif
