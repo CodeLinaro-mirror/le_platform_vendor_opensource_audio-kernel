@@ -1,12 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef WCD_CPE_CORE_H
 #define WCD_CPE_CORE_H
 
-#include <soc/qcom/qcom_ramdump.h>
+#include <soc/qcom/ramdump.h>
 #include <linux/dma-mapping.h>
 #include "wcd_cpe_services.h"
 
@@ -181,7 +180,7 @@ struct wcd_cpe_core {
 
 	/* Ramdump support */
 	void *cpe_ramdump_dev;
-	struct qcom_dump_segment cpe_ramdump_seg;
+	struct ramdump_segment cpe_ramdump_seg;
 	dma_addr_t cpe_dump_addr;
 	void *cpe_dump_v_addr;
 
