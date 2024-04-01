@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
 /*
  * Copyright (c) 2011-2014 The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __USF_H__
@@ -112,28 +112,28 @@ struct us_xx_info_type {
 /* Name of the client - event calculator */
 	const char __user *client_name;
 /* Selected device identification, accepted in the kernel's CAD */
-	uint32_t dev_id;
+	__u32 dev_id;
 /* 0 - point_epos type; (e.g. 1 - gr_mmrd) */
-	uint32_t stream_format;
+	__u32 stream_format;
 /* Required sample rate in Hz */
-	uint32_t sample_rate;
+	__u32 sample_rate;
 /* Size of a buffer (bytes) for US data transfer between the module and USF */
-	uint32_t buf_size;
+	__u32 buf_size;
 /* Number of the buffers for the US data transfer */
-	uint16_t buf_num;
+	__u16 buf_num;
 /* Number of the microphones (TX) or speakers(RX) */
-	uint16_t port_cnt;
+	__u16 port_cnt;
 /* Microphones(TX) or speakers(RX) indexes in their enumeration */
-	uint8_t  port_id[USF_MAX_PORT_NUM];
+	__u8  port_id[USF_MAX_PORT_NUM];
 /* Bits per sample 16 or 32 */
-	uint16_t bits_per_sample;
+	__u16 bits_per_sample;
 /* Input:  Transparent info for encoder in the LPASS */
 /* Parameters data size in bytes */
-	uint16_t params_data_size;
+	__u16 params_data_size;
 /* Pointer to the parameters */
-	uint8_t __user *params_data;
+	__u8 __user *params_data;
 /* Max size of buffer for get and set parameter */
-	uint32_t max_get_set_param_buf_size;
+	__u32 max_get_set_param_buf_size;
 };
 
 struct us_input_info_type {
@@ -147,11 +147,11 @@ struct us_input_info_type {
 	/* Touch screen pressure limits: min & max; for input module */
 	int tsc_pressure[MIN_MAX_DIM];
 	/* The requested buttons bitmap */
-	uint16_t req_buttons_bitmap;
+	__u16 req_buttons_bitmap;
 	/* Bitmap of types of events (USF_X_EVENT), produced by calculator */
-	uint16_t event_types;
+	__u16 event_types;
 	/* Bitmap of types of events from devs, conflicting with USF */
-	uint16_t conflicting_event_types;
+	__u16 conflicting_event_types;
 };
 
 struct us_tx_info_type {
@@ -173,9 +173,9 @@ struct point_event_type {
 	/* {x;y}  in transparent units */
 	int inclinations[TILTS_DIM];
 /* [0-1023] (10bits); 0 - pen up */
-	uint32_t pressure;
+	__u32 pressure;
 /* Bitmap for button state. 1 - down, 0 - up */
-	uint16_t buttons_state_bitmap;
+	__u16 buttons_state_bitmap;
 };
 
 /* Mouse buttons, supported by USF */
@@ -186,23 +186,23 @@ struct mouse_event_type {
 /* The mouse relative movement (dX, dY, dZ) */
 	int rels[COORDINATES_DIM];
 /* Bitmap of mouse buttons states: 1 - down, 0 - up; */
-	uint16_t buttons_states;
+	__u16 buttons_states;
 };
 
 struct key_event_type {
 /*  Calculated MS key- see input.h. */
-	uint32_t key;
+	__u32 key;
 /* Keyboard's key state: 1 - down, 0 - up; */
-	uint8_t key_state;
+	__u8 key_state;
 };
 
 struct usf_event_type {
 /* Event sequence number */
-	uint32_t seq_num;
+	__u32 seq_num;
 /* Event generation system time */
-	uint32_t timestamp;
+	__u32 timestamp;
 /* Destination input event type index (e.g. touch screen, mouse, key) */
-	uint16_t event_type_ind;
+	__u16 event_type_ind;
 	union {
 		struct point_event_type point_event;
 		struct mouse_event_type mouse_event;
@@ -213,43 +213,43 @@ struct usf_event_type {
 struct us_tx_update_info_type {
 /* Input  general: */
 /* Number of calculated events */
-	uint16_t event_counter;
+	__u16 event_counter;
 /* Calculated events or NULL */
 	struct usf_event_type __user *event;
 /* Pointer (read index) to the end of available region */
 /* in the shared US data memory */
-	uint32_t free_region;
+	__u32 free_region;
 /* Time (sec) to wait for data or special values: */
 /* USF_NO_WAIT_TIMEOUT, USF_INFINITIVE_TIMEOUT, USF_DEFAULT_TIMEOUT */
-	uint32_t timeout;
+	__u32 timeout;
 /* Events (from conflicting devs) to be disabled/enabled */
-	uint16_t event_filters;
+	__u16 event_filters;
 
 /* Input  transparent data: */
 /* Parameters size */
-	uint16_t params_data_size;
+	__u16 params_data_size;
 /* Pointer to the parameters */
-	uint8_t __user *params_data;
+	__u8 __user *params_data;
 /* Output parameters: */
 /* Pointer (write index) to the end of ready US data region */
 /* in the shared memory */
-	uint32_t ready_region;
+	__u32 ready_region;
 };
 
 struct us_rx_update_info_type {
 /* Input  general: */
 /* Pointer (write index) to the end of ready US data region */
 /* in the shared memory */
-	uint32_t ready_region;
+	__u32 ready_region;
 /* Input  transparent data: */
 /* Parameters size */
-	uint16_t params_data_size;
+	__u16 params_data_size;
 /* pPointer to the parameters */
-	uint8_t __user *params_data;
+	__u8 __user *params_data;
 /* Output parameters: */
 /* Pointer (read index) to the end of available region */
 /* in the shared US data memory */
-	uint32_t free_region;
+	__u32 free_region;
 };
 
 struct us_detect_info_type {
@@ -259,33 +259,33 @@ struct us_detect_info_type {
 /* US detection mode */
 	enum us_detect_mode_enum  us_detect_mode;
 /* US data dropped during this time (msec) */
-	uint32_t skip_time;
+	__u32 skip_time;
 /* Transparent data size */
-	uint16_t params_data_size;
+	__u16 params_data_size;
 /* Pointer to the transparent data */
-	uint8_t __user *params_data;
+	__u8 __user *params_data;
 /* Time (sec) to wait for US presence event */
-	uint32_t detect_timeout;
+	__u32 detect_timeout;
 /* Out parameter: US presence */
-	bool is_us;
+	_Bool is_us;
 };
 
 struct us_version_info_type {
 /* Size of memory for the version string */
-	uint16_t buf_size;
+	__u16 buf_size;
 /* Pointer to the memory for the version string */
 	char __user *pbuf;
 };
 
 struct us_stream_param_type {
 /* Id of module */
-	uint32_t module_id;
+	__u32 module_id;
 /* Id of parameter */
-	uint32_t param_id;
+	__u32 param_id;
 /* Size of memory of the parameter buffer */
-	uint32_t buf_size;
+	__u32 buf_size;
 /* Pointer to the memory of the parameter buffer */
-	uint8_t __user *pbuf;
+	__u8 __user *pbuf;
 };
 
 #endif /* __USF_H__ */

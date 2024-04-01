@@ -41,13 +41,12 @@ endif
 endif
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE     += \
-                -I$(LEGACY_PATH)/include/uapi/audio
+                -I$(LEGACY_PATH)/include/uapi
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 LINUXINCLUDE    += \
                 -I$(LEGACY_PATH)/include/uapi \
-                -I$(LEGACY_PATH)/include/uapi/audio \
                 -I$(LEGACY_PATH)/include/asoc \
                 -I$(LEGACY_PATH)/include
 
