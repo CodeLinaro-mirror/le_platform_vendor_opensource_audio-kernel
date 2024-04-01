@@ -14,13 +14,14 @@ static int __init audio_platform_init(void)
 	msm_fe_dai_init();
 	msm_dai_q6_hdmi_init();
 	msm_dai_q6_init();
+	msm_dai_slim_init();
 	msm_dai_stub_init();
 	msm_lsm_client_init();
 	msm_pcm_afe_init();
 	msm_pcm_dtmf_init();
 	msm_pcm_hostless_init();
 	msm_pcm_loopback_init();
-#if !(IS_ENABLED(CONFIG_SND_SOC_SA410M) || IS_ENABLED(CONFIG_ARCH_MDM9607))
+#ifndef CONFIG_SND_SOC_SA410M
 	msm_pcm_noirq_init();
 #endif
 	msm_pcm_dsp_init();
@@ -39,7 +40,7 @@ static void audio_platform_exit(void)
 	msm_pcm_voice_exit();
 	msm_soc_routing_platform_exit();
 	msm_pcm_dsp_exit();
-#if !(IS_ENABLED(CONFIG_SND_SOC_SA410M) || IS_ENABLED(CONFIG_ARCH_MDM9607))
+#ifndef CONFIG_SND_SOC_SA410M
 	msm_pcm_noirq_exit();
 #endif
 	msm_pcm_loopback_exit();
@@ -48,6 +49,7 @@ static void audio_platform_exit(void)
 	msm_pcm_afe_exit();
 	msm_lsm_client_exit();
 	msm_dai_stub_exit();
+	msm_dai_slim_exit();
 	msm_dai_q6_exit();
 	msm_dai_q6_hdmi_exit();
 	msm_fe_dai_exit();
