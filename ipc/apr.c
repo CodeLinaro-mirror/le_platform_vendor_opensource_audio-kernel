@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -717,6 +717,11 @@ void apr_cb_func(void *buf, int len, void *priv)
 	pr_debug("%x %x %x %pK %pK\n", c_svc->id, c_svc->dest_id,
 		 c_svc->client_id, c_svc->fn, c_svc->priv);
 	data.payload_size = hdr->pkt_size - hdr_size;
+	if (data.payload_size > len) {
+		pr_err("APR: Invalid payload size %d, len %d \n", data.payload_size, len);
+		return;
+	}
+
 	data.opcode = hdr->opcode;
 	data.src = src;
 	data.src_port = hdr->src_port;
