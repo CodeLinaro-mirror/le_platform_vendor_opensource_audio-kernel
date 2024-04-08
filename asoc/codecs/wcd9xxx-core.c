@@ -1233,10 +1233,14 @@ static void wcd9xxx_i2c_remove(struct i2c_client *client)
 	struct wcd9xxx_pdata *pdata = client->dev.platform_data;
 
 	wcd9xxx = dev_get_drvdata(&client->dev);
-	msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
-				 pdata->regulator,
-				 pdata->num_supplies);
-	wcd9xxx_device_exit(wcd9xxx);
+
+	if(wcd9xxx && pdata) {
+		msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
+					 pdata->regulator,
+					 pdata->num_supplies);
+		wcd9xxx_device_exit(wcd9xxx);
+	}
+
 	dev_set_drvdata(&client->dev, NULL);
 }
 
