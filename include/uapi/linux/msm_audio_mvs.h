@@ -1,7 +1,12 @@
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
+/*
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+
 #ifndef _UAPI_MSM_AUDIO_MVS_H
 #define _UAPI_MSM_AUDIO_MVS_H
 
-#include <audio/linux/msm_audio.h>
+#include <linux/msm_audio.h>
 #include <linux/types.h>
 
 #define AUDIO_GET_MVS_CONFIG _IOW(AUDIO_IOCTL_MAGIC, \
