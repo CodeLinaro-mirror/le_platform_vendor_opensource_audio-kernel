@@ -45,6 +45,10 @@
 #include <asoc/wcdcal-hwdep.h>
 #include <asoc/wcd9xxx-irq.h>
 
+#define SND_JACK_OC_HPHL 0x0040
+#define SND_JACK_OC_HPHR 0x0080
+#define SND_JACK_UNSUPPORTED 0x0100
+
 #define WCD9XXX_JACK_MASK (SND_JACK_HEADSET | SND_JACK_OC_HPHL | \
 			   SND_JACK_OC_HPHR | SND_JACK_LINEOUT | \
 			   SND_JACK_UNSUPPORTED | \
@@ -402,10 +406,11 @@ static bool __wcd9xxx_switch_micbias(struct wcd9xxx_mbhc *mbhc,
 		    restartpolling)
 			wcd9xxx_pause_hs_polling(mbhc);
 
-			snd_soc_component_update_bits(component, WCD9XXX_A_MAD_ANA_CTRL,
-					    0x10, 0x10);
-			snd_soc_component_update_bits(component, WCD9XXX_A_LDO_H_MODE_1,
-					    0x20, 0x20);
+		snd_soc_component_update_bits(component, WCD9XXX_A_MAD_ANA_CTRL,
+				    0x10, 0x10);
+		snd_soc_component_update_bits(component, WCD9XXX_A_LDO_H_MODE_1,
+				    0x20, 0x20);
+
 		/* Reprogram thresholds */
 		if (d->micb_mv != VDDIO_MICBIAS_MV) {
 			cfilt_k_val =
