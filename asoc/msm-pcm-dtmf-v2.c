@@ -235,6 +235,8 @@ static int msm_pcm_open(struct snd_soc_component *component,
 	struct dtmf_drv_info *prtd = NULL;
 	int ret = 0;
 
+	runtime->hw = msm_pcm_hardware;
+
 	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
 		prtd = kzalloc(sizeof(struct dtmf_drv_info), GFP_KERNEL);
 
@@ -248,8 +250,6 @@ static int msm_pcm_open(struct snd_soc_component *component,
 		init_waitqueue_head(&prtd->out_wait);
 		INIT_LIST_HEAD(&prtd->out_queue);
 		INIT_LIST_HEAD(&prtd->free_out_queue);
-
-		runtime->hw = msm_pcm_hardware;
 
 		ret = snd_pcm_hw_constraint_integer(runtime,
 						    SNDRV_PCM_HW_PARAM_PERIODS);

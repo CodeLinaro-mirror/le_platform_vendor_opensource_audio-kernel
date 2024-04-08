@@ -15,7 +15,7 @@
 #define __WCD9XXX_COMMON_H__
 
 #include <linux/notifier.h>
-#include <uapi/audio/linux/mfd/wcd9xxx/wcd9xxx_registers.h>
+#include <uapi/linux/mfd/wcd9xxx/wcd9xxx_registers.h>
 #include "core.h"
 
 enum wcd9xxx_bandgap_type {

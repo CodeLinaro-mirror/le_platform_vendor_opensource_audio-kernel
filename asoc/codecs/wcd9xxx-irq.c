@@ -19,7 +19,7 @@
 #include <linux/pm_qos.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
-#include <audio/linux/mfd/wcd9xxx/wcd9xxx_registers.h>
+#include <linux/mfd/wcd9xxx/wcd9xxx_registers.h>
 #include <asoc/core.h>
 #include <asoc/wcd9xxx-irq.h>
 
