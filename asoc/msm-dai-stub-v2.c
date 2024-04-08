@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2014, 2017, 2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/init.h>
 #include <linux/module.h>
@@ -176,6 +176,7 @@ static struct snd_soc_dai_driver msm_dai_stub_dtmf_tx_dai = {
 	.ops = &msm_dai_stub_ops,
 	.probe = &msm_dai_stub_dai_probe,
 	.remove = &msm_dai_stub_dai_remove,
+	.name = "dtmf_tx",
 };
 
 static struct snd_soc_dai_driver msm_dai_stub_host_capture_tx_dai[] = {
@@ -193,6 +194,7 @@ static struct snd_soc_dai_driver msm_dai_stub_host_capture_tx_dai[] = {
 		.ops = &msm_dai_stub_ops,
 		.probe = &msm_dai_stub_dai_probe,
 		.remove = &msm_dai_stub_dai_remove,
+		.name = "rx_capture_tx",
 	},
 	{
 		.capture = {
@@ -208,6 +210,7 @@ static struct snd_soc_dai_driver msm_dai_stub_host_capture_tx_dai[] = {
 		.ops = &msm_dai_stub_ops,
 		.probe = &msm_dai_stub_dai_probe,
 		.remove = &msm_dai_stub_dai_remove,
+		.name = "tx_capture_tx",
 	},
 };
 
@@ -226,6 +229,7 @@ static struct snd_soc_dai_driver msm_dai_stub_host_playback_rx_dai[] = {
 		.ops = &msm_dai_stub_ops,
 		.probe = &msm_dai_stub_dai_probe,
 		.remove = &msm_dai_stub_dai_remove,
+		.name = "rx_playback_rx",
 	},
 	{
 		.playback = {
@@ -241,6 +245,7 @@ static struct snd_soc_dai_driver msm_dai_stub_host_playback_rx_dai[] = {
 		.ops = &msm_dai_stub_ops,
 		.probe = &msm_dai_stub_dai_probe,
 		.remove = &msm_dai_stub_dai_remove,
+		.name = "tx_playback_rx",
 	},
 };
 
