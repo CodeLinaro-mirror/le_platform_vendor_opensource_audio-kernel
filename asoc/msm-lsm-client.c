@@ -871,6 +871,13 @@ static int msm_lsm_dereg_model(struct snd_pcm_substream *substream,
 
 	if (p_info->model_id != 0 &&
 		p_info->param_type == LSM_DEREG_MULTI_SND_MODEL) {
+
+		if(list_empty(&client->stage_cfg[p_info->stage_idx].sound_models)) {
+				 pr_err("%s: sound_models list is empty \n",
+                                 __func__);
+				 return -EINVAL;
+		}
+
 		list_for_each_entry(sm,
 				   &client->stage_cfg[p_info->stage_idx].sound_models,
 				   list) {
