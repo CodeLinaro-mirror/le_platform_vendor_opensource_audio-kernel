@@ -36,7 +36,7 @@
 #include "msm-pcm-routing-devdep.h"
 #include "msm-qti-pp-config.h"
 #ifdef CONFIG_DOLBY_DAP
-#include <linux/msm-dolby-dap-config.h>
+#include "msm-dolby-dap-config.h"
 #endif
 #include <linux/msm-ds2-dap-config.h>
 
@@ -33928,12 +33928,14 @@ static void snd_soc_dapm_new_controls_tdm(struct snd_soc_component *component)
 				msm_qdsp6_widgets_tdm,
 				ARRAY_SIZE(msm_qdsp6_widgets_tdm));
 
-	if (!(strnstr(snd_card_name, "sa8155", strlen(snd_card_name)) ||
-		strnstr(snd_card_name, "sa6155", strlen(snd_card_name)) ||
-		strnstr(snd_card_name, "sa8195", strlen(snd_card_name)))) {
-		snd_soc_dapm_new_controls(&component->dapm,
-				msm_qdsp6_widgets_tdm_gen4,
-				ARRAY_SIZE(msm_qdsp6_widgets_tdm_gen4));
+	if (snd_card_name != NULL) {
+		if (!(strnstr(snd_card_name, "sa8155", strlen(snd_card_name)) ||
+			strnstr(snd_card_name, "sa6155", strlen(snd_card_name)) ||
+			strnstr(snd_card_name, "sa8195", strlen(snd_card_name)))) {
+			snd_soc_dapm_new_controls(&component->dapm,
+					msm_qdsp6_widgets_tdm_gen4,
+					ARRAY_SIZE(msm_qdsp6_widgets_tdm_gen4));
+		}
 	}
 }
 static void snd_soc_dapm_add_routes_tdm(struct snd_soc_component *component)
@@ -33946,12 +33948,14 @@ static void snd_soc_dapm_add_routes_tdm(struct snd_soc_component *component)
         snd_soc_dapm_add_routes(&component->dapm, intercon_tdm,
 		ARRAY_SIZE(intercon_tdm));
 
-	if (!(strnstr(snd_card_name, "sa8155", strlen(snd_card_name)) ||
-		strnstr(snd_card_name, "sa6155", strlen(snd_card_name)) ||
-		strnstr(snd_card_name, "sa8195", strlen(snd_card_name)))) {
-		snd_soc_dapm_add_routes(&component->dapm,
-				intercon_tdm_gen4,
-				ARRAY_SIZE(intercon_tdm_gen4));
+	if (snd_card_name != NULL) {
+		if (!(strnstr(snd_card_name, "sa8155", strlen(snd_card_name)) ||
+			strnstr(snd_card_name, "sa6155", strlen(snd_card_name)) ||
+			strnstr(snd_card_name, "sa8195", strlen(snd_card_name)))) {
+			snd_soc_dapm_add_routes(&component->dapm,
+					intercon_tdm_gen4,
+					ARRAY_SIZE(intercon_tdm_gen4));
+		}
 	}
 }
 #else
@@ -34034,11 +34038,13 @@ static int msm_routing_probe(struct snd_soc_component *component)
 	snd_soc_dapm_ignore_suspend(&component->dapm, "BE_IN");
 	snd_soc_dapm_add_routes(&component->dapm, intercon,
 		ARRAY_SIZE(intercon));
-	if (!(strnstr(snd_card_name, "sa8155", strlen(snd_card_name)) ||
-		strnstr(snd_card_name, "sa6155", strlen(snd_card_name)) ||
-		strnstr(snd_card_name, "sa8195", strlen(snd_card_name)))) {
-		snd_soc_dapm_add_routes(&component->dapm, intercon_gen4,
-			ARRAY_SIZE(intercon_gen4));
+	if (snd_card_name != NULL) {
+		if (!(strnstr(snd_card_name, "sa8155", strlen(snd_card_name)) ||
+			strnstr(snd_card_name, "sa6155", strlen(snd_card_name)) ||
+			strnstr(snd_card_name, "sa8195", strlen(snd_card_name)))) {
+			snd_soc_dapm_add_routes(&component->dapm, intercon_gen4,
+				ARRAY_SIZE(intercon_gen4));
+		}
 	}
 
 	snd_soc_dapm_add_routes_tdm(component);
