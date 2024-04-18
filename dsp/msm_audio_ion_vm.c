@@ -283,7 +283,7 @@ static int msm_audio_ion_smmu_map(struct dma_buf *dma_buf,
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
 					MSM_AUDIO_HAB_TIMEOUT_MS,
-					0);
+					HABMM_SOCKET_RECV_FLAGS_TIMEOUT);
 			} while (time_before(jiffies, delay) && (rc == -EINTR) &&
 					(cmd_rsp_size == 0));
 			if (rc) {
@@ -301,7 +301,7 @@ static int msm_audio_ion_smmu_map(struct dma_buf *dma_buf,
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
 					MSM_AUDIO_HAB_TIMEOUT_MS,
-					0);
+					HABMM_SOCKET_RECV_FLAGS_TIMEOUT);
 
 				if (time_before(jiffies, delay) && (rc == -EINTR) &&
 				   (cmd_rsp_size == 0)) {
@@ -392,7 +392,7 @@ static int msm_audio_ion_smmu_unmap(struct dma_buf *dma_buf)
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
 					MSM_AUDIO_HAB_TIMEOUT_MS,
-					0);
+					HABMM_SOCKET_RECV_FLAGS_TIMEOUT);
 			} while (time_before(jiffies, delay) &&
 					(rc == -EINTR) && (cmd_rsp_size == 0));
 			if (rc) {
@@ -410,7 +410,7 @@ static int msm_audio_ion_smmu_unmap(struct dma_buf *dma_buf)
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
 					MSM_AUDIO_HAB_TIMEOUT_MS,
-					0);
+					HABMM_SOCKET_RECV_FLAGS_TIMEOUT);
 
 				if (time_before(jiffies, delay) && (rc == -EINTR) &&
 				   (cmd_rsp_size == 0)) {
