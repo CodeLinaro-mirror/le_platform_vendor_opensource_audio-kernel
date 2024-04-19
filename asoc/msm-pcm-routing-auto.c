@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <linux/init.h>
@@ -2444,6 +2446,11 @@ int msm_pcm_routing_set_channel_mixer_runtime(int fe_id, int be_id, int session_
 		pr_err("%s: Could not find copp_idx for fe_id: %d, will use default copp_idx\n",
 			__func__, fe_id);
 		copp_idx = adm_get_default_copp_idx(port_id);
+		if (copp_idx < 0) {
+			pr_err("%s: failed to get default copp_idx for port_id: %d\n",
+			    __func__, port_id);
+			return -EINVAL;
+		}
 	}
 	pr_debug("%s: port_id - %d, copp_idx %d session id - %d\n",
 		 __func__, port_id, copp_idx, session_id);
