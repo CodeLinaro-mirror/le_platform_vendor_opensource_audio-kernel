@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 /*
 * Add support for 24 and 32bit format for ASM loopback and playback session.
@@ -2743,11 +2743,27 @@ void msm_pcm_routing_dereg_phy_stream(int fedai_id, int stream_type)
 				continue;
 			}
 			port_id = get_port_id(msm_bedais[i].port_id);
+#ifdef RX_TO_TX_LOOPBACK
+			if((session_type == SESSION_TYPE_TX && port_id == RX_TO_TX_LOOPBACK_DUMMY_TX_PORT))
+			{
+			topology = adm_get_topology_for_port_copp_idx(
+					port_id, idx);
+			msm_routing_unload_topology(topology);
+			port_id = RX_TO_TX_LOOPBACK_RX_PORT;
+			copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
+			adm_close(port_id, copp_perf_mode, idx);
+
+			}
+			else {
+#endif
 			topology = adm_get_topology_for_port_copp_idx(
 					port_id, idx);
 			msm_routing_unload_topology(topology);
 			copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
 			adm_close(port_id, copp_perf_mode, idx);
+#ifdef RX_TO_TX_LOOPBACK
+			}
+#endif
 			pr_debug("%s:copp:%ld,idx bit fe:%d,type:%d,be:%d\n",
 				 __func__, copp, fedai_id, session_type, i);
 			clear_bit(idx,
