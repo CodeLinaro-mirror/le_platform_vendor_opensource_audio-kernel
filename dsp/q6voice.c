@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
-<<<<<<< HEAD   (3ec17e ASoC : add unmap for cal memory)
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
-=======
  * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
->>>>>>> CHANGE (86e8ee dsp: q6voice: Adds checks for an integer overflow)
  */
 #include <linux/slab.h>
 #include <linux/kthread.h>
