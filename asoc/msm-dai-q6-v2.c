@@ -1211,6 +1211,7 @@ static struct msm_dai_stream_aif_name msm_dai_q6_dai_stream_aif_names[] = {
 	{"Primary SPDIF Capture","PRI_SPDIF_TX"},
 	{"Secondary SPDIF Capture","SEC_SPDIF_TX"},
 	{"AFE Playback","PCM_RX"},
+	{"AFE Capture","PCM_TX"},
 	{"AFE-PROXY RX","AFE Playback1"},
 	{"PCM_RX1","AFE Loopback Capture"},
 	{"AFE_LOOPBACK_TX","AFE Capture"},
