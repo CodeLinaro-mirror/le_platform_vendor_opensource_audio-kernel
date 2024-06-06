@@ -436,14 +436,9 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 		pr_debug("%s: audio heap is used\n", __func__);
 		heap = dma_heap_find("qcom,audio");
 		if (!heap) {
-			pr_err("%s:Unable to find audio heap, trying system-uncached heap\n",
-				__func__);
-			heap = dma_heap_find("qcom,system-uncached");
-			if (!heap) {
-				pr_err("Unable to find the system-uncached heap\n");
-				kfree(iosys_vmap);
-				goto err;
-			}
+			pr_err("Unable to find the audio heap\n");
+			kfree(iosys_vmap);
+			goto err;
 		}
 	}
 

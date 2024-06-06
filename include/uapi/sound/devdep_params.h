@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
+/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+
 #ifndef _DEV_DEP_H
 #define _DEV_DEP_H
 
@@ -53,7 +57,7 @@ struct dts_eagle_param_desc {
 	__u32 size;
 	__s32 offset;
 	__u32 device;
-} __attribute__((packed)); 
+} __attribute__((packed));
 
 #define HWDEP_FE_BASE                   3000 /*unique base for FE hw dep nodes*/
 struct snd_pcm_mmap_fd {
