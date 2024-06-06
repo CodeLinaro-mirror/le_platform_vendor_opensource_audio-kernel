@@ -37,7 +37,7 @@ struct dolby_param_license32 {
 		_IOR('U', 0x15, struct dolby_param_data32)
 
 /* DOLBY DOLBY GUIDS */
-#if defined(CONFIG_DOLBY_DS2) || defined(CONFIG_DOLBY_LICENSE)
+#ifdef CONFIG_DOLBY_DS2
 #define DS2_MODULE_ID			0x00010775
 
 #define DS2_DSP_SUPPORTED_ENDP_DEVICE		17

@@ -38,7 +38,7 @@
 #ifdef CONFIG_DOLBY_DAP
 #include "msm-dolby-dap-config.h"
 #endif
-#include <linux/msm-ds2-dap-config.h>
+#include "msm-ds2-dap-config.h"
 
 #define DRV_NAME "msm-pcm-routing-v2"
 

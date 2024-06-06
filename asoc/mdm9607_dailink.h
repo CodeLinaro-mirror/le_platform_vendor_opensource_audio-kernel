@@ -28,11 +28,6 @@ SND_SOC_DAILINK_DEFS(voicemmode2,
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-voice")));
 
-SND_SOC_DAILINK_DEFS(qchat,
-	DAILINK_COMP_ARRAY(COMP_CPU("QCHAT")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-voice")));
-
 SND_SOC_DAILINK_DEFS(csvoicehostrxcapture,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-stub-dev.5")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-tx")),

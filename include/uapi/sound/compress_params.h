@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) AND MIT) */
-/*
+/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  *  compress_params.h - codec types and parameters for compressed data
  *  streaming interface
  *
