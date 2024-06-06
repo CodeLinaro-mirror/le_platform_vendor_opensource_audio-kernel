@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
+/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
+
 #ifndef _CALIB_HWDEP_H
 #define _CALIB_HWDEP_H
 
@@ -17,7 +21,7 @@ enum wcd_cal_type {
 
 struct wcdcal_ioctl_buffer {
 	__u32 size;
-	__u8 __user *buffer;
+	__u8 *buffer;
 	enum wcd_cal_type cal_type;
 };
 
@@ -32,7 +36,7 @@ enum q6afe_cal_type {
 
 struct q6afecal_ioctl_buffer {
 	__u32 size;
-	__u8 __user *buffer;
+	__u8 *buffer;
 	enum q6afe_cal_type cal_type;
 };
 
