@@ -1206,8 +1206,8 @@ done:
 	return ret;
 }
 
-static int msm_pcm_copy(struct snd_soc_component *component, struct snd_pcm_substream *substream, int channel,
-			unsigned long hwoff, void __user *buf,
+static int msm_pcm_copy(struct snd_soc_component *component, struct snd_pcm_substream *substream,
+			int channel, unsigned long hwoff, void __user *buf,
 			unsigned long fbytes)
 {
 	int ret = 0;
@@ -1222,7 +1222,8 @@ static int msm_pcm_copy(struct snd_soc_component *component, struct snd_pcm_subs
 	return ret;
 }
 
-static snd_pcm_uframes_t msm_pcm_pointer(struct snd_soc_component *component, struct snd_pcm_substream *substream)
+static snd_pcm_uframes_t msm_pcm_pointer(struct snd_soc_component *component,
+			struct snd_pcm_substream *substream)
 {
 	struct dai_data *dai_data = NULL;
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -1247,7 +1248,8 @@ done:
 	return ret;
 }
 
-static int msm_pcm_trigger(struct snd_soc_component *component, struct snd_pcm_substream *substream, int cmd)
+static int msm_pcm_trigger(struct snd_soc_component *component,
+			struct snd_pcm_substream *substream, int cmd)
 {
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -1330,8 +1332,8 @@ done:
 	return ret;
 }
 
-static int msm_pcm_hw_params(struct snd_soc_component *component, struct snd_pcm_substream *substream,
-			     struct snd_pcm_hw_params *params)
+static int msm_pcm_hw_params(struct snd_soc_component *component,
+			struct snd_pcm_substream *substream, struct snd_pcm_hw_params *params)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct snd_dma_buffer *dma_buf = &substream->dma_buffer;
