@@ -1468,13 +1468,13 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.name		= DRV_NAME,
 	.pcm_construct	= msm_asoc_pcm_new,
 	.probe		= msm_pcm_hpcm_probe,
-        .open           = msm_pcm_open,
-        .hw_params      = msm_pcm_hw_params,
-        .prepare        = msm_pcm_prepare,
-        .trigger        = msm_pcm_trigger,
-        .pointer        = msm_pcm_pointer,
-        .copy_user      = msm_pcm_copy,
-        .close          = msm_pcm_close,
+	.open           = msm_pcm_open,
+	.hw_params      = msm_pcm_hw_params,
+	.prepare        = msm_pcm_prepare,
+	.trigger        = msm_pcm_trigger,
+	.pointer        = msm_pcm_pointer,
+	.copy_user      = msm_pcm_copy,
+	.close          = msm_pcm_close,
 };
 
 static int msm_pcm_probe(struct platform_device *pdev)

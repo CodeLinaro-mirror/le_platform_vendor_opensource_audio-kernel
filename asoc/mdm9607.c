@@ -184,7 +184,6 @@ static const char *const tdm_num_slots_text[] = {"eight", "sixteen"};
 static int mdm_tdm_num_slots = 8;
 
 /* TDM default offset */
-#ifdef mdm9607daisupport
 static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* PRI_TDM_RX */
 	{0, 4, 8, 12, 16, 20, 24, 28},
@@ -195,7 +194,7 @@ static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* SEC_TDM_TX */
 	{0, 4, 8, 12, 16, 20, 24, 28},
 };
-#endif
+
 static int mdm_spk_control;
 static atomic_t aux_ref_count;
 static atomic_t sec_aux_ref_count;
@@ -469,7 +468,7 @@ done:
 		atomic_dec(&mi2s_ref_count);
 	return ret;
 }
-#ifdef mdm9607daisupport
+
 static int mdm_sec_mi2s_clk_ctl(struct snd_soc_pcm_runtime *rtd, bool enable,
 				int rate, u16 mode)
 {
@@ -655,17 +654,17 @@ done:
 		atomic_dec(&sec_mi2s_ref_count);
 	return ret;
 }
-#endif
+
 static const struct snd_soc_ops mdm_mi2s_be_ops = {
 	.startup = mdm_mi2s_startup,
 	.shutdown = mdm_mi2s_shutdown,
 };
-#ifdef mdm9607daisupport
+
 static const struct snd_soc_ops mdm_sec_mi2s_be_ops = {
 	.startup = mdm_sec_mi2s_startup,
 	.shutdown = mdm_sec_mi2s_shutdown,
 };
-#endif
+
 static int mdm_mi2s_rate_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
@@ -752,7 +751,7 @@ static int mdm_sec_mi2s_rate_put(struct snd_kcontrol *kcontrol,
 		 (int)ucontrol->value.integer.value[0]);
 	return 0;
 }
-#ifdef mdm9607daisupport
+
 static int mdm_sec_mi2s_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rt,
 					      struct snd_pcm_hw_params *params)
 {
@@ -785,7 +784,7 @@ static int mdm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rt,
 	rate->min = rate->max = MDM_MI2S_RATE;
 	return 0;
 }
-#endif
+
 static int mdm_mi2s_rx_ch_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
@@ -1556,7 +1555,7 @@ static int mdm_mclk_event(struct snd_soc_dapm_widget *w,
 	}
 	return 0;
 }
-#ifdef mdm9607daisupport
+
 static void mdm_auxpcm_shutdown(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -1731,7 +1730,7 @@ static const struct snd_soc_ops mdm_sec_auxpcm_be_ops = {
 	.startup = mdm_sec_auxpcm_startup,
 	.shutdown = mdm_sec_auxpcm_shutdown,
 };
-#endif
+
 static int mdm_auxpcm_rate_get(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
@@ -1755,7 +1754,7 @@ static int mdm_auxpcm_rate_put(struct snd_kcontrol *kcontrol,
 	}
 	return 0;
 }
-#ifdef mdm9607daisupport
+
 static int mdm_auxpcm_be_params_fixup(struct snd_soc_pcm_runtime *rtd,
 					  struct snd_pcm_hw_params *params)
 {
@@ -1770,7 +1769,7 @@ static int mdm_auxpcm_be_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	return 0;
 }
-#endif
+
 static const struct snd_soc_dapm_widget mdm9607_dapm_widgets[] = {
 
 	SND_SOC_DAPM_SUPPLY("MCLK",  SND_SOC_NOPM, 0, 0,
@@ -1900,7 +1899,7 @@ static const struct snd_kcontrol_new mdm_snd_controls[] = {
 			mdm_tdm_num_slots_get,
 			mdm_tdm_num_slots_put),
 };
-#ifdef mdm9607daisupport
+
 static int mdm_tdm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 				struct snd_pcm_hw_params *params)
 {
@@ -2289,7 +2288,7 @@ static const struct snd_soc_ops mdm_tdm_be_ops = {
 	.hw_params = mdm_tdm_snd_hw_params,
 	.shutdown = mdm_tdm_shutdown,
 };
-#endif
+
 static int msm_snd_get_ext_clk_cnt(void)
 {
 	return clk_users;
@@ -2511,7 +2510,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA1,
 		SND_SOC_DAILINK_REG(multimedia1),
 	},
-#ifdef mdm9607daisupport
+
 	{
 		.name = "Circuit-Switch Voice",
 		.stream_name = "CS-Voice",
@@ -2546,7 +2545,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.stream_name = "Primary MI2S_RX Hostless Playback",
 		.dynamic = 1,
 		.dpcm_playback = 1,
-		.dpcm_capture = 1,
+		//.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
 	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
@@ -2664,7 +2663,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 	},
 	{
 		.name = "Primary MI2S TX Hostless",
-		.stream_name = "Primary MI2S_TX Hostless Playback",
+		.stream_name = "Primary MI2S_TX Hostless Capture",
 		.dynamic = 1,
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
@@ -2792,6 +2791,21 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA4,
 		SND_SOC_DAILINK_REG(multimedia4),
 	},
+	{
+		.name = "QCHAT",
+		.stream_name = "QCHAT",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.dpcm_playback = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+		    SND_SOC_DPCM_TRIGGER_POST},
+		//.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.id = MSM_FRONTEND_DAI_QCHAT,
+		SND_SOC_DAILINK_REG(qchat),
+	},
 	/* Backend DAI Links */
 	{
 		.name = LPASS_BE_AFE_PCM_RX,
@@ -2914,6 +2928,7 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(sec_auxpcm_tx),
 	},
+#ifdef mdm9607daisupport
 	/* FE TDM DAI links */
 	{
 		.name = "Primary TDM RX 0 Hostless",
@@ -2993,7 +3008,7 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(tomtom_i2s_tx1),
 	},
-#ifdef mdm9607daisupport
+
 	/* TDM be dai links */
 	{
 		.name = LPASS_BE_PRI_TDM_RX_0,
@@ -3041,7 +3056,7 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(sec_tdm_tx_0),
 	},
-#endif
+
 };
 
 
