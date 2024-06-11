@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
 * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
 */
 
 #include <linux/kernel.h>
@@ -589,7 +589,7 @@ static int apr_vm_cb_thread(void *data)
 		ret = habmm_socket_send(hab_handle_rx,
 				(void *)&apr_ack,
 				sizeof(apr_ack),
-				0);
+				HABMM_SOCKET_SEND_FLAGS_NON_BLOCKING);
 #else
 		ret = status;
 #endif
@@ -646,7 +646,7 @@ static int apr_vm_get_svc(const char *svc_name, int domain_id, int *client_id,
 				ret = habmm_socket_send(hab_handle_tx,
 						(void *) &tx_data,
 						apr_len,
-						0);
+						HABMM_SOCKET_SEND_FLAGS_NON_BLOCKING);
 				if (ret) {
 					pr_err("%s: habmm_socket_send failed %d\n",
 						__func__, ret);
@@ -732,7 +732,7 @@ static int apr_vm_rel_svc(int domain_id, int svc_id, int handle)
 			ret = habmm_socket_send(hab_handle_tx,
 					(void *) &tx_data,
 					apr_len,
-					0);
+					HABMM_SOCKET_SEND_FLAGS_NON_BLOCKING);
 			if (ret)
 				pr_err("%s: habmm_socket_send failed %d\n",
 					__func__, ret);
@@ -868,7 +868,7 @@ int apr_send_pkt(void *handle, uint32_t *buf)
 	ret = habmm_socket_send(hab_handle_tx,
 			(void *)&apr_tx_buf,
 			apr_send_len,
-			0);
+			HABMM_SOCKET_SEND_FLAGS_NON_BLOCKING);
 	if (ret) {
 		pr_err("%s: habmm_socket_send failed %d\n",
 				__func__, ret);
