@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) AND MIT) */
-/*
+/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  *  compress_params.h - codec types and parameters for compressed data
  *  streaming interface
  *
@@ -418,6 +419,7 @@ struct snd_codec {
 	__u32 format;
 	__u32 align;
 	union snd_codec_options options;
+	__u32 compr_passthr;
 	/* reserved[0] is compr_passthr and reserved[1] is flags */
 	__u32 reserved[3];
 } __attribute__((packed, aligned(4)));

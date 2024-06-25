@@ -4,7 +4,7 @@
  */
 #include <linux/slab.h>
 #include <linux/mutex.h>
-#include <audio/linux/mfd/wcd9xxx/wcd9xxx_registers.h>
+#include <linux/mfd/wcd9xxx/wcd9xxx_registers.h>
 #include <asoc/wcd9xxx-slimslave.h>
 
 struct wcd9xxx_slim_sch {
@@ -306,7 +306,7 @@ err:
 	sconfig_tx.chs = NULL;
 	return ret;
 }
-EXPORT_SYMBOL_GPL(wcd9xxx_close_slim_sch);
+EXPORT_SYMBOL_GPL(wcd9xxx_cfg_slim_sch_tx);
 
 int wcd9xxx_get_slave_port(unsigned int ch_num)
 {
