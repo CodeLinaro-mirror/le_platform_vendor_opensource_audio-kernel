@@ -36,7 +36,7 @@
 #include "msm-pcm-routing-devdep.h"
 #include "msm-qti-pp-config.h"
 #include "msm-dolby-dap-config.h"
-#include "msm-ds2-dap-config.h"
+#include <linux/msm-ds2-dap-config.h>
 
 #define DRV_NAME "msm-pcm-routing-v2"
 
