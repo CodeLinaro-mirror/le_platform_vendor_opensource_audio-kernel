@@ -9,7 +9,7 @@
 
 #include <bindings/audio-codec-port-types.h>
 
-#define WCD938X_MAX_SLAVE_CH_TYPES 24
+#define WCD938X_MAX_SLAVE_CH_TYPES 26
 #define ZERO 0
 #define WCD938X_DRV_NAME "wcd938x_codec"
 
