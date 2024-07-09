@@ -21892,6 +21892,10 @@ static const struct snd_kcontrol_new rx_cdc_dma_rx_1_port_mixer_controls[] = {
 	MSM_BACKEND_DAI_RX_CDC_DMA_RX_1,
 	MSM_BACKEND_DAI_SLIMBUS_8_TX, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
+	SOC_DOUBLE_EXT("SLIM_7_TX", SND_SOC_NOPM,
+	MSM_BACKEND_DAI_RX_CDC_DMA_RX_1,
+	MSM_BACKEND_DAI_SLIMBUS_7_TX, 1, 0, msm_routing_get_port_mixer,
+	msm_routing_put_port_mixer),
 	SOC_DOUBLE_EXT("TERT_MI2S_TX", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_RX_CDC_DMA_RX_1,
 	MSM_BACKEND_DAI_TERTIARY_MI2S_TX, 1, 0, msm_routing_get_port_mixer,
@@ -27327,6 +27331,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"RX_CDC_DMA_RX_1 Port Mixer", "VA_CDC_DMA_TX_0", "VA_CDC_DMA_TX_0"},
 	{"RX_CDC_DMA_RX_1 Port Mixer", "TX_CDC_DMA_TX_3", "TX_CDC_DMA_TX_3"},
 	{"RX_CDC_DMA_RX_1 Port Mixer", "SLIM_8_TX", "SLIMBUS_8_TX"},
+	{"RX_CDC_DMA_RX_1 Port Mixer", "SLIM_7_TX", "SLIMBUS_7_TX"},
 	{"RX_CDC_DMA_RX_1", NULL, "RX_CDC_DMA_RX_1 Port Mixer"},
 #endif
 
