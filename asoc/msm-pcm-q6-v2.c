@@ -3717,6 +3717,7 @@ static int msm_pcm_add_controls(struct snd_soc_pcm_runtime *rtd)
 static int msm_asoc_pcm_new(struct snd_soc_component *component, struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_card *card = rtd->card->snd_card;
+	struct snd_pcm *pcm = rtd->pcm;
 	int ret = 0;
 
 	if (!card->dev->coherent_dma_mask)
@@ -3760,7 +3761,7 @@ static int msm_asoc_pcm_new(struct snd_soc_component *component, struct snd_soc_
 	if (ret)
 		pr_err("%s: Could not add pcm ADSP Stream Callback Control\n",
 			__func__);
-
+	pcm->nonatomic = true;
 	return ret;
 }
 
