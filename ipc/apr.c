@@ -1200,6 +1200,21 @@ static int apr_probe(struct platform_device *pdev)
 	if (!apr_priv)
 		return -ENOMEM;
 
+	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle", &size);
+	if (!prop) {
+		dev_err(&pdev->dev, "Missing remotproc handle\n");
+		ret = -EINVAL;
+		return ret;
+	}
+	rproc_phandle = be32_to_cpup(prop->value);
+
+	rproc_h = rproc_get_by_phandle(rproc_phandle);
+	if (!rproc_h) {
+		dev_info_ratelimited(&pdev->dev, "remotproc handle NULL\n");
+		ret = -EPROBE_DEFER;
+		return ret;
+	}
+
 	apr_priv->dev = &pdev->dev;
 	spin_lock_init(&apr_priv->apr_lock);
 	INIT_WORK(&apr_priv->add_chld_dev_work, apr_add_child_devices);
