@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef _MSM_PCM_ROUTING_H
 #define _MSM_PCM_ROUTING_H
@@ -363,6 +363,8 @@ enum {
 	MSM_FRONTEND_DAI_VOICE2_STUB,
 	MSM_FRONTEND_DAI_VOICEMMODE1,
 	MSM_FRONTEND_DAI_VOICEMMODE2,
+	MSM_FRONTEND_DAI_CS_VOICE,
+	MSM_FRONTEND_DAI_VOLTE,
 	MSM_FRONTEND_DAI_MAX,
 };
 
