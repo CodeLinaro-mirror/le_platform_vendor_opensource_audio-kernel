@@ -37230,8 +37230,6 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"VoLTE Stub Tx Mixer", "STUB_TX_HL", "STUB_TX"},
 	{"VoLTE Stub Tx Mixer", "SLIM_1_TX", "SLIMBUS_1_TX"},
 	{"VoLTE Stub Tx Mixer", "STUB_1_TX_HL", "STUB_1_TX"},
-	{"Voice_Tx Mixer", "PRI_MI2S_TX_Voice", "PRI_MI2S_TX"},
-	{"CS-VOICE_UL1", NULL, "Voice_Tx Mixer"},
 #ifndef CONFIG_AUXPCM_DISABLE
 	{"VoLTE Stub Tx Mixer", "AUX_PCM_UL_TX", "AUX_PCM_TX"},
 #endif
@@ -41604,7 +41602,6 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"PRI_RX Audio Mixer", "MultiMedia2", "MM_DL2"},
 	{"PRI_RX Audio Mixer", "MultiMedia3", "MM_DL3"},
 	{"PRI_RX Audio Mixer", "MultiMedia4", "MM_DL4"},
-	{"PRI_MI2S_RX_Voice Mixer", "CSVoice", "CS-VOICE_DL1"},
 #ifndef CONFIG_SA410M_DISABLE
 	{"PRI_RX Audio Mixer", "MultiMedia5", "MM_DL5"},
 	{"PRI_RX Audio Mixer", "MultiMedia6", "MM_DL6"},

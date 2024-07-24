@@ -512,10 +512,9 @@ static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 		__func__,
 		runtime->control->appl_ptr, runtime->status->hw_ptr, hwbuf);
 
-	memset(hwbuf,0,fbytes);
 	if (sockptr_is_kernel(sockbuf)) {
 
-		pr_err("%s kernel pointer %p\n",__func__,buf);
+		pr_debug("%s kernel pointer %p\n",__func__,buf);
 		memcpy(hwbuf,buf,fbytes);
 	} else {
 
@@ -616,10 +615,9 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 			__func__, runtime->control->appl_ptr,
 			runtime->status->hw_ptr, hwbuf);
 
-	memset(hwbuf,0,fbytes);
 	if (sockptr_is_kernel(sockbuf)) {
 
-		pr_err("%s kernel pointer %p\n",__func__,buf);
+		pr_debug("%s kernel pointer %p\n",__func__,buf);
 		memcpy(buf, hwbuf, fbytes);
 	} else {
 		pr_err("%s user pointer %p\n",__func__,buf);
