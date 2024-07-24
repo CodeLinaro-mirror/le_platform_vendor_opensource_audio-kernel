@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
+#include <linux/sockptr.h>
 
 #include <sound/core.h>
 #include <sound/soc.h>
@@ -503,17 +504,23 @@ static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 	struct pcm_afe_info *prtd = runtime->private_data;
 	char *hwbuf = runtime->dma_area + hwoff;
 	u32 mem_map_handle = 0;
+	sockptr_t sockbuf = KERNEL_SOCKPTR(buf);
 
 	pr_debug("%s : appl_ptr 0x%lx hw_ptr 0x%lx dest_to_copy 0x%pK\n",
 		__func__,
 		runtime->control->appl_ptr, runtime->status->hw_ptr, hwbuf);
 
-	if (copy_from_user(hwbuf, buf, fbytes)) {
-		pr_err("%s :Failed to copy audio from user buffer\n",
-			__func__);
-
-		ret = -EFAULT;
-		goto fail;
+	if (sockptr_is_kernel(sockbuf)) {
+		pr_debug("%s kernel pointer %p\n", __func__, buf);
+		memcpy(hwbuf, buf, fbytes);
+	} else {
+		pr_debug("%s user pointer %p\n", __func__, buf);
+		if (copy_from_user(hwbuf, buf, fbytes)) {
+			pr_err("%s :Failed to copy audio from user buffer\n",
+				__func__);
+			ret = -EFAULT;
+			goto fail;
+		}
 	}
 
 	if (!prtd->mmap_flag) {
@@ -536,7 +543,7 @@ static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 				mem_map_handle,
 				snd_pcm_lib_period_bytes(prtd->substream));
 
-		if (ret) {
+		if (ret < 0) {
 			pr_err("%s: AFE proxy port write failed %d\n",
 				__func__, ret);
 			goto fail;
@@ -559,6 +566,7 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 	int port_id = cpu_dai->id;
 	char *hwbuf = runtime->dma_area + hwoff;
 	u32 mem_map_handle = 0;
+	sockptr_t sockbuf = KERNEL_SOCKPTR(buf);
 
 	if (!prtd->mmap_flag) {
 		mem_map_handle = afe_req_mmap_handle(prtd->audio_client);
@@ -579,7 +587,7 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 				snd_pcm_lib_period_bytes(prtd->substream),
 				port_id);
 
-		if (ret) {
+		if (ret < 0) {
 			pr_err("%s: AFE proxy port read failed %d\n",
 				__func__, ret);
 			goto fail;
@@ -601,11 +609,16 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 			__func__, runtime->control->appl_ptr,
 			runtime->status->hw_ptr, hwbuf);
 
-	if (copy_to_user(buf, hwbuf, fbytes)) {
-		pr_err("%s: copy to user failed\n", __func__);
-
-		goto fail;
-		ret = -EFAULT;
+	if (sockptr_is_kernel(sockbuf)) {
+		pr_debug("%s kernel pointer %p\n", __func__, buf);
+		memcpy(buf, hwbuf, fbytes);
+	} else {
+		pr_debug("%s user pointer %p\n", __func__, buf);
+		if (copy_to_user(buf, hwbuf, fbytes)) {
+			pr_err("%s: copy to user failed\n", __func__);
+			goto fail;
+			ret = -EFAULT;
+		}
 	}
 
 fail:
