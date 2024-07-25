@@ -8184,8 +8184,8 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 
 		rc = of_property_read_u32(dev->of_node, "qcom,wcn-btfm",
 					  &wcn_btfm_intf);
-		if (rc) {
-			dev_dbg(dev, "%s: No DT match wcn btfm interface\n",
+		if (1) {
+			dev_err(dev, "%s: No DT match wcn btfm interface\n",
 				__func__);
 		} else {
 			if (wcn_btfm_intf) {
