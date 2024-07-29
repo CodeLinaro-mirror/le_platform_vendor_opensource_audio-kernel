@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/irq.h>
@@ -2280,8 +2280,10 @@ static irqreturn_t swrm_wakeup_interrupt(int irq, void *dev)
 			}
 			mutex_lock(&swrm->irq_lock);
 			if (!irqd_irq_disabled(
-			    irq_get_irq_data(swrm->wake_irq)))
+			    irq_get_irq_data(swrm->wake_irq))) {
+				irq_set_irq_wake(swrm->wake_irq, 0);
 				disable_irq_nosync(swrm->wake_irq);
+			}
 			mutex_unlock(&swrm->irq_lock);
 		}
 		mutex_unlock(&swrm->devlock);
@@ -2299,8 +2301,10 @@ static irqreturn_t swrm_wakeup_interrupt(int irq, void *dev)
 		}
 		mutex_lock(&swrm->irq_lock);
 		if (!irqd_irq_disabled(
-		    irq_get_irq_data(swrm->wake_irq)))
+		    irq_get_irq_data(swrm->wake_irq))) {
+			irq_set_irq_wake(swrm->wake_irq, 0);
 			disable_irq_nosync(swrm->wake_irq);
+		}
 		mutex_unlock(&swrm->irq_lock);
 	}
 	pm_runtime_get_sync(swrm->dev);
@@ -3140,9 +3144,10 @@ static int swrm_runtime_resume(struct device *dev)
 					return IRQ_NONE;
 				}
 				mutex_lock(&swrm->irq_lock);
-				if (!irqd_irq_disabled(
-				    irq_get_irq_data(swrm->wake_irq)))
+				if (!irqd_irq_disabled(irq_get_irq_data(swrm->wake_irq))) {
+					irq_set_irq_wake(swrm->wake_irq, 0);
 					disable_irq_nosync(swrm->wake_irq);
+				}
 				mutex_unlock(&swrm->irq_lock);
 			}
 			if (swrm->ipc_wakeup)
@@ -3337,8 +3342,12 @@ static int swrm_runtime_suspend(struct device *dev)
 		if (swrm->clk_stop_mode0_supp) {
 			if (swrm->wake_irq > 0) {
 				irq_data = irq_get_irq_data(swrm->wake_irq);
-				if (irq_data && irqd_irq_disabled(irq_data))
+				mutex_lock(&swrm->irq_lock);
+				if (irq_data && irqd_irq_disabled(irq_data)) {
+					irq_set_irq_wake(swrm->wake_irq, 1);
 					enable_irq(swrm->wake_irq);
+				}
+				mutex_unlock(&swrm->irq_lock);
 			} else if (swrm->ipc_wakeup) {
 				msm_aud_evt_blocking_notifier_call_chain(
 					SWR_WAKE_IRQ_REGISTER, (void *)swrm);
@@ -3429,6 +3438,7 @@ int swrm_register_wake_irq(struct swr_mstr_ctrl *swrm)
 			}
 			swrm->wake_irq = dir_apps_irq;
 		}
+		mutex_lock(&swrm->irq_lock);
 		ret = request_threaded_irq(swrm->wake_irq, NULL,
 					   swrm_wakeup_interrupt,
 					   IRQF_TRIGGER_HIGH | IRQF_ONESHOT,
@@ -3436,10 +3446,12 @@ int swrm_register_wake_irq(struct swr_mstr_ctrl *swrm)
 		if (ret) {
 			dev_err(swrm->dev, "%s: Failed to request irq %d\n",
 				__func__, ret);
+			mutex_unlock(&swrm->irq_lock);
 			return -EINVAL;
 		}
 		irq_set_irq_wake(swrm->wake_irq, 1);
 	}
+	mutex_unlock(&swrm->irq_lock);
 	return ret;
 }
 
