@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -35,6 +35,7 @@ MODULE_IMPORT_NS(DMA_BUF);
 #define MSM_AUDIO_SMMU_VM_CMD_MAP_V2 0x00000003
 #define MSM_AUDIO_SMMU_VM_CMD_UNMAP_V2 0x00000004
 #define MSM_AUDIO_SMMU_VM_HAB_MINOR_ID 1
+#define MSM_AUDIO_HAB_TIMEOUT_MS  1000
 
 struct msm_audio_ion_private {
 	bool smmu_enabled;
@@ -273,7 +274,7 @@ static int msm_audio_ion_smmu_map(struct dma_buf *dma_buf,
 				rc = habmm_socket_recv(msm_audio_ion_hab_handle,
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
-					0xFFFFFFFF,
+					MSM_AUDIO_HAB_TIMEOUT_MS,
 					0);
 			} while (time_before(jiffies, delay) && (rc == -EINTR) &&
 					(cmd_rsp_size == 0));
@@ -291,7 +292,7 @@ static int msm_audio_ion_smmu_map(struct dma_buf *dma_buf,
 				rc = habmm_socket_recv(msm_audio_ion_hab_handle,
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
-					0xFFFFFFFF,
+					MSM_AUDIO_HAB_TIMEOUT_MS,
 					0);
 
 				if (time_before(jiffies, delay) && (rc == -EINTR) &&
@@ -382,7 +383,7 @@ static int msm_audio_ion_smmu_unmap(struct dma_buf *dma_buf)
 				rc = habmm_socket_recv(msm_audio_ion_hab_handle,
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
-					0xFFFFFFFF,
+					MSM_AUDIO_HAB_TIMEOUT_MS,
 					0);
 			} while (time_before(jiffies, delay) &&
 					(rc == -EINTR) && (cmd_rsp_size == 0));
@@ -400,7 +401,7 @@ static int msm_audio_ion_smmu_unmap(struct dma_buf *dma_buf)
 				rc = habmm_socket_recv(msm_audio_ion_hab_handle,
 					(void *)&cmd_rsp,
 					&cmd_rsp_size,
-					0xFFFFFFFF,
+					MSM_AUDIO_HAB_TIMEOUT_MS,
 					0);
 
 				if (time_before(jiffies, delay) && (rc == -EINTR) &&
