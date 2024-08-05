@@ -184,6 +184,7 @@ static const char *const tdm_num_slots_text[] = {"eight", "sixteen"};
 static int mdm_tdm_num_slots = 8;
 
 /* TDM default offset */
+
 static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* PRI_TDM_RX */
 	{0, 4, 8, 12, 16, 20, 24, 28},
@@ -194,7 +195,6 @@ static unsigned int tdm_slot_offset[TDM_MAX][TDM_SLOT_OFFSET_MAX] = {
 	/* SEC_TDM_TX */
 	{0, 4, 8, 12, 16, 20, 24, 28},
 };
-
 static int mdm_spk_control;
 static atomic_t aux_ref_count;
 static atomic_t sec_aux_ref_count;
@@ -2510,7 +2510,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA1,
 		SND_SOC_DAILINK_REG(multimedia1),
 	},
-
 	{
 		.name = "Circuit-Switch Voice",
 		.stream_name = "CS-Voice",
@@ -2545,10 +2544,8 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.stream_name = "Primary MI2S_RX Hostless Playback",
 		.dynamic = 1,
 		.dpcm_playback = 1,
-		//.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(pri_mi2s_rx_hostless),
@@ -2561,7 +2558,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		// this dainlink has playback support
 		.ignore_pmdown_time = 1,
@@ -2593,7 +2589,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		.id = MSM_FRONTEND_DAI_DTMF_RX,
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		SND_SOC_DAILINK_REG(dtmf_rx_hostless),
 	},
 	{
@@ -2656,7 +2651,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 			    SND_SOC_DPCM_TRIGGER_POST},
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		/* this dainlink has playback support */
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA6,
 		SND_SOC_DAILINK_REG(multimedia6),
@@ -2668,7 +2662,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(pri_mi2s_tx_hostless),
@@ -2695,7 +2688,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		/* This dainlink has Voice support */
 		.ignore_pmdown_time = 1,
@@ -2710,7 +2702,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		/* This dainlink has Voice support */
 		.ignore_pmdown_time = 1,
@@ -2799,7 +2790,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.dpcm_playback = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 		    SND_SOC_DPCM_TRIGGER_POST},
-		//.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		/* this dainlink has playback support */
 		.ignore_pmdown_time = 1,
@@ -2928,57 +2918,6 @@ static struct snd_soc_dai_link mdm_dai[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(sec_auxpcm_tx),
 	},
-#ifdef mdm9607daisupport
-	/* FE TDM DAI links */
-	{
-		.name = "Primary TDM RX 0 Hostless",
-		.stream_name = "Primary TDM RX 0 Hostless",
-		.dynamic = 1,
-		.dpcm_playback = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		SND_SOC_DAILINK_REG(pri_tdm_rx_0_hostless),
-	},
-	{
-		.name = "Primary TDM TX 0 Hostless",
-		.stream_name = "Primary TDM TX 0 Hostless",
-		.dynamic = 1,
-		.dpcm_capture = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		SND_SOC_DAILINK_REG(pri_tdm_tx_0_hostless),
-	},
-	{
-		.name = "Secondary TDM RX 0 Hostless",
-		.stream_name = "Secondary TDM RX 0 Hostless",
-		.dynamic = 1,
-		.dpcm_playback = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		SND_SOC_DAILINK_REG(sec_tdm_rx_0_hostless),
-	},
-	{
-		.name = "Secondary TDM TX 0 Hostless",
-		.stream_name = "Secondary TDM TX 0 Hostless",
-		.dynamic = 1,
-		.dpcm_capture = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
-	//	.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
-		.ignore_suspend = 1,
-		.ignore_pmdown_time = 1,
-		SND_SOC_DAILINK_REG(sec_tdm_tx_0_hostless),
-	},
-#endif
 };
 
 static struct snd_soc_dai_link mdm_9330_dai[] = {
@@ -3008,7 +2947,6 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(tomtom_i2s_tx1),
 	},
-
 	/* TDM be dai links */
 	{
 		.name = LPASS_BE_PRI_TDM_RX_0,
@@ -3056,7 +2994,6 @@ static struct snd_soc_dai_link mdm_9330_dai[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(sec_tdm_tx_0),
 	},
-
 };
 
 
@@ -3406,8 +3343,19 @@ static struct platform_driver mdm_asoc_machine_driver = {
 	.remove = mdm_asoc_machine_remove,
 };
 
+static int __init mdm_soc_platform_init(void)
+{
+	platform_driver_register(&mdm_asoc_machine_driver);
+	return 0;
+}
 
-module_platform_driver(mdm_asoc_machine_driver);
+static void mdm_soc_platform_exit(void)
+{
+	platform_driver_unregister(&mdm_asoc_machine_driver);
+}
+
+module_init(mdm_soc_platform_init);
+module_exit(mdm_soc_platform_exit);
 
 MODULE_DESCRIPTION("ALSA SoC msm");
 MODULE_LICENSE("GPL");

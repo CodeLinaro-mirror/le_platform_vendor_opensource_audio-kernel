@@ -1233,14 +1233,15 @@ static void wcd9xxx_i2c_remove(struct i2c_client *client)
 	struct wcd9xxx_pdata *pdata = client->dev.platform_data;
 
 	wcd9xxx = dev_get_drvdata(&client->dev);
-
-	if(wcd9xxx && pdata) {
-		msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
-					 pdata->regulator,
-					 pdata->num_supplies);
-		wcd9xxx_device_exit(wcd9xxx);
+	if (wcd9xxx == NULL) {
+		dev_set_drvdata(&client->dev, NULL);
+		return;
 	}
 
+	msm_cdc_release_supplies(wcd9xxx->dev, wcd9xxx->supplies,
+				 pdata->regulator,
+				 pdata->num_supplies);
+	wcd9xxx_device_exit(wcd9xxx);
 	dev_set_drvdata(&client->dev, NULL);
 }
 
@@ -1767,13 +1768,12 @@ int wcd9xxx_init(void)
 
 void wcd9xxx_exit(void)
 {
-	wcd9xxx_set_intf_type(WCD9XXX_INTERFACE_TYPE_PROBING);
-
 	i2c_del_driver(&tabla_i2c_driver);
 	i2c_del_driver(&wcd9xxx_i2c_driver);
 	i2c_del_driver(&wcd9335_i2c_driver);
 	i2c_del_driver(&wcd934x_i2c_driver);
 	slim_driver_unregister(&wcd_slim_driver);
+	wcd9xxx_set_intf_type(WCD9XXX_INTERFACE_TYPE_PROBING);
 }
 
 MODULE_DESCRIPTION("Codec core driver");

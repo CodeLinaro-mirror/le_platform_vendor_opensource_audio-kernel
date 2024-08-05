@@ -455,7 +455,7 @@ int voice_get_idx_for_session(u32 session_id)
 
 	return idx;
 }
-EXPORT_SYMBOL(voice_get_idx_for_session);
+EXPORT_SYMBOL_GPL(voice_get_idx_for_session);
 
 static struct voice_data *voice_get_session_by_idx(int idx)
 {
@@ -4795,7 +4795,6 @@ static int voice_send_cvp_media_fmt_info_cmd(struct voice_data *v)
 			CVD_INT_VERSION_2_3)
 		goto done;
 
-
 	if (common.cvp_version < CVP_VERSION_2)
 		ret = voice_send_cvp_device_channels_cmd(v);
 	else
@@ -5816,7 +5815,7 @@ static int voice_send_vol_step_cmd(struct voice_data *v)
 	cvp_vol_step_cmd.cvp_set_vol_step.value = v->dev_rx.volume_step_value;
 	cvp_vol_step_cmd.cvp_set_vol_step.ramp_duration_ms =
 					v->dev_rx.volume_ramp_duration_ms;
-	pr_debug("%s step_value:%d, ramp_duration_ms:%d",
+	pr_debug("%s step_value:%d, ramp_duration_ms:%d\n",
 			__func__,
 			cvp_vol_step_cmd.cvp_set_vol_step.value,
 			cvp_vol_step_cmd.cvp_set_vol_step.ramp_duration_ms);
@@ -8014,6 +8013,11 @@ static int32_t qdsp_cvs_callback(struct apr_client_data *data, void *priv)
 
 	if (data->opcode == APR_BASIC_RSP_RESULT) {
 		if (data->payload_size) {
+			if (data->payload_size < (2*sizeof(uint32_t))) {
+				pr_err("%s: invalid payload_size, required: %d, actual: %d\n",
+						__func__, (2*sizeof(uint32_t)), data->payload_size);
+				return -EINVAL;
+			}
 			ptr = data->payload;
 
 			pr_debug("%x %x\n", ptr[0], ptr[1]);

@@ -505,7 +505,7 @@ int msm_audio_ion_alloc(void **handle, size_t bufsz,
 
 	if (IS_ERR_OR_NULL((void *)(*handle))) {
 		if (IS_ERR((void *)(*handle)))
-			err_ion_ptr = PTR_ERR((int *)(*handle));
+			err_ion_ptr = PTR_ERR((void *)(*handle));
 		pr_err("%s: ION alloc fail err ptr=%ld, smmu_enabled=%d\n",
 		       __func__, err_ion_ptr, msm_audio_ion_data.smmu_enabled);
 		rc = -ENOMEM;

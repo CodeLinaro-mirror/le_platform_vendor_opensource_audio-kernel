@@ -1206,8 +1206,9 @@ done:
 	return ret;
 }
 
-static int msm_pcm_copy(struct snd_soc_component *component, struct snd_pcm_substream *substream,
-			int channel, unsigned long hwoff, void __user *buf,
+static int msm_pcm_copy(struct snd_soc_component *component,
+			struct snd_pcm_substream *substream, int channel,
+			unsigned long hwoff, void __user *buf,
 			unsigned long fbytes)
 {
 	int ret = 0;
@@ -1286,7 +1287,8 @@ done:
 	return ret;
 }
 
-static int msm_pcm_prepare(struct snd_soc_component *component, struct snd_pcm_substream *substream)
+static int msm_pcm_prepare(struct snd_soc_component *component,
+			struct snd_pcm_substream *substream)
 {
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -1333,7 +1335,8 @@ done:
 }
 
 static int msm_pcm_hw_params(struct snd_soc_component *component,
-			struct snd_pcm_substream *substream, struct snd_pcm_hw_params *params)
+			struct snd_pcm_substream *substream,
+			struct snd_pcm_hw_params *params)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct snd_dma_buffer *dma_buf = &substream->dma_buffer;
@@ -1389,7 +1392,8 @@ done:
 	return ret;
 }
 
-static int msm_pcm_open(struct snd_soc_component *component, struct snd_pcm_substream *substream)
+static int msm_pcm_open(struct snd_soc_component *component,
+			struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct hpcm_drv *prtd = &hpcm_drv;
@@ -1445,7 +1449,8 @@ done:
 	return ret;
 }
 
-static int msm_asoc_pcm_new(struct snd_soc_component *component, struct snd_soc_pcm_runtime *rtd)
+static int msm_asoc_pcm_new(struct snd_soc_component *component,
+			struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_card *card = rtd->card->snd_card;
 

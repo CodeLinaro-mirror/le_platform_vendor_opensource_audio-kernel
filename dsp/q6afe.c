@@ -8620,7 +8620,7 @@ void afe_set_dtmf_gen_rx_portid_session(u16 port_id, int set, int session_idx)
 	else if (this_afe.dtmf_gen_rx_session_portid[session_idx] == port_id)
 		this_afe.dtmf_gen_rx_session_portid[session_idx] = -1;
 }
-EXPORT_SYMBOL(afe_set_dtmf_gen_rx_portid_session);
+EXPORT_SYMBOL_GPL(afe_set_dtmf_gen_rx_portid_session);
 
 /**
  * afe_dtmf_generate_rx - command to generate AFE DTMF RX

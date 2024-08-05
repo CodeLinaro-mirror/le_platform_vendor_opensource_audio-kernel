@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -866,7 +866,6 @@ static int msm_dtmf_rx_generate_put(struct snd_kcontrol *kcontrol,
 static int msm_dtmf_rx_generate_get(struct  snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s:\n", __func__);
 	ucontrol->value.integer.value[0] = 0;
 	return 0;
 }
@@ -927,7 +926,7 @@ static struct snd_kcontrol_new msm_voice_controls[] = {
 			     msm_voice_sidetone_get, msm_voice_sidetone_put),
 	SOC_SINGLE_BOOL_EXT("Voice Mic Break Enable", 0, msm_voice_mbd_get,
 				msm_voice_mbd_put),
-        SOC_SINGLE_MULTI_EXT("DTMF_Generate Rx Low High Duration Gain",
+	SOC_SINGLE_MULTI_EXT("DTMF_Generate Rx Low High Duration Gain",
 				SND_SOC_NOPM, 0, 5000, 0, 4,
 				msm_dtmf_rx_generate_get,
 				msm_dtmf_rx_generate_put),

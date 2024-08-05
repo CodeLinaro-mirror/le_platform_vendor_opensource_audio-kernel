@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -506,24 +506,18 @@ static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 	u32 mem_map_handle = 0;
 	sockptr_t sockbuf = KERNEL_SOCKPTR(buf);
 
-
-
 	pr_debug("%s : appl_ptr 0x%lx hw_ptr 0x%lx dest_to_copy 0x%pK\n",
 		__func__,
 		runtime->control->appl_ptr, runtime->status->hw_ptr, hwbuf);
 
 	if (sockptr_is_kernel(sockbuf)) {
-
-		pr_debug("%s kernel pointer %p\n",__func__,buf);
-		memcpy(hwbuf,buf,fbytes);
+		pr_debug("%s kernel pointer %p\n", __func__, buf);
+		memcpy(hwbuf, buf, fbytes);
 	} else {
-
-		pr_err("%s user pointer %p\n",__func__,buf);
-
+		pr_debug("%s user pointer %p\n", __func__, buf);
 		if (copy_from_user(hwbuf, buf, fbytes)) {
 			pr_err("%s :Failed to copy audio from user buffer\n",
 				__func__);
-
 			ret = -EFAULT;
 			goto fail;
 		}
@@ -616,14 +610,12 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 			runtime->status->hw_ptr, hwbuf);
 
 	if (sockptr_is_kernel(sockbuf)) {
-
-		pr_debug("%s kernel pointer %p\n",__func__,buf);
+		pr_debug("%s kernel pointer %p\n", __func__, buf);
 		memcpy(buf, hwbuf, fbytes);
 	} else {
-		pr_err("%s user pointer %p\n",__func__,buf);
+		pr_debug("%s user pointer %p\n", __func__, buf);
 		if (copy_to_user(buf, hwbuf, fbytes)) {
 			pr_err("%s: copy to user failed\n", __func__);
-
 			goto fail;
 			ret = -EFAULT;
 		}

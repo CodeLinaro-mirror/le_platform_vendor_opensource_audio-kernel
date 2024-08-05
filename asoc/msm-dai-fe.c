@@ -437,7 +437,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		//.compress_new = msm_compr_new,
 		.compress_new = snd_soc_new_compress,
 		.name = "MultiMedia4",
 		.probe = fe_dai_probe,
