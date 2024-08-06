@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2019, 2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -8184,8 +8184,8 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 
 		rc = of_property_read_u32(dev->of_node, "qcom,wcn-btfm",
 					  &wcn_btfm_intf);
-		if (1) {
-			dev_err(dev, "%s: No DT match wcn btfm interface\n",
+		if (rc) {
+			dev_dbg(dev, "%s: No DT match wcn btfm interface\n",
 				__func__);
 		} else {
 			if (wcn_btfm_intf) {
