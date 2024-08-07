@@ -2686,11 +2686,25 @@ void msm_pcm_routing_dereg_phy_stream(int fedai_id, int stream_type)
 				continue;
 			}
 			port_id = get_port_id(msm_bedais[i].port_id);
-			topology = adm_get_topology_for_port_copp_idx(
+#ifdef RX_TO_TX_LOOPBACK
+			if (session_type == SESSION_TYPE_TX &&
+					port_id == RX_TO_TX_LOOPBACK_DUMMY_TX_PORT) {
+				topology = adm_get_topology_for_port_copp_idx(
 					port_id, idx);
-			msm_routing_unload_topology(topology);
-			copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
-			adm_close(port_id, copp_perf_mode, idx);
+				msm_routing_unload_topology(topology);
+				port_id = RX_TO_TX_LOOPBACK_RX_PORT;
+				copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
+				adm_close(port_id, copp_perf_mode, idx);
+			} else {
+#endif
+				topology = adm_get_topology_for_port_copp_idx(
+					port_id, idx);
+				msm_routing_unload_topology(topology);
+				copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
+				adm_close(port_id, copp_perf_mode, idx);
+#ifdef RX_TO_TX_LOOPBACK
+			}
+#endif
 			pr_debug("%s:copp:%ld,idx bit fe:%d,type:%d,be:%d\n",
 				 __func__, copp, fedai_id, session_type, i);
 			clear_bit(idx,
