@@ -28,6 +28,7 @@ static int __init audio_platform_init(void)
 	msm_pcm_voice_init();
 	msm_pcm_voip_init();
 	msm_common_init();
+	msm_voice_host_init();
 
 	return 0;
 }
@@ -52,6 +53,7 @@ static void audio_platform_exit(void)
 	msm_dai_q6_hdmi_exit();
 	msm_fe_dai_exit();
 	msm_compress_dsp_exit();
+	msm_voice_host_exit();
 }
 
 module_init(audio_platform_init);
