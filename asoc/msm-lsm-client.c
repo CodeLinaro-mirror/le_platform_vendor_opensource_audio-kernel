@@ -4307,6 +4307,11 @@ static int msm_lsm_input_hw_params_put(struct snd_kcontrol *kcontrol,
 	prtd = runtime->private_data;
 	rtd = substream->private_data;
 
+	if (size > sizeof(struct snd_lsm_input_hw_params)) {
+		dev_err(rtd->dev, "%s: %s: Invalid size: %d\n",
+				__func__, "LSM_SET_INPUT_HW_PARAMS", size);
+		return -EINVAL;
+	}
 	if (copy_from_user(&params, bytes, size)) {
 		dev_err(rtd->dev, "%s: %s: copy_from_user failed\n",
 				__func__, "LSM_SET_INPUT_HW_PARAMS");
