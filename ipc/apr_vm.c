@@ -512,6 +512,11 @@ static int apr_vm_cb_process_evt(char *buf, int len)
 	pr_debug("%x %x %x %p %p\n", c_svc->id, c_svc->dest_id,
 		 c_svc->client_id, c_svc->fn, c_svc->priv);
 
+	if (hdr->pkt_size < hdr_size) {
+		pr_err("APR: invalid pkt_zie (%d), hdr_size: %d\n",
+					hdr->pkt_size, hdr_size);
+		return -EINVAL;
+	}
 	data.payload_size = hdr->pkt_size - hdr_size;
 	data.opcode = hdr->opcode;
 	data.src = src;
