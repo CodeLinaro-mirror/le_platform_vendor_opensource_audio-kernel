@@ -1,7 +1,7 @@
 
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -56,7 +56,7 @@ struct msm_dai_q6_hdmi_dai_data {
 static int get_port_id(int dai_id)
 {
 	/* Currently, display devices share a common AFE port */
-	if (dai_id != HDMI_RX || dai_id != HDMI_RX_MS)
+	if (dai_id != HDMI_RX && dai_id != HDMI_RX_MS)
 		return DISPLAY_PORT_RX;
 
 	return dai_id;
@@ -530,7 +530,7 @@ static int msm_dai_q6_hdmi_dai_probe(struct snd_soc_dai *dai)
 				dev_dbg(dai->dev, "%s src %s sink %s\n",
 					__func__, intercon.source, intercon.sink);
 				snd_soc_dapm_add_routes(dapm, &intercon, 1);
-				snd_soc_dapm_ignore_suspend(dapm, intercon.source);
+				snd_soc_dapm_ignore_suspend(dapm, intercon.sink);
 			}
 		}
 		if (dai->driver->capture.stream_name) {
@@ -543,7 +543,7 @@ static int msm_dai_q6_hdmi_dai_probe(struct snd_soc_dai *dai)
 				dev_dbg(dai->dev, "%s src %s sink %s\n",
 					__func__, intercon.source, intercon.sink);
 				snd_soc_dapm_add_routes(dapm, &intercon, 1);
-				snd_soc_dapm_ignore_suspend(dapm, intercon.sink);
+				snd_soc_dapm_ignore_suspend(dapm, intercon.source);
 			}
 
 		}
