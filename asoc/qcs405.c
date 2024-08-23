@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/clk.h>
 #include <linux/delay.h>
@@ -7867,7 +7868,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.name = MSM_DAILINK_NAME(Media1),
 		.stream_name = "MultiMedia1",
 		.dynamic = 1,
-		.nonatomic = 1,
+		.nonatomic = 0,
 		.dpcm_playback = 1,
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
@@ -8246,7 +8247,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.name = MSM_DAILINK_NAME(Compress4),
 		.stream_name = "Compress4",
 		.dynamic = 1,
-		.nonatomic = 1,
+		.nonatomic = 0,
 		.dpcm_playback = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			 SND_SOC_DPCM_TRIGGER_POST},
