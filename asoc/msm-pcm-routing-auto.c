@@ -58,6 +58,11 @@
 #define ASM_CFG_PARAM_MAX 4
 static int asm_cfg_params[ASM_CFG_PARAM_MAX];
 
+#ifdef RX_TO_TX_LOOPBACK
+#define RX_TO_TX_LOOPBACK_DUMMY_TX_PORT  AFE_PORT_ID_QUINARY_TDM_TX_7
+#define RX_TO_TX_LOOPBACK_RX_PORT  AFE_PORT_ID_QUINARY_TDM_RX
+#endif
+
 static struct mutex routing_lock;
 
 static struct cal_type_data *cal_data[MAX_ROUTING_CAL_TYPES];
@@ -2563,7 +2568,19 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 						&ec_ref_chmix_cfg[fedai_id]);
 				/* reset ec_ref config */
 				ec_ref_chmix_cfg[fedai_id].output_channel = 0;
-			} else
+			}
+#ifdef RX_TO_TX_LOOPBACK
+			else if (session_type == SESSION_TYPE_TX &&
+					port_id == RX_TO_TX_LOOPBACK_DUMMY_TX_PORT) {
+				port_id = RX_TO_TX_LOOPBACK_RX_PORT;
+				copp_idx = adm_open(port_id, path_type,
+				sample_rate, channels, topology,
+				copp_perf_mode, bits_per_sample,
+				app_type, acdb_dev_id,
+				session_type, passthr_mode, copp_token);
+			}
+#endif
+			else
 				copp_idx = adm_open(port_id, path_type,
 					    sample_rate, channels, topology,
 					    copp_perf_mode, bits_per_sample,
@@ -2686,11 +2703,25 @@ void msm_pcm_routing_dereg_phy_stream(int fedai_id, int stream_type)
 				continue;
 			}
 			port_id = get_port_id(msm_bedais[i].port_id);
-			topology = adm_get_topology_for_port_copp_idx(
+#ifdef RX_TO_TX_LOOPBACK
+			if (session_type == SESSION_TYPE_TX &&
+					port_id == RX_TO_TX_LOOPBACK_DUMMY_TX_PORT) {
+				topology = adm_get_topology_for_port_copp_idx(
 					port_id, idx);
-			msm_routing_unload_topology(topology);
-			copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
-			adm_close(port_id, copp_perf_mode, idx);
+				msm_routing_unload_topology(topology);
+				port_id = RX_TO_TX_LOOPBACK_RX_PORT;
+				copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
+				adm_close(port_id, copp_perf_mode, idx);
+			} else {
+#endif
+				topology = adm_get_topology_for_port_copp_idx(
+					port_id, idx);
+				msm_routing_unload_topology(topology);
+				copp_perf_mode = get_copp_perf_mode(fedai_id, session_type, i);
+				adm_close(port_id, copp_perf_mode, idx);
+#ifdef RX_TO_TX_LOOPBACK
+			}
+#endif
 			pr_debug("%s:copp:%ld,idx bit fe:%d,type:%d,be:%d\n",
 				 __func__, copp, fedai_id, session_type, i);
 			clear_bit(idx,
@@ -4461,6 +4492,8 @@ struct msm_asm_config loopback_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 struct msm_asm_config playback_cfg[] = {
@@ -4518,6 +4551,8 @@ struct msm_asm_config playback_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 struct msm_asm_config capture_cfg[] = {
@@ -4575,6 +4610,8 @@ struct msm_asm_config capture_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 int msm_pcm_asm_cfg_get(int fe_id, int mode)
@@ -19696,6 +19733,12 @@ static const struct snd_kcontrol_new mmul1_mixer_controls[] = {
 		MSM_BACKEND_DAI_QUAT_TDM_TX_3,
 		MSM_FRONTEND_DAI_MULTIMEDIA1, 1, 0, msm_routing_get_audio_mixer,
 		msm_routing_put_audio_mixer),
+#ifdef RX_TO_TX_LOOPBACK
+	SOC_DOUBLE_EXT("QUIN_TDM_TX_7", SND_SOC_NOPM,
+		MSM_BACKEND_DAI_QUIN_TDM_TX_7,
+		MSM_FRONTEND_DAI_MULTIMEDIA1, 1, 0, msm_routing_get_audio_mixer,
+		msm_routing_put_audio_mixer),
+#endif
 	SOC_DOUBLE_EXT("QUIN_TDM_TX_0", SND_SOC_NOPM,
 		MSM_BACKEND_DAI_QUIN_TDM_TX_0,
 		MSM_FRONTEND_DAI_MULTIMEDIA1, 1, 0, msm_routing_get_audio_mixer,
@@ -25471,17 +25514,23 @@ static int msm_routing_put_app_type_cfg_control(struct snd_kcontrol *kcontrol,
 					  struct snd_ctl_elem_value *ucontrol)
 {
 	int i = 0, j;
-	int num_app_types = ucontrol->value.integer.value[i++];
+	int num_app_types = 0;
 
 	pr_debug("%s\n", __func__);
 
-	memset(app_type_cfg, 0, MAX_APP_TYPES*
-				sizeof(struct msm_pcm_routing_app_type_data));
-	if (num_app_types > MAX_APP_TYPES || num_app_types < 0) {
+	mutex_lock(&routing_lock);
+	if (ucontrol->value.integer.value[0] > MAX_APP_TYPES ||
+	    ucontrol->value.integer.value[0] < 0) {
 		pr_err("%s: number of app types %d is invalid\n",
-			__func__, num_app_types);
+			__func__, ucontrol->value.integer.value[0]);
+		mutex_unlock(&routing_lock);
 		return -EINVAL;
 	}
+
+	num_app_types = ucontrol->value.integer.value[i++];
+	memset(app_type_cfg, 0, MAX_APP_TYPES*
+				sizeof(struct msm_pcm_routing_app_type_data));
+
 	for (j = 0; j < num_app_types; j++) {
 		app_type_cfg[j].app_type =
 				ucontrol->value.integer.value[i++];
@@ -25490,7 +25539,7 @@ static int msm_routing_put_app_type_cfg_control(struct snd_kcontrol *kcontrol,
 		app_type_cfg[j].bit_width =
 				ucontrol->value.integer.value[i++];
 	}
-
+	mutex_unlock(&routing_lock);
 	return 0;
 }
 
@@ -28638,7 +28687,9 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"MultiMedia1 Mixer", "QUAT_TDM_TX_1", "QUAT_TDM_TX_1"},
 	{"MultiMedia1 Mixer", "QUAT_TDM_TX_2", "QUAT_TDM_TX_2"},
 	{"MultiMedia1 Mixer", "QUAT_TDM_TX_3", "QUAT_TDM_TX_3"},
-
+#ifdef RX_TO_TX_LOOPBACK
+	{"MultiMedia1 Mixer", "QUIN_TDM_TX_7", "QUIN_TDM_TX_7"},
+#endif
 	{"MultiMedia1 Mixer", "QUIN_TDM_TX_0", "QUIN_TDM_TX_0"},
 	{"MultiMedia1 Mixer", "QUIN_TDM_TX_1", "QUIN_TDM_TX_1"},
 	{"MultiMedia1 Mixer", "QUIN_TDM_TX_2", "QUIN_TDM_TX_2"},
@@ -32650,6 +32701,9 @@ static int msm_pcm_routing_prepare(struct snd_soc_component *component,
 				(fdai->passthr_mode == LEGACY_PCM))
 				msm_pcm_routing_cfg_pp(port_id, copp_idx,
 						       topology, channels);
+			if (msm_pcm_routing_channel_mixer(i, fdai->perf_mode, fdai->strm_id,
+				session_type))
+				pr_err("%s: failed to send channel mixer\n", __func__);
 		}
 	}
 

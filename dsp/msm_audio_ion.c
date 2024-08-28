@@ -810,6 +810,12 @@ int msm_audio_ion_mmap(struct audio_buffer *abuff,
 	 * pages associated with carved out memory. This might change in the
 	 * future and we can remove this check and the else statement.
 	 */
+
+	if (!table->sgl) {
+		pr_err("%s: table->sgl is NULL\n", __func__);
+		return -EINVAL;
+	}
+
 	page = sg_page(table->sgl);
 	if (page) {
 		pr_debug("%s: page is NOT null\n", __func__);
