@@ -12,7 +12,7 @@
 #include <dsp/q6core.h>
 #include <dsp/q6common.h>
 
-#include "msm-ds2-dap-config.h"
+#include <linux/msm-ds2-dap-config.h>
 #include "msm-pcm-routing-v2.h"
 
 

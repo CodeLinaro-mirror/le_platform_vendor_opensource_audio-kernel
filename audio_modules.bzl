@@ -72,6 +72,7 @@ audio_modules.register(
             "msm-pcm-hostless.c",
             "msm-pcm-loopback-v2.c",
             "msm-pcm-q6-v2.c",
+            "msm-pcm-host-voice-v2.c",
             ],
          "CONFIG_QTI_PP": [
             "msm-qti-pp-config.c",

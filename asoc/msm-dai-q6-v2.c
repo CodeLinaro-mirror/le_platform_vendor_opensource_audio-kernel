@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -1211,6 +1211,7 @@ static struct msm_dai_stream_aif_name msm_dai_q6_dai_stream_aif_names[] = {
 	{"Primary SPDIF Capture","PRI_SPDIF_TX"},
 	{"Secondary SPDIF Capture","SEC_SPDIF_TX"},
 	{"AFE Playback","PCM_RX"},
+	{"AFE Capture", "PCM_TX"},
 	{"AFE-PROXY RX","AFE Playback1"},
 	{"PCM_RX1","AFE Loopback Capture"},
 	{"AFE_LOOPBACK_TX","AFE Capture"},

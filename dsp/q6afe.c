@@ -27,7 +27,7 @@
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
 #define AFE_NOWAIT_TOKEN	2048
-
+#define MAX_VOC_SESSIONS	8
 #define SP_V4_NUM_MAX_SPKRS SP_V2_NUM_MAX_SPKRS
 #define MAX_LSM_SESSIONS 8
 
@@ -218,6 +218,7 @@ struct afe_ctl {
 	u32 afe_cal_mode[AFE_MAX_PORTS];
 
 	u16 dtmf_gen_rx_portid;
+	u16 dtmf_gen_rx_session_portid[MAX_VOC_SESSIONS];
 	struct audio_cal_info_spk_prot_cfg	prot_cfg;
 	struct afe_spkr_prot_calib_get_resp	calib_data;
 	struct audio_cal_info_sp_th_vi_ftm_cfg	th_ftm_cfg;
@@ -1151,6 +1152,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 	} else if (data->opcode ==
 			AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST) {
 		uint32_t *payload = data->payload;
+		if (!data->payload_size || (data->payload_size < sizeof(uint32_t)))
+			return -EINVAL;
 
 		pr_debug("%s: AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST handle %d\n",
 			__func__, payload[0]);
@@ -1163,6 +1166,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 	} else if (data->payload_size) {
 		uint32_t *payload;
 		uint16_t port_id = 0;
+		if (!data->payload_size || (data->payload_size < sizeof(uint32_t)))
+			return -EINVAL;
 
 		payload = data->payload;
 		if (data->opcode == APR_BASIC_RSP_RESULT) {
@@ -1296,7 +1301,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			struct afe_port_mod_evt_rsp_hdr *evt_pl =
 				(struct afe_port_mod_evt_rsp_hdr *)payload;
 
-			if (!payload || (data->token >= AFE_MAX_PORTS)) {
+			if (!payload || (data->token >= AFE_MAX_PORTS) ||
+				(data->payload_size < sizeof(struct afe_port_mod_evt_rsp_hdr))) {
 				pr_err("%s: Error: size %d payload %pK token %d\n",
 					__func__, data->payload_size,
 					payload, data->token);
@@ -1305,6 +1311,9 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			if ((evt_pl->module_id == AFE_MODULE_SPEAKER_PROTECTION_V2_EX_VI) &&
 			    (evt_pl->event_id == AFE_PORT_SP_DC_DETECTION_EVENT) &&
 			    (evt_pl->payload_size == sizeof(flag_dc_presence))) {
+				if (data->payload_size < (sizeof(struct afe_port_mod_evt_rsp_hdr) +
+						sizeof(flag_dc_presence)))
+					return -EINVAL;
 
 				memcpy(&flag_dc_presence,
 					(uint8_t *)payload +
@@ -8604,6 +8613,24 @@ void afe_set_dtmf_gen_rx_portid(u16 port_id, int set)
 EXPORT_SYMBOL(afe_set_dtmf_gen_rx_portid);
 
 /**
+ * afe_set_dtmf_gen_rx_portid_session -
+ *         Set port_id for DTMF tone generation
+ *
+ * @port_id: AFE port id
+ * @set: set or reset port id value for dtmf gen
+ * @session_idx: session index of voice call
+ *
+ */
+void afe_set_dtmf_gen_rx_portid_session(u16 port_id, int set, int session_idx)
+{
+	if (set)
+		this_afe.dtmf_gen_rx_session_portid[session_idx] = port_id;
+	else if (this_afe.dtmf_gen_rx_session_portid[session_idx] == port_id)
+		this_afe.dtmf_gen_rx_session_portid[session_idx] = -1;
+}
+EXPORT_SYMBOL_GPL(afe_set_dtmf_gen_rx_portid_session);
+
+/**
  * afe_dtmf_generate_rx - command to generate AFE DTMF RX
  *
  * @duration_in_ms: Duration in ms for dtmf tone
@@ -11998,7 +12025,7 @@ int __init afe_init(void)
 	atomic_set(&this_afe.clk_status, 0);
 	atomic_set(&this_afe.mem_map_cal_index, -1);
 	this_afe.apr = NULL;
-	this_afe.dtmf_gen_rx_portid = -1;
+	this_afe.dtmf_gen_rx_portid = AFE_PORT_ID_PRIMARY_MI2S_RX;
 	this_afe.mmap_handle = 0;
 	this_afe.vi_tx_port = -1;
 	this_afe.vi_rx_port = -1;

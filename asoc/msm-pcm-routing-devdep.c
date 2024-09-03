@@ -10,7 +10,7 @@
 #include <sound/hwdep.h>
 #include <sound/devdep_params.h>
 #include "msm-pcm-routing-devdep.h"
-#include "msm-ds2-dap-config.h"
+#include <linux/msm-ds2-dap-config.h>
 
 #if IS_ENABLED(CONFIG_SND_HWDEP) && IS_ENABLED(CONFIG_AUDIO_QGKI)
 static int msm_pcm_routing_hwdep_open(struct snd_hwdep *hw, struct file *file)
