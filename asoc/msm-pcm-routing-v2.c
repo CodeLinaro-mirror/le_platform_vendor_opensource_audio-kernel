@@ -2431,6 +2431,12 @@ int msm_pcm_routing_set_channel_mixer_runtime(int be_id, int session_id,
 	pr_debug("%s: port_id - %d, copp_idx %d session id - %d\n",
 		 __func__, port_id, copp_idx, session_id);
 
+        if (copp_idx < 0) {
+                pr_err("%s: invalid copp id %d\n", __func__,
+                                copp_idx);
+                return -EINVAL;
+        }
+
 	if ((params->input_channel < 0) ||
 		(params->input_channel > ADM_MAX_CHANNELS)) {
 		pr_err("%s: invalid input channel %d\n", __func__,
