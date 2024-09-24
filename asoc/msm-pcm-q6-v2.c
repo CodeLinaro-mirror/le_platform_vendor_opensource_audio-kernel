@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -1008,12 +1008,31 @@ static int msm_pcm_open(struct snd_soc_component *component, struct snd_pcm_subs
 
 	prtd->audio_client->dev = component->dev;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+		long wait_time = MSM_PCM_PLAYBACK_MAX_WAIT;
 		runtime->hw = msm_pcm_hardware_playback;
 
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+			runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+	}
 	/* Capture path */
-	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
+	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+		long wait_time = MSM_PCM_CAPTURE_MAX_WAIT;
 		runtime->hw = msm_pcm_hardware_capture;
+
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+			runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+	}
 	else {
 		pr_err("Invalid Stream type %d\n", substream->stream);
 		return -EINVAL;
@@ -1231,9 +1250,11 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 		ret = wait_event_timeout(the_locks.eos_wait,
 					 !test_bit(CMD_EOS, &prtd->cmd_pending),
 					 timeout);
-		if (!ret)
+		if (!ret) {
 			pr_err("%s: CMD_EOS failed, cmd_pending 0x%lx\n",
 			       __func__, prtd->cmd_pending);
+			ret = -ETIMEDOUT;
+		}
 		q6asm_cmd(prtd->audio_client, CMD_CLOSE);
 		q6asm_audio_client_buf_free_contiguous(dir,
 					prtd->audio_client);
@@ -1245,7 +1266,7 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	kfree(prtd);
 	runtime->private_data = NULL;
 	mutex_unlock(&pdata->lock);
-	return 0;
+	return ret;
 }
 
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/fs.h>
@@ -702,9 +702,11 @@ static struct cal_block_data *create_cal_block(struct cal_type_data *cal_type,
 done:
 	return cal_block;
 err:
-	kfree(cal_block->cal_info);
+	if (cal_block->cal_info)
+		kfree(cal_block->cal_info);
 	cal_block->cal_info = NULL;
-	kfree(cal_block->client_info);
+	if (cal_block->client_info)
+		kfree(cal_block->client_info);
 	cal_block->client_info = NULL;
 	kfree(cal_block);
 	cal_block = NULL;
