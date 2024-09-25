@@ -21,8 +21,7 @@
 #include <linux/remoteproc/qcom_rproc.h>
 #include <linux/remoteproc.h>
 #include <linux/version.h>
-#include <soc/qcom/boot_stats.h>
-
+#include <linux/bootmarker_kernel.h>
 
 #define Q6_PIL_GET_DELAY_MS 100
 #define BOOT_CMD 1
@@ -176,11 +175,7 @@ load_adsp:
 	{
 		adsp_state = apr_get_q6_state();
 		if (adsp_state == APR_SUBSYS_DOWN) {
-#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
-			place_marker("M - Start ADSP");
-#else
-			pr_err("boot_kpi: M - Start ADSP\n");
-#endif
+			bootmarker_place_marker("M - Start ADSP");
 			rc = rproc_boot(priv->pil_h);
 
 			if (rc) {
