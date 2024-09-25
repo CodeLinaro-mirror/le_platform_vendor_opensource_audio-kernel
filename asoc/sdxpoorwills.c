@@ -10,7 +10,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -249,6 +249,7 @@ static int sdx_sec_tdm_mode = I2S_PCM_MASTER_MODE;
 static int sdx_spk_control = 1;
 static atomic_t mi2s_ref_count;
 static atomic_t sec_mi2s_ref_count;
+static atomic_t sec_auxpcm_ref_count;
 
 static struct proxy_dev_config proxy_tx_cfg = {
 	.sample_rate = SAMPLE_RATE_48KHZ,
@@ -1165,13 +1166,15 @@ static void sdx_sec_auxpcm_shutdown(struct snd_pcm_substream *substream)
 	struct snd_soc_card *card = rtd->card;
 	struct sdx_machine_data *pdata = snd_soc_card_get_drvdata(card);
 
-	if (pdata->sec_auxpcm_mode == 1)
-		ret = msm_cdc_pinctrl_select_sleep_state(pdata->sec_master_p);
-	else
-		ret = msm_cdc_pinctrl_select_sleep_state(pdata->sec_slave_p);
-	if (ret)
-		pr_err("%s: failed to set sec gpios to sleep: %d\n",
-		       __func__, ret);
+	if (atomic_dec_return(&sec_auxpcm_ref_count) == 0) {
+		if (pdata->sec_auxpcm_mode == 1)
+			ret = msm_cdc_pinctrl_select_sleep_state(pdata->sec_master_p);
+		else
+			ret = msm_cdc_pinctrl_select_sleep_state(pdata->sec_slave_p);
+		if (ret)
+			pr_err("%s: failed to set sec gpios to sleep: %d\n",
+				 __func__, ret);
+	}
 }
 
 static int sdx_sec_auxpcm_startup(struct snd_pcm_substream *substream)
@@ -1182,45 +1185,48 @@ static int sdx_sec_auxpcm_startup(struct snd_pcm_substream *substream)
 	struct sdx_machine_data *pdata = snd_soc_card_get_drvdata(card);
 
 	pdata->sec_auxpcm_mode = sdx_sec_auxpcm_mode;
-	if (pdata->lpaif_sec_muxsel_virt_addr != NULL) {
-		ret = afe_enable_lpass_core_shared_clock(MI2S_RX, CLOCK_ON);
-		if (ret < 0) {
+	if (atomic_inc_return(&sec_auxpcm_ref_count) == 1) {
+		if (pdata->lpaif_sec_muxsel_virt_addr != NULL) {
+			ret = afe_enable_lpass_core_shared_clock(MI2S_RX, CLOCK_ON);
+			if (ret < 0) {
+				ret = -EINVAL;
+				goto done;
+			}
+			iowrite32(PCM_SEL << I2S_PCM_SEL_OFFSET,
+				pdata->lpaif_sec_muxsel_virt_addr);
+			if (pdata->lpass_mux_mic_ctl_virt_addr != NULL) {
+				if (pdata->sec_auxpcm_mode == 1)
+					iowrite32(SEC_TLMM_CLKS_EN_MASTER,
+						pdata->lpass_mux_mic_ctl_virt_addr);
+				else
+					iowrite32(SEC_TLMM_CLKS_EN_SLAVE,
+						pdata->lpass_mux_mic_ctl_virt_addr);
+			} else {
+				dev_err(card->dev,
+					"%s lpass_mux_mic_ctl_virt_addr is NULL\n",
+					__func__);
+			ret = -EINVAL;
+			}
+		} else {
+			dev_err(card->dev,
+				"%s lpaif_sec_muxsel_virt_addr is NULL\n", __func__);
 			ret = -EINVAL;
 			goto done;
 		}
-		iowrite32(PCM_SEL << I2S_PCM_SEL_OFFSET,
-				pdata->lpaif_sec_muxsel_virt_addr);
-		if (pdata->lpass_mux_mic_ctl_virt_addr != NULL) {
-			if (pdata->sec_auxpcm_mode == 1)
-				iowrite32(SEC_TLMM_CLKS_EN_MASTER,
-					  pdata->lpass_mux_mic_ctl_virt_addr);
-			else
-				iowrite32(SEC_TLMM_CLKS_EN_SLAVE,
-					  pdata->lpass_mux_mic_ctl_virt_addr);
-		} else {
-			dev_err(card->dev,
-				"%s lpass_mux_mic_ctl_virt_addr is NULL\n",
-				__func__);
-			ret = -EINVAL;
-		}
-	} else {
-		dev_err(card->dev,
-			"%s lpaif_sec_muxsel_virt_addr is NULL\n", __func__);
-		ret = -EINVAL;
-		goto done;
-	}
 
-	if (pdata->sec_auxpcm_mode == 1) {
-		ret = msm_cdc_pinctrl_select_active_state(pdata->sec_master_p);
-		if (ret < 0)
+		if (pdata->sec_auxpcm_mode == 1) {
+			ret = msm_cdc_pinctrl_select_active_state(pdata->sec_master_p);
+			if (ret < 0)
+				pr_err("%s pinctrl set failed\n", __func__);
+		} else {
+			ret = msm_cdc_pinctrl_select_active_state(pdata->sec_slave_p);
+			if (ret < 0)
 			pr_err("%s pinctrl set failed\n", __func__);
-	} else {
-		ret = msm_cdc_pinctrl_select_active_state(pdata->sec_slave_p);
-		if (ret < 0)
-			pr_err("%s pinctrl set failed\n", __func__);
+		}
+		afe_enable_lpass_core_shared_clock(MI2S_RX, CLOCK_OFF);
 	}
-	afe_enable_lpass_core_shared_clock(MI2S_RX, CLOCK_OFF);
 done:
+	if (ret) atomic_dec_return(&sec_auxpcm_ref_count);
 	return ret;
 }
 
@@ -3639,6 +3645,7 @@ static int sdx_asoc_machine_probe(struct platform_device *pdev)
 	mutex_init(&cdc_mclk_mutex);
 	atomic_set(&mi2s_ref_count, 0);
 	atomic_set(&sec_mi2s_ref_count, 0);
+	atomic_set(&sec_auxpcm_ref_count, 0);
 	pdata->prim_clk_usrs = 0;
 
 	card->dev = &pdev->dev;
