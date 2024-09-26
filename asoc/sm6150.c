@@ -7228,7 +7228,6 @@ static struct snd_soc_dai_link msm_wcn_be_dai_links[] = {
 	},
 };
 
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 static struct snd_soc_dai_link ext_disp_be_dai_link[] = {
 	/* DISP PORT BACK END DAI Link */
 	{
@@ -7240,10 +7239,9 @@ static struct snd_soc_dai_link ext_disp_be_dai_link[] = {
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		SND_SOC_DAILINK_REG(ext_display_port),
+		SND_SOC_DAILINK_REG(display_port),
 	},
 };
-#endif
 
 static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 	{
@@ -7622,9 +7620,7 @@ static struct snd_soc_dai_link msm_sm6150_dai_links[
 			 ARRAY_SIZE(msm_tasha_be_dai_links) +
 #endif
 			 ARRAY_SIZE(msm_wcn_be_dai_links) +
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 			 ARRAY_SIZE(ext_disp_be_dai_link) +
-#endif
 			 ARRAY_SIZE(msm_mi2s_be_dai_links) +
 			 ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 			 ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
@@ -8146,7 +8142,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links);
 		}
 
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 		rc = of_property_read_u32(dev->of_node,
 					  "qcom,ext-disp-audio-rx",
 					  &val);
@@ -8162,7 +8157,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					ARRAY_SIZE(ext_disp_be_dai_link);
 			}
 		}
-#endif
 
 		rc = of_property_read_u32(dev->of_node, "qcom,mi2s-audio-intf",
 					  &mi2s_audio_intf);
