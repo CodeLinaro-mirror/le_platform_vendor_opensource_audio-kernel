@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -899,6 +899,13 @@ static int msm_lsm_reg_model(struct snd_pcm_substream *substream,
 
 		q6lsm_sm_set_param_data(client, p_info, &offset, sm);
 
+		if ((sm->size - offset) < p_info->param_size) {
+			dev_err(rtd->dev, "%s: user buff size is greater than expected\n",
+				__func__);
+			rc = -EINVAL;
+			goto err_copy;
+		}
+
 		/*
 		 * For set_param, advance the sound model data with the
 		 * number of bytes required by param_data.
@@ -948,6 +955,13 @@ static int msm_lsm_dereg_model(struct snd_pcm_substream *substream,
 
 	if (p_info->model_id != 0 &&
 		p_info->param_type == LSM_DEREG_MULTI_SND_MODEL) {
+
+		if(list_empty(&client->stage_cfg[p_info->stage_idx].sound_models)) {
+				 pr_err("%s: sound_models list is empty \n",
+                                 __func__);
+				 return -EINVAL;
+		}
+
 		list_for_each_entry(sm,
 				   &client->stage_cfg[p_info->stage_idx].sound_models,
 				   list) {
@@ -4375,6 +4389,11 @@ static int msm_lsm_input_hw_params_put(struct snd_kcontrol *kcontrol,
 	prtd = runtime->private_data;
 	rtd = substream->private_data;
 
+	if (size > sizeof(struct snd_lsm_input_hw_params)) {
+		dev_err(rtd->dev, "%s: %s: Invalid size: %d\n",
+				__func__, "LSM_SET_INPUT_HW_PARAMS", size);
+		return -EINVAL;
+	}
 	if (copy_from_user(&params, bytes, size)) {
 		dev_err(rtd->dev, "%s: %s: copy_from_user failed\n",
 				__func__, "LSM_SET_INPUT_HW_PARAMS");
