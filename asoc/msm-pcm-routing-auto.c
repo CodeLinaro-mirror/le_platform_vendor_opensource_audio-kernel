@@ -90,6 +90,11 @@
 #define ASM_CFG_PARAM_MAX 4
 static int asm_cfg_params[ASM_CFG_PARAM_MAX];
 
+#ifdef RX_TO_TX_LOOPBACK
+#define RX_TO_TX_LOOPBACK_DUMMY_TX_PORT  AFE_PORT_ID_QUINARY_TDM_TX_7
+#define RX_TO_TX_LOOPBACK_RX_PORT  AFE_PORT_ID_QUINARY_TDM_RX
+#endif
+
 static struct mutex routing_lock;
 
 static struct cal_type_data *cal_data[MAX_ROUTING_CAL_TYPES];
@@ -2595,7 +2600,19 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 						&ec_ref_chmix_cfg[fedai_id]);
 				/* reset ec_ref config */
 				ec_ref_chmix_cfg[fedai_id].output_channel = 0;
-			} else
+			}
+#ifdef RX_TO_TX_LOOPBACK
+			else if (session_type == SESSION_TYPE_TX &&
+					port_id == RX_TO_TX_LOOPBACK_DUMMY_TX_PORT) {
+				port_id = RX_TO_TX_LOOPBACK_RX_PORT;
+				copp_idx = adm_open(port_id, path_type,
+				sample_rate, channels, topology,
+				copp_perf_mode, bits_per_sample,
+				app_type, acdb_dev_id,
+				session_type, passthr_mode, copp_token);
+			}
+#endif
+			else
 				copp_idx = adm_open(port_id, path_type,
 					    sample_rate, channels, topology,
 					    copp_perf_mode, bits_per_sample,
@@ -4507,6 +4524,8 @@ struct msm_asm_config loopback_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 struct msm_asm_config playback_cfg[] = {
@@ -4564,6 +4583,8 @@ struct msm_asm_config playback_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 struct msm_asm_config capture_cfg[] = {
@@ -4621,6 +4642,8 @@ struct msm_asm_config capture_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICE2_STUB] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE1] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_CS_VOICE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
+	[MSM_FRONTEND_DAI_VOLTE] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
 int msm_pcm_asm_cfg_get(int fe_id, int mode)
@@ -19742,6 +19765,12 @@ static const struct snd_kcontrol_new mmul1_mixer_controls[] = {
 		MSM_BACKEND_DAI_QUAT_TDM_TX_3,
 		MSM_FRONTEND_DAI_MULTIMEDIA1, 1, 0, msm_routing_get_audio_mixer,
 		msm_routing_put_audio_mixer),
+#ifdef RX_TO_TX_LOOPBACK
+	SOC_DOUBLE_EXT("QUIN_TDM_TX_7", SND_SOC_NOPM,
+		MSM_BACKEND_DAI_QUIN_TDM_TX_7,
+		MSM_FRONTEND_DAI_MULTIMEDIA1, 1, 0, msm_routing_get_audio_mixer,
+		msm_routing_put_audio_mixer),
+#endif
 	SOC_DOUBLE_EXT("QUIN_TDM_TX_0", SND_SOC_NOPM,
 		MSM_BACKEND_DAI_QUIN_TDM_TX_0,
 		MSM_FRONTEND_DAI_MULTIMEDIA1, 1, 0, msm_routing_get_audio_mixer,
@@ -28690,7 +28719,9 @@ static const struct snd_soc_dapm_route intercon_tdm[] = {
 	{"MultiMedia1 Mixer", "QUAT_TDM_TX_1", "QUAT_TDM_TX_1"},
 	{"MultiMedia1 Mixer", "QUAT_TDM_TX_2", "QUAT_TDM_TX_2"},
 	{"MultiMedia1 Mixer", "QUAT_TDM_TX_3", "QUAT_TDM_TX_3"},
-
+#ifdef RX_TO_TX_LOOPBACK
+	{"MultiMedia1 Mixer", "QUIN_TDM_TX_7", "QUIN_TDM_TX_7"},
+#endif
 	{"MultiMedia1 Mixer", "QUIN_TDM_TX_0", "QUIN_TDM_TX_0"},
 	{"MultiMedia1 Mixer", "QUIN_TDM_TX_1", "QUIN_TDM_TX_1"},
 	{"MultiMedia1 Mixer", "QUIN_TDM_TX_2", "QUIN_TDM_TX_2"},

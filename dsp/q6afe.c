@@ -1152,6 +1152,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 	} else if (data->opcode ==
 			AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST) {
 		uint32_t *payload = data->payload;
+		if (!data->payload_size || (data->payload_size < sizeof(uint32_t)))
+			return -EINVAL;
 
 		pr_debug("%s: AFE_CMD_RSP_REMOTE_LPASS_CORE_HW_VOTE_REQUEST handle %d\n",
 			__func__, payload[0]);
@@ -1164,6 +1166,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 	} else if (data->payload_size) {
 		uint32_t *payload;
 		uint16_t port_id = 0;
+		if (!data->payload_size || (data->payload_size < sizeof(uint32_t)))
+			return -EINVAL;
 
 		payload = data->payload;
 		if (data->opcode == APR_BASIC_RSP_RESULT) {
@@ -1297,7 +1301,8 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			struct afe_port_mod_evt_rsp_hdr *evt_pl =
 				(struct afe_port_mod_evt_rsp_hdr *)payload;
 
-			if (!payload || (data->token >= AFE_MAX_PORTS)) {
+			if (!payload || (data->token >= AFE_MAX_PORTS) ||
+				(data->payload_size < sizeof(struct afe_port_mod_evt_rsp_hdr))) {
 				pr_err("%s: Error: size %d payload %pK token %d\n",
 					__func__, data->payload_size,
 					payload, data->token);
@@ -1306,6 +1311,9 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			if ((evt_pl->module_id == AFE_MODULE_SPEAKER_PROTECTION_V2_EX_VI) &&
 			    (evt_pl->event_id == AFE_PORT_SP_DC_DETECTION_EVENT) &&
 			    (evt_pl->payload_size == sizeof(flag_dc_presence))) {
+				if (data->payload_size < (sizeof(struct afe_port_mod_evt_rsp_hdr) +
+						sizeof(flag_dc_presence)))
+					return -EINVAL;
 
 				memcpy(&flag_dc_presence,
 					(uint8_t *)payload +
