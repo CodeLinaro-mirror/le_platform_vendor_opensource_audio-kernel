@@ -96,6 +96,7 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 	struct platform_device *pdev = adsp_private;
 	struct adsp_loader_private *priv = NULL;
 	const char *adsp_dt = "qcom,adsp-state";
+	const char *qcom_quinvm = "qcom,quinvm";
 	int rc = 0;
 	u32 adsp_state;
 	struct property *prop;
@@ -130,17 +131,19 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 		goto fail;
 	}
 
-	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
-					&size);
-	if (!prop) {
-		dev_err(&pdev->dev, "Missing remoteproc handle\n");
-		goto fail;
-	}
+	if (!of_machine_is_compatible(qcom_quinvm)) {
+		prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
+						&size);
+		if (!prop) {
+			dev_err(&pdev->dev, "Missing remoteproc handle\n");
+			goto fail;
+		}
 
-	rproc_handle = be32_to_cpup(prop->value);
-	priv->pil_h = rproc_get_by_phandle(rproc_handle);
-	if (!priv->pil_h)
-		goto fail;
+		rproc_handle = be32_to_cpup(prop->value);
+		priv->pil_h = rproc_get_by_phandle(rproc_handle);
+		if (!priv->pil_h)
+			goto fail;
+	}
 
 	rproc = priv->pil_h;
 	rc = of_property_read_string(pdev->dev.of_node,
