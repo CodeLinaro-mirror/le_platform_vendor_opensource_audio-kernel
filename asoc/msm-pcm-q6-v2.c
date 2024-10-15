@@ -273,19 +273,19 @@ static int msm_pcm_soft_volume_ctl_put(struct snd_kcontrol *kcontrol,
 
 		if ( prtd) {
 			if ((ucontrol->value.integer.value[0] < 0) || (ucontrol->value.integer.value[0] > 15000)) {
-				pr_err("%s : Ramp period range (0 to 15000), input value is out of range: %d",__func__,soft_params.period);
+				pr_err("%s : Ramp period range (0 to 15000), input value is out of range: %d",__func__,ucontrol->value.integer.value[0]);
 				goto exit;
 			} else {
 				soft_params.period = ucontrol->value.integer.value[0];
 			}
 			if ((ucontrol->value.integer.value[1] < 0) || (ucontrol->value.integer.value[1] > 15000000)) {
-				pr_err("%s : Ramp step range (0 to 15000000), input value is out of range: %d",__func__,soft_params.step);
+				pr_err("%s : Ramp step range (0 to 15000000), input value is out of range: %d",__func__,ucontrol->value.integer.value[1]);
 				goto exit;
 			} else {
 				soft_params.step = ucontrol->value.integer.value[1];
 			}
 			if ((ucontrol->value.integer.value[2] < 0) || (ucontrol->value.integer.value[2] >= SOFT_VOLUME_CURVE_ENUM_MAX)) {
-				pr_err("%s : Ramping curve range (0 to 2), input value is out of range: %d",__func__,soft_params.rampingcurve);
+				pr_err("%s : Ramping curve range (0 to 2), input value is out of range: %d",__func__,ucontrol->value.integer.value[2]);
 				goto exit;
 			} else {
 				soft_params.rampingcurve = ucontrol->value.integer.value[2];
@@ -562,6 +562,8 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	uint16_t format = 0;
 	uint16_t req_format = 0;
 	uint16_t input_file_format = 0;
+	int port_id = 0, copp_idx = -1;
+	bool found = false;
 
 	if (!component) {
 		pr_err("%s: component is NULL\n", __func__);
@@ -686,6 +688,15 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	if (ret) {
 		pr_err("%s: stream reg failed ret:%d\n", __func__, ret);
 		return ret;
+	}
+
+	found = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
+				SESSION_TYPE_RX, &port_id, &copp_idx);
+	if (found) {
+		q6adm_update_rtd_info(soc_prtd, port_id, copp_idx,
+					soc_prtd->dai_link->id, 1);
+	} else {
+		pr_err("%s: copp_idx not found\n", __func__);
 	}
 
 	/*Format block is configure with input file bits_per_sample*/
@@ -1089,8 +1100,10 @@ static int msm_pcm_open(struct snd_soc_component *component, struct snd_pcm_subs
 	prtd->reset_event = false;
 	runtime->private_data = prtd;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		msm_adsp_init_mixer_ctl_pp_event_queue(soc_prtd);
+		msm_adsp_init_mixer_ctl_adm_pp_event_queue(soc_prtd);
+	}
 
 	/* Vote to update the Rx thread priority to RT Thread for playback */
 	if ((substream->stream == SNDRV_PCM_STREAM_PLAYBACK) &&
@@ -1208,6 +1221,8 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	uint32_t timeout;
 	int dir = 0;
 	int ret = 0;
+	int port_id = 0, copp_idx = -1;
+	bool found = false;
 
 	pr_debug("%s: cmd_pending 0x%lx\n", __func__, prtd->cmd_pending);
 
@@ -1260,9 +1275,21 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 					prtd->audio_client);
 		q6asm_audio_client_free(prtd->audio_client);
 	}
+
+	found = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
+				SESSION_TYPE_RX, &port_id, &copp_idx);
+	if (found) {
+		q6adm_update_rtd_info(soc_prtd, port_id, copp_idx,
+					soc_prtd->dai_link->id, 0);
+		q6adm_clear_callback();
+	} else {
+		pr_err("%s: copp_idx not found\n", __func__);
+	}
+
 	msm_pcm_routing_dereg_phy_stream(soc_prtd->dai_link->id,
 						SNDRV_PCM_STREAM_PLAYBACK);
 	msm_adsp_clean_mixer_ctl_pp_event_queue(soc_prtd);
+	msm_adsp_clean_mixer_ctl_adm_pp_event_queue(soc_prtd);
 	kfree(prtd);
 	runtime->private_data = NULL;
 	mutex_unlock(&pdata->lock);
@@ -2651,7 +2678,7 @@ static int msm_pcm_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 	if (chmixer_pspd->enable && prtd && prtd->audio_client) {
 		stream_id = prtd->audio_client->session;
 		be_id = chmixer_pspd->port_idx;
-		msm_pcm_routing_set_channel_mixer_runtime(be_id,
+		msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 				stream_id,
 				session_type,
 				chmixer_pspd);
