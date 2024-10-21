@@ -384,11 +384,30 @@ static int msm_pcm_open(struct snd_soc_component *component, struct snd_pcm_subs
 
 	pcm->volume = 0x2000;
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+		long wait_time = MSM_PCM_PLAYBACK_MAX_WAIT;
 		pcm->playback_substream = substream;
-	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
+
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+				runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+
+	} else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+		long wait_time = MSM_PCM_CAPTURE_MAX_WAIT;
 		pcm->capture_substream = substream;
 
+		if (runtime->rate) {
+			long t = runtime->period_size * 2 /
+				runtime->rate;
+			wait_time = max(t, wait_time);
+		}
+
+		substream->wait_time = msecs_to_jiffies(wait_time * 1000);
+	}
 	pcm->instance++;
 	dev_dbg(component->dev, "%s: pcm out open: %d,%d\n", __func__,
 			pcm->instance, substream->stream);
@@ -1055,7 +1074,7 @@ static int msm_pcm_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 		if (prtd->audio_client) {
 			stream_id = prtd->audio_client->session;
 			be_id = chmixer_pspd->port_idx;
-			msm_pcm_routing_set_channel_mixer_runtime(be_id,
+			msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 					stream_id,
 					session_type,
 					chmixer_pspd);

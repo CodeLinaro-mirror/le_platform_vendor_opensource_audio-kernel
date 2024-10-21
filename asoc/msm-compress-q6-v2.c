@@ -590,7 +590,7 @@ static void compr_event_handler(uint32_t opcode,
 	struct audio_client *ac;
 	uint32_t chan_mode = 0;
 	uint32_t sample_rate = 0;
-	uint64_t bytes_available;
+	uint64_t bytes_available = 0;
 	int stream_id;
 	uint32_t stream_index;
 	unsigned long flags;
@@ -745,7 +745,7 @@ static void compr_event_handler(uint32_t opcode,
 				pr_debug("%s:Send zero size buffer\n", __func__);
 				msm_compr_send_buffer(prtd);
 				prtd->zero_buffer = 1;
-			} else {
+			} else if (atomic_read(&prtd->drain)) {
 				/*
 				 * moving to next stream failed, so reset the gapless state
 				 * set next stream id for the same session so that the same
@@ -764,6 +764,9 @@ static void compr_event_handler(uint32_t opcode,
 				q6asm_stream_cmd_nowait(ac, CMD_EOS, ac->stream_id);
 
 				prtd->cmd_interrupt = 0;
+			} else {
+				pr_debug("%s:underrun, bytes_available is 0\n", __func__);
+				atomic_set(&prtd->xrun, 1);
 			}
 		} else if (bytes_available < cstream->runtime->fragment_size) {
 			pr_debug("%s:Partial Buffer Case \n", __func__);
@@ -5195,7 +5198,7 @@ static int msm_compr_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 		if (prtd && prtd->audio_client) {
 			stream_id = prtd->audio_client->session;
 			be_id = chmixer_pspd->port_idx;
-			msm_pcm_routing_set_channel_mixer_runtime(be_id,
+			msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 					stream_id, session_type, chmixer_pspd);
 		}
 	}
