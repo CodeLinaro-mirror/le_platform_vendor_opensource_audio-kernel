@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2019, 2021 The Linux Foundation. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #define CONFIG_MSM_QDSP6_APRV2_RPMSG 1
@@ -15,3 +18,4 @@
 #define CONFIG_MSM_QDSP6V2_CODECS 1
 #define CONFIG_SND_EVENT 1
 #define CONFIG_SND_SOC_SA8155 1
+#define CONFIG_AUTO_AUDIO
