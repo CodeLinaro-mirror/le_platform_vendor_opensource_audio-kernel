@@ -281,6 +281,16 @@ static struct apr_svc_table svc_tbl_voice[] = {
 	},
 };
 
+static inline size_t memscpy(void *dst, size_t dst_size, const void *src,
+	size_t src_size)
+{
+	size_t min_size;
+
+	min_size = dst_size < src_size ? dst_size : src_size;
+	memcpy(dst, src, min_size);
+	return min_size;
+}
+
 /**
  * apr_get_modem_state:
  *
@@ -868,7 +878,8 @@ int apr_send_pkt(void *handle, uint32_t *buf)
 		ret = -ENOMEM;
 		goto done;
 	}
-	memcpy(&apr_send->pkt_header, buf, hdr->pkt_size);
+	memscpy((void *)(&apr_send->pkt_header), APR_TX_BUF_SIZE-(sizeof(uint32_t)*2),
+			buf, hdr->pkt_size);
 
 	ret = habmm_socket_send(hab_handle_tx,
 			(void *)&apr_tx_buf,
