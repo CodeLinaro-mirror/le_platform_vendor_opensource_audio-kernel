@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017, 2019-2020 The Linux Foundation. All rights reserved.
+ * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <linux/kernel.h>
@@ -17,7 +20,11 @@ static int __init audio_q6_init(void)
 	spk_params_init();
 	q6asm_init();
 	q6lsm_init();
+#ifndef CONFIG_AUTO_AUDIO
 	voice_init();
+#else
+	pr_debug("%s: AUTO target voice_init skipped",__func__);
+#endif
 	core_init();
 	msm_audio_ion_init();
 	audio_slimslave_init();
