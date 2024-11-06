@@ -705,7 +705,7 @@ int msm_audio_ion_import_cma(void  **handle, int fd,
 		}
 	}
 
-	msm_audio_dma_buf_map(*handle, paddr, plen, &bufsz);
+	msm_audio_dma_buf_map(*handle, paddr, (dma_addr_t *) plen, &bufsz);
 
 	return 0;
 
