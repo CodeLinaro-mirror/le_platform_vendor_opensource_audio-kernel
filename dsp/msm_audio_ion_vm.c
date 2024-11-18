@@ -608,7 +608,7 @@ err:
  *
  * Returns 0 on success or error on failure
  */
-int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
+int msm_audio_ion_alloc(void **handle, size_t bufsz,
 			dma_addr_t *paddr, size_t *plen, void **vaddr)
 {
 	int rc = -EINVAL;
@@ -620,7 +620,7 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 		pr_debug("%s:probe is not done, deferred\n", __func__);
 		return -EPROBE_DEFER;
 	}
-	if (!dma_buf || !paddr || !vaddr || !bufsz || !plen) {
+	if (!handle || !paddr || !vaddr || !bufsz || !plen) {
 		pr_err("%s: Invalid params\n", __func__);
 		return -EINVAL;
 	}
@@ -638,10 +638,10 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 		heap = dma_heap_find("qcom,audio");
 	}
 
-	*dma_buf = dma_heap_buffer_alloc(heap, bufsz, 0, 0);
-	if (IS_ERR_OR_NULL((void *)(*dma_buf))) {
-		if (IS_ERR((void *)(*dma_buf)))
-			err_ion_ptr = PTR_ERR((int *)(*dma_buf));
+	*handle = dma_heap_buffer_alloc(heap, bufsz, 0, 0);
+	if (IS_ERR_OR_NULL((void *)(*handle))) {
+		if (IS_ERR((void *)(*handle)))
+			err_ion_ptr = PTR_ERR((void *)(*handle));
 		pr_err("%s: ION alloc fail err ptr=%ld, smmu_enabled=%d\n",
 		       __func__, err_ion_ptr, msm_audio_ion_data.smmu_enabled);
 		rc = -ENOMEM;
@@ -649,7 +649,7 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 		goto err;
 	}
 
-	rc = msm_audio_ion_map_buf(*dma_buf, paddr, plen, iosys_vmap);
+	rc = msm_audio_ion_map_buf(*handle, paddr, plen, iosys_vmap);
 	if (rc) {
 		pr_err("%s: failed to map ION buf, rc = %d\n", __func__, rc);
 		kfree(iosys_vmap);
@@ -706,7 +706,7 @@ EXPORT_SYMBOL(msm_audio_is_hypervisor_supported);
  *
  * Returns 0 on success or error on failure
  */
-int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
+int msm_audio_ion_import(void **handle, int fd,
 			unsigned long *ionflag, size_t bufsz,
 			dma_addr_t *paddr, size_t *plen, void **vaddr)
 {
@@ -718,7 +718,7 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 		return -EPROBE_DEFER;
 	}
 
-	if (!dma_buf || !paddr || !vaddr || !plen) {
+	if (!handle || !paddr || !vaddr || !plen) {
 		pr_err("%s: Invalid params\n", __func__);
 		return -EINVAL;
 	}
@@ -728,16 +728,16 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 		return -ENOMEM;
 
 	/* bufsz should be 0 and fd shouldn't be 0 as of now */
-	*dma_buf = dma_buf_get(fd);
-	pr_debug("%s: dma_buf =%pK, fd=%d\n", __func__, *dma_buf, fd);
-	if (IS_ERR_OR_NULL((void *)(*dma_buf))) {
+	*handle = dma_buf_get(fd);
+	pr_debug("%s: dma_buf =%pK, fd=%d\n", __func__, *handle, fd);
+	if (IS_ERR_OR_NULL((void *)(*handle))) {
 		pr_err("%s: dma_buf_get failed\n", __func__);
 		rc = -EINVAL;
 		goto err;
 	}
 
 	if (ionflag != NULL) {
-		rc = dma_buf_get_flags(*dma_buf, ionflag);
+		rc = dma_buf_get_flags((struct dma_buf *)*handle, ionflag);
 		if (rc) {
 			pr_err("%s: could not get flags for the dma_buf\n",
 				__func__);
@@ -745,7 +745,7 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 		}
 	}
 
-	rc = msm_audio_ion_map_buf(*dma_buf, paddr, plen, iosys_vmap);
+	rc = msm_audio_ion_map_buf(*handle, paddr, plen, iosys_vmap);
 	if (rc) {
 		pr_err("%s: failed to map ION buf, rc = %d\n", __func__, rc);
 		goto err;
@@ -758,10 +758,10 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 	return 0;
 
 err_ion_flag:
-	dma_buf_put(*dma_buf);
+	dma_buf_put((struct dma_buf *) *handle);
 err:
 	kfree(iosys_vmap);
-	*dma_buf = NULL;
+	*handle = NULL;
 	return rc;
 }
 EXPORT_SYMBOL(msm_audio_ion_import);
@@ -780,7 +780,7 @@ EXPORT_SYMBOL(msm_audio_ion_import);
  *
  * Returns 0 on success or error on failure
  */
-int msm_audio_ion_import_cma(struct dma_buf **dma_buf, int fd,
+int msm_audio_ion_import_cma(void **handle, int fd,
 			unsigned long *ionflag, size_t bufsz,
 			dma_addr_t *paddr, size_t *plen, void **vaddr)
 {
@@ -791,23 +791,23 @@ int msm_audio_ion_import_cma(struct dma_buf **dma_buf, int fd,
 		return -EPROBE_DEFER;
 	}
 
-	if (!dma_buf || !paddr || !vaddr || !plen ||
+	if (!handle || !paddr || !vaddr || !plen ||
 	    !msm_audio_ion_data.cb_cma_dev) {
 		pr_err("%s: Invalid params\n", __func__);
 		return -EINVAL;
 	}
 
 	/* bufsz should be 0 and fd shouldn't be 0 as of now */
-	*dma_buf = dma_buf_get(fd);
-	pr_debug("%s: dma_buf =%pK, fd=%d\n", __func__, *dma_buf, fd);
-	if (IS_ERR_OR_NULL((void *)(*dma_buf))) {
+	*handle = dma_buf_get(fd);
+	pr_debug("%s: dma_buf =%pK, fd=%d\n", __func__, *handle, fd);
+	if (IS_ERR_OR_NULL((void *)(*handle))) {
 		pr_err("%s: dma_buf_get failed\n", __func__);
 		rc = -EINVAL;
 		goto err;
 	}
 
 	if (ionflag != NULL) {
-		rc = dma_buf_get_flags(*dma_buf, ionflag);
+		rc = dma_buf_get_flags(*handle, ionflag);
 		if (rc) {
 			pr_err("%s: could not get flags for the dma_buf\n",
 				__func__);
@@ -815,14 +815,14 @@ int msm_audio_ion_import_cma(struct dma_buf **dma_buf, int fd,
 		}
 	}
 
-	msm_audio_dma_buf_map(*dma_buf, paddr, plen, true);
+	msm_audio_dma_buf_map(*handle, paddr, plen, true);
 
 	return 0;
 
 err_ion_flag:
-	dma_buf_put(*dma_buf);
+	dma_buf_put((struct dma_buf *) *handle);
 err:
-	*dma_buf = NULL;
+	*handle = NULL;
 	return rc;
 }
 EXPORT_SYMBOL(msm_audio_ion_import_cma);
@@ -835,27 +835,27 @@ EXPORT_SYMBOL(msm_audio_ion_import_cma);
  *
  * Returns 0 on success or error on failure
  */
-int msm_audio_ion_free(struct dma_buf *dma_buf)
+int msm_audio_ion_free(void *handle)
 {
 	int ret = 0;
 
-	if (!dma_buf) {
+	if (!handle) {
 		pr_err("%s: dma_buf invalid\n", __func__);
 		return -EINVAL;
 	}
 
-	ret = msm_audio_ion_unmap_kernel(dma_buf);
+	ret = msm_audio_ion_unmap_kernel(handle);
 	if (ret)
 		return ret;
 
 	if (msm_audio_ion_data.smmu_enabled) {
-		ret = msm_audio_ion_smmu_unmap(dma_buf);
+		ret = msm_audio_ion_smmu_unmap(handle);
 		if (ret)
 			pr_err("%s: smmu unmap failed with ret %d\n",
 				__func__, ret);
 	}
 
-	msm_audio_dma_buf_unmap(dma_buf, false);
+	msm_audio_dma_buf_unmap(handle, false);
 
 	return 0;
 }
@@ -869,14 +869,14 @@ EXPORT_SYMBOL(msm_audio_ion_free);
  *
  * Returns 0 on success or error on failure
  */
-int msm_audio_ion_free_cma(struct dma_buf *dma_buf)
+int msm_audio_ion_free_cma(void *handle)
 {
-	if (!dma_buf) {
+	if (!handle) {
 		pr_err("%s: dma_buf invalid\n", __func__);
 		return -EINVAL;
 	}
 
-	msm_audio_dma_buf_unmap(dma_buf, true);
+	msm_audio_dma_buf_unmap(handle, true);
 
 	return 0;
 }
@@ -908,7 +908,7 @@ int msm_audio_ion_mmap(struct audio_buffer *abuff,
 	mutex_lock(&(msm_audio_ion_data.list_mutex));
 	list_for_each_entry(alloc_data, &(msm_audio_ion_data.alloc_list),
 			    list) {
-		if (alloc_data->dma_buf == abuff->dma_buf) {
+		if (alloc_data->dma_buf == abuff->mem_handle) {
 			found = true;
 			table = alloc_data->table;
 			break;
@@ -919,7 +919,7 @@ int msm_audio_ion_mmap(struct audio_buffer *abuff,
 	if (!found) {
 		dev_err(cb_dev,
 			"%s: cannot find allocation, dma_buf %pK",
-			__func__, abuff->dma_buf);
+			__func__, abuff->mem_handle);
 		return -EINVAL;
 	}
 	/* uncached */
