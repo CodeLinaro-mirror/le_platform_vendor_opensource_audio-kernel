@@ -1,4 +1,5 @@
 /* Copyright (c) 2010-2014, 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1126,11 +1127,6 @@ static int __init apr_debug_init(void)
 						 &apr_debug_ops);
 	return 0;
 }
-#else
-static int __init apr_debug_init(void)
-(
-	return 0;
-)
 #endif
 
 static void apr_cleanup(void)
@@ -1151,7 +1147,9 @@ static void apr_cleanup(void)
 				mutex_destroy(&client[i][j].svc[k].m_lock);
 		}
 	}
+#ifdef CONFIG_DEBUG_FS
 	debugfs_remove(debugfs_apr_debug);
+#endif
 }
 
 static int apr_probe(struct platform_device *pdev)
@@ -1217,8 +1215,11 @@ static int apr_probe(struct platform_device *pdev)
 				       AUDIO_NOTIFIER_MODEM_DOMAIN,
 				       &modem_service_nb);
 		apr_tal_init();
+#ifdef CONFIG_DEBUG_FS
 		return apr_debug_init();
-
+#else
+		return 0;
+#endif
 	} else {
 		pr_err("%s: invalid subsys-name %s\n", __func__, subsys_name);
 		return -EINVAL;
@@ -1233,7 +1234,11 @@ static int apr_probe(struct platform_device *pdev)
 		ret = 0;
 	}
 
+#ifdef CONFIG_DEBUG_FS
 	return apr_debug_init();
+#else
+	return 0;
+#endif
 }
 
 static int apr_remove(struct platform_device *pdev)
