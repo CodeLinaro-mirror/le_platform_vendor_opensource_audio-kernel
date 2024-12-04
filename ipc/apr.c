@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -25,12 +25,12 @@
 #include <linux/of_platform.h>
 #include <linux/ratelimit.h>
 #include <linux/qcom_scm.h>
+#include <linux/bootmarker_kernel.h>
 #include <soc/snd_event.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/audio_notifier.h>
 #include <ipc/apr.h>
 #include <ipc/apr_tal.h>
-#include <soc/qcom/boot_stats.h>
 #include <linux/remoteproc.h>
 #include <linux/remoteproc/qcom_rproc.h>
 #include <trace/events/rproc_qcom.h>
@@ -322,7 +322,7 @@ static void apr_adsp_up(void)
 {
 	if (apr_get_q6_state() != APR_SUBSYS_LOADED) {
 		pr_info("%s: Q6 is Up\n", __func__);
-		pr_err("boot_kpi: M - ADSP Ready\n");
+		bootmarker_place_marker("M - ADSP Ready");
 		apr_set_q6_state(APR_SUBSYS_LOADED);
 
 		spin_lock(&apr_priv->apr_lock);
