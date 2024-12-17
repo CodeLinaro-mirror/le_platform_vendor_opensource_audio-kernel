@@ -269,33 +269,39 @@ static int msm_pcm_soft_volume_ctl_put(struct snd_kcontrol *kcontrol,
 	if (substream->ref_count > 0) {
 		prtd = substream->runtime->private_data;
 
-		if ( prtd) {
-			if ((ucontrol->value.integer.value[0] < 0) || (ucontrol->value.integer.value[0] > 15000)) {
-				pr_err("%s : Ramp period range (0 to 15000), input value is out of range: %d",__func__,soft_params.period);
-				goto exit;
-			} else {
-				soft_params.period = ucontrol->value.integer.value[0];
-			}
-			if ((ucontrol->value.integer.value[1] < 0) || (ucontrol->value.integer.value[1] > 15000000)) {
-				pr_err("%s : Ramp step range (0 to 15000000), input value is out of range: %d",__func__,soft_params.step);
-				goto exit;
-			} else {
-				soft_params.step = ucontrol->value.integer.value[1];
-			}
-			if ((ucontrol->value.integer.value[2] < 0) || (ucontrol->value.integer.value[2] >= SOFT_VOLUME_CURVE_ENUM_MAX)) {
-				pr_err("%s : Ramping curve range (0 to 2), input value is out of range: %d",__func__,soft_params.rampingcurve);
-				goto exit;
-			} else {
-				soft_params.rampingcurve = ucontrol->value.integer.value[2];
-			}
-
-			pr_debug("%s : soft vol params, period: %d, step: %d, ramp curve: %d",__func__,soft_params.period,
-											soft_params.step,soft_params.rampingcurve);
-			rc = msm_pcm_set_soft_volume_params(prtd, &soft_params);
+	if (prtd) {
+		if ((ucontrol->value.integer.value[0] < 0) ||
+			(ucontrol->value.integer.value[0] > 15000)) {
+			pr_err("%s : Ramp period range (0 to 15000), input value is out of range: %d\n",
+				__func__, ucontrol->value.integer.value[0]);
+			goto exit;
 		} else {
-			pr_err("%s: prtd not found\n", __func__);
-			return -ENODEV;
+			soft_params.period = ucontrol->value.integer.value[0];
 		}
+		if ((ucontrol->value.integer.value[1] < 0) ||
+			(ucontrol->value.integer.value[1] > 15000000)) {
+			pr_err("%s : Ramp step range (0 to 15000000), input value is out of range: %d\n",
+				__func__, ucontrol->value.integer.value[1]);
+			goto exit;
+		} else {
+			soft_params.step = ucontrol->value.integer.value[1];
+		}
+		if ((ucontrol->value.integer.value[2] < 0) ||
+			(ucontrol->value.integer.value[2] >= SOFT_VOLUME_CURVE_ENUM_MAX)) {
+			pr_err("%s : Ramping curve range (0 to 2), input value is out of range: %d\n",
+				__func__, ucontrol->value.integer.value[2]);
+			goto exit;
+		} else {
+			soft_params.rampingcurve = ucontrol->value.integer.value[2];
+		}
+
+		pr_debug("%s : soft vol params, period: %d, step: %d, ramp curve: %d\n",
+			__func__, soft_params.period, soft_params.step, soft_params.rampingcurve);
+		rc = msm_pcm_set_soft_volume_params(prtd, &soft_params);
+	} else {
+		pr_err("%s: prtd not found\n", __func__);
+		return -ENODEV;
+	}
 	} else {
 		pr_err("%s: substream ref count is invalid\n", __func__);
 		return -ENODEV;
