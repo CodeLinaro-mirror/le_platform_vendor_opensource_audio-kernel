@@ -17,7 +17,6 @@
 #include <dsp/q6audio-v2.h>
 
 #define MAX_MODULES_IN_TOPO 16
-#define MAX_FE_ID           33
 #define ADM_GET_TOPO_MODULE_LIST_LENGTH\
 		((MAX_MODULES_IN_TOPO + 1) * sizeof(uint32_t))
 #define ADM_GET_TOPO_MODULE_INSTANCE_LIST_LENGTH                               \
