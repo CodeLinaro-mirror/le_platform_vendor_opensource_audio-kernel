@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef __Q6_ADM_V2_H__
 #define __Q6_ADM_V2_H__
@@ -17,7 +17,6 @@
 #include <dsp/q6audio-v2.h>
 
 #define MAX_MODULES_IN_TOPO 16
-#define MAX_FE_ID           33
 #define ADM_GET_TOPO_MODULE_LIST_LENGTH\
 		((MAX_MODULES_IN_TOPO + 1) * sizeof(uint32_t))
 #define ADM_GET_TOPO_MODULE_INSTANCE_LIST_LENGTH                               \

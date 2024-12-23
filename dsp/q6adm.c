@@ -22,6 +22,7 @@
 #include <ipc/apr.h>
 #include "adsp_err.h"
 #include <soc/qcom/secure_buffer.h>
+#include "../asoc/msm-pcm-routing-v2.h"
 
 #define TIMEOUT_MS 1000
 
@@ -76,7 +77,7 @@ struct adm_copp {
 	unsigned long adm_status[AFE_MAX_PORTS][MAX_COPPS_PER_PORT];
 	atomic_t token[AFE_MAX_PORTS][MAX_COPPS_PER_PORT];
 	adm_cb cb;
-	void *priv[AFE_MAX_PORTS][MAX_COPPS_PER_PORT][MAX_FE_ID];
+	void *priv[AFE_MAX_PORTS][MAX_COPPS_PER_PORT][MSM_FRONTEND_DAI_MAX];
 };
 
 struct source_tracking_data {
@@ -2000,7 +2001,7 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 					sizeof(struct adm_usr_info),
 					data->payload, data->payload_size);
 			if (this_adm.copp.cb) {
-				for (i = 0; i < MAX_FE_ID; i++) {
+				for (i = 0; i < MSM_FRONTEND_DAI_MAX; i++) {
 					if (this_adm.copp.priv[port_idx]
 							[copp_idx][i]) {
 						pr_debug("%s: calling adm callback for feid %d port_idx %d copp_idx %d\n",
