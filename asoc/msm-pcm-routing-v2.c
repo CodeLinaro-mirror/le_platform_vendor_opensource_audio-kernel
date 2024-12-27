@@ -2133,6 +2133,14 @@ static void msm_pcm_routing_process_voice(u16 reg, u16 val, int set)
 
 	pr_debug("%s: reg %x val %x set %x\n", __func__, reg, val, set);
 
+	if (val == MSM_FRONTEND_DAI_DTMF_RX &&
+            afe_get_port_type(msm_bedais[reg].port_id) ==
+                                                MSM_AFE_PORT_TYPE_RX) {
+                pr_debug("%s(): set=%d port id=0x%x for dtmf generation\n",
+                         __func__, set, msm_bedais[reg].port_id);
+                afe_set_dtmf_gen_rx_portid(msm_bedais[reg].port_id, set);
+        }
+
 	session_id = msm_pcm_routing_get_voc_sessionid(val);
 
 	pr_debug("%s: FE DAI 0x%x session_id 0x%x\n",
@@ -2150,13 +2158,6 @@ static void msm_pcm_routing_process_voice(u16 reg, u16 val, int set)
 	else
 		clear_bit(val, &msm_bedais[reg].fe_sessions[0]);
 
-	if (val == MSM_FRONTEND_DAI_DTMF_RX &&
-	    afe_get_port_type(msm_bedais[reg].port_id) ==
-						MSM_AFE_PORT_TYPE_RX) {
-		pr_debug("%s(): set=%d port id=0x%x for dtmf generation\n",
-			 __func__, set, msm_bedais[reg].port_id);
-		afe_set_dtmf_gen_rx_portid(msm_bedais[reg].port_id, set);
-	}
 	if (session_id != 0 && afe_get_port_type(msm_bedais[reg].port_id) ==
 						MSM_AFE_PORT_TYPE_RX) {
 		pr_err("%s(): set=%d port id=0x%x for dtmf generation\n",
