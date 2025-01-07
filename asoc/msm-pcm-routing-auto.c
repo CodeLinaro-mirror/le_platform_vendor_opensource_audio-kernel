@@ -33043,7 +33043,7 @@ static int msm_routing_put_copp_dtmf_module_enable
 	be_id = (uint8_t *)ucontrol->value.bytes.data;
 	be_id_val = *be_id;
 
-	if((be_id_val < 0) || (be_id_val >= MSM_BACKEND_DAI_MAX)) {
+	if (be_id_val >= MSM_BACKEND_DAI_MAX) {
 		pr_err("%s: received invalid be_id %lu\n", __func__, be_id_val);
 		return -EINVAL;
 	}

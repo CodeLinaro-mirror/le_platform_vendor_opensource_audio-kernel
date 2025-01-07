@@ -2221,11 +2221,6 @@ static int afe_send_cal_block(u16 port_id, struct cal_block_data *cal_block)
 		result = -EINVAL;
 		goto done;
 	}
-	if (cal_block->cal_data.size < 0) {
-		pr_debug("%s: AFE cal has invalid size!\n", __func__);
-		result = -EINVAL;
-		goto done;
-	}
 	if (cal_block->cal_data.size == 0) {
 		pr_debug("%s: AFE cal size is zero!\n", __func__);
 		goto done;
