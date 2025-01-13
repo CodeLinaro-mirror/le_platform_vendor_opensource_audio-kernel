@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -424,7 +424,7 @@ static int audio_notifier_convert_opcode(unsigned long opcode,
 	int ret = 0;
 
 	switch (opcode) {
-	case QCOM_SSR_BEFORE_SHUTDOWN:
+	case QCOM_SSR_AFTER_SHUTDOWN:
 	case SERVREG_SERVICE_STATE_DOWN:
 		*notifier_opcode = AUDIO_NOTIFIER_SERVICE_DOWN;
 		break;
