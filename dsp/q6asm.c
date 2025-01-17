@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022,2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -638,8 +638,11 @@ static int q6asm_session_register(struct audio_client *ac)
 
 	pr_debug("%s: Registering the common port with APR\n", __func__);
 	ac->mmap_apr = q6asm_mmap_apr_reg();
-	if (ac->mmap_apr == NULL)
+	if (ac->mmap_apr == NULL) {
+		pr_err("%s: q6asm_mmap_apr_reg failed\n",
+			__func__);
 		goto fail_mmap;
+	}
 
 	return 0;
 
@@ -1498,8 +1501,10 @@ struct audio_client *q6asm_audio_client_alloc(app_cb cb, void *priv)
 	int rc = 0;
 
 	ac = kzalloc(sizeof(struct audio_client), GFP_KERNEL);
-	if (!ac)
+	if (!ac) {
+		pr_err("%s: Memory allocation failed for audio_client.\n", __func__);
 		return NULL;
+	}
 
 	mutex_lock(&session_lock);
 	n = q6asm_session_alloc(ac);
@@ -3118,8 +3123,11 @@ int q6asm_set_pp_params(struct audio_client *ac,
 	if (param_data != NULL)
 		pkt_size += param_size;
 	asm_set_param = kzalloc(pkt_size, GFP_KERNEL);
-	if (!asm_set_param)
+	if (!asm_set_param) {
+		pr_err("%s: memory allocation failed for asm_set_param with packet size %d\n",
+			__func__, pkt_size);
 		return -ENOMEM;
+	}
 
 	mutex_lock(&session[session_id].mutex_lock_per_session);
 	if (!q6asm_is_valid_audio_client(ac)) {
@@ -3740,7 +3748,7 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		return -EINVAL;
 	}
 
-	dev_vdbg(ac->dev, "%s: session[%d] wr_format[0x%x]\n",
+	pr_debug("%s: session[%d] wr_format[0x%x]\n",
 		__func__, ac->session, format);
 
 	q6asm_stream_add_hdr(ac, &open.hdr, sizeof(open), TRUE, stream_id);
