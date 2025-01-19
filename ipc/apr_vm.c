@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
 * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
-* Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022,2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 */
 
 #include <linux/kernel.h>
@@ -388,6 +388,11 @@ static void apr_adsp_up(void)
 	spin_unlock(&apr_priv->apr_lock);
 	snd_event_notify(apr_priv->dev, SND_EVENT_UP);
 }
+
+void apr_set_adsp_up(void)
+{
+}
+EXPORT_SYMBOL(apr_set_adsp_up);
 
 struct apr_client *apr_get_client(int dest_id, int client_id)
 {

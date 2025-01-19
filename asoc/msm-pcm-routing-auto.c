@@ -33205,6 +33205,13 @@ static int msm_routing_put_copp_event_cmd(struct snd_kcontrol *kcontrol,
 	int copp_idx = -1, port_id = 0;
 
 	ev = (struct msm_adm_event_data *)ucontrol->value.bytes.data;
+
+	if ((ev == NULL) || (ev->event_type != ADSP_ADM_SERVICE_ID)) {
+             pr_err("%s: adm event data invalid\n", __func__);
+             ret = -EINVAL;
+             return ret;
+	}
+
 	param_size = ev->payload_length - sizeof(struct module_info_data);
 	opcode = adm_pp_reg_event_opcode[(ev->event_type)
 						- ADSP_ADM_SERVICE_ID];
