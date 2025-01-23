@@ -204,7 +204,11 @@ ifdef CONFIG_SND_SOC_WCD_IRQ
 endif
 
 ifdef CONFIG_SND_SOC_TAS571X
-	TAS571X_OBJS += tas571x.o
+	ifeq ($(TARGET_PRODUCT),bengal_2w_v2)
+		TAS571X_OBJS += tas571x-v2.o
+	else
+		TAS571X_OBJS += tas571x.o
+	endif
 endif
 
 LINUX_INC +=	-Iinclude/linux
