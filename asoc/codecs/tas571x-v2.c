@@ -1075,6 +1075,21 @@ static int tas571x_i2c_probe(struct i2c_client *client,
 		goto disable_regs;
 	}
 
+	/*
+	 * Audio codec is powered through a GPIO
+	 * This GPIO needs to be configured properly to drive 1.8V.
+	 */
+
+	/* Retrieve GPIOs for Audio codec initialization */
+	priv->spk_en_gpio = of_get_named_gpio(dev->of_node,"spk-en-gpio", 0);
+	if(gpio_is_valid(priv->spk_en_gpio)){
+		ret = gpio_request(priv->spk_en_gpio, "spk-en-gpio");
+		if(ret<0){
+			dev_err(dev, "spk-en-gpio request failed\n", ret);
+			goto disable_regs;
+		}
+	}
+
 	priv->pdn_gpio = of_get_named_gpio(dev->of_node,"pdn-gpios", 0);
 	if(gpio_is_valid(priv->pdn_gpio)){
 		ret = gpio_request(priv->pdn_gpio, "audio-pdn-gpio");
