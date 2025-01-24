@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -609,9 +609,7 @@ static int audio_notify_probe(struct platform_device *pdev)
 {
 	int ret = -EINVAL;
 	struct adsp_notify_private *priv = NULL;
-	struct property *prop;
-	int size;
-	phandle rproc_phandle;
+	const char *qcom_quinvm = "qcom,quinvm";
 
 	adsp_private = NULL;
 	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
@@ -620,20 +618,25 @@ static int audio_notify_probe(struct platform_device *pdev)
 		return ret;
 	}
 	platform_set_drvdata(pdev, priv);
-	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle", &size);
-	if (!prop) {
-		dev_err(&pdev->dev, "Missing remoteproc handle\n");
-		return ret;
-	}
-	rproc_phandle = be32_to_cpup(prop->value);
 
-	priv->rproc_h = rproc_get_by_phandle(rproc_phandle);
-	if (!priv->rproc_h) {
-		dev_err(&pdev->dev, "remoteproc handle NULL\n");
-		ret = -EPROBE_DEFER;
-		return ret;
-	}
+	if (!of_machine_is_compatible(qcom_quinvm)) {
+		struct property *prop;
+		int size;
+		phandle rproc_phandle;
+		prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle", &size);
+		if (!prop) {
+			dev_err(&pdev->dev, "Missing remoteproc handle\n");
+			return ret;
+		}
+		rproc_phandle = be32_to_cpup(prop->value);
 
+		priv->rproc_h = rproc_get_by_phandle(rproc_phandle);
+		if (!priv->rproc_h) {
+			dev_err(&pdev->dev, "remoteproc handle NULL\n");
+			ret = -EPROBE_DEFER;
+			return ret;
+		}
+	}
 	adsp_private = pdev;
 
 	audio_notifier_subsys_init();

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2014, 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -96,11 +96,9 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 	struct platform_device *pdev = adsp_private;
 	struct adsp_loader_private *priv = NULL;
 	const char *adsp_dt = "qcom,adsp-state";
+	const char *qcom_quinvm = "qcom,quinvm";
 	int rc = 0;
 	u32 adsp_state;
-	struct property *prop;
-	int size;
-	phandle rproc_handle;
 	struct rproc *rproc;
 	void *padsp_restart_cb = &adsp_load_state_notify_cb;
 	const char *image;
@@ -130,17 +128,22 @@ static void adsp_load_fw(struct work_struct *adsp_ldr_work)
 		goto fail;
 	}
 
-	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
-					&size);
-	if (!prop) {
-		dev_err(&pdev->dev, "Missing remoteproc handle\n");
-		goto fail;
-	}
+	if (!of_machine_is_compatible(qcom_quinvm)) {
+		struct property *prop;
+		int size;
+		phandle rproc_handle;
+		prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
+						&size);
+		if (!prop) {
+			dev_err(&pdev->dev, "Missing remoteproc handle\n");
+			goto fail;
+		}
 
-	rproc_handle = be32_to_cpup(prop->value);
-	priv->pil_h = rproc_get_by_phandle(rproc_handle);
-	if (!priv->pil_h)
-		goto fail;
+		rproc_handle = be32_to_cpup(prop->value);
+		priv->pil_h = rproc_get_by_phandle(rproc_handle);
+		if (!priv->pil_h)
+			goto fail;
+	}
 
 	rproc = priv->pil_h;
 	rc = of_property_read_string(pdev->dev.of_node,
@@ -187,6 +190,8 @@ load_adsp:
 				dev_err(&pdev->dev, "%s: pil get failed,\n",
 					__func__);
 				goto fail;
+			} else {
+				apr_set_adsp_up();
 			}
 		} else if (adsp_state == APR_SUBSYS_LOADED) {
 			dev_dbg(&pdev->dev,

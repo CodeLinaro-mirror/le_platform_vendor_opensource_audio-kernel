@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
 * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
-* Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022,2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
 */
 
 #include <linux/kernel.h>
@@ -281,6 +281,14 @@ static struct apr_svc_table svc_tbl_voice[] = {
 	},
 };
 
+static inline size_t memscpy(void *dst, size_t dst_size, const void *src,
+	size_t src_size)
+{
+	size_t min_size = dst_size < src_size ? dst_size : src_size;
+	memcpy(dst, src, min_size);
+	return min_size;
+}
+
 /**
  * apr_get_modem_state:
  *
@@ -380,6 +388,11 @@ static void apr_adsp_up(void)
 	spin_unlock(&apr_priv->apr_lock);
 	snd_event_notify(apr_priv->dev, SND_EVENT_UP);
 }
+
+void apr_set_adsp_up(void)
+{
+}
+EXPORT_SYMBOL(apr_set_adsp_up);
 
 struct apr_client *apr_get_client(int dest_id, int client_id)
 {
@@ -863,7 +876,8 @@ int apr_send_pkt(void *handle, uint32_t *buf)
 		ret = -ENOMEM;
 		goto done;
 	}
-	memcpy(&apr_send->pkt_header, buf, hdr->pkt_size);
+	memscpy((void*)(&apr_send->pkt_header), APR_TX_BUF_SIZE-(sizeof(uint32_t)*2),
+			buf, hdr->pkt_size);
 
 	ret = habmm_socket_send(hab_handle_tx,
 			(void *)&apr_tx_buf,
