@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -2696,6 +2696,8 @@ static int msm_compr_trigger(struct snd_soc_component *component,
 		prtd->bytes_received = 0;
 		prtd->bytes_sent = 0;
 		prtd->marker_timestamp = 0;
+		// Reset zero_buffer to ensure correct calculations on next trigger start
+		prtd->zero_buffer = 0;
 
 		atomic_set(&prtd->xrun, 0);
 		spin_unlock_irqrestore(&prtd->lock, flags);
@@ -5198,8 +5200,13 @@ static int msm_compr_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 		if (prtd && prtd->audio_client) {
 			stream_id = prtd->audio_client->session;
 			be_id = chmixer_pspd->port_idx;
+#ifdef CONFIG_AUTO_AUDIO
 			msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 					stream_id, session_type, chmixer_pspd);
+#else
+			msm_pcm_routing_set_channel_mixer_runtime(be_id,
+					stream_id, session_type, chmixer_pspd);
+#endif
 		}
 	}
 

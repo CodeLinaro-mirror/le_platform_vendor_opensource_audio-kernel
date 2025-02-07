@@ -815,10 +815,17 @@ int msm_pcm_routing_set_channel_mixer_cfg(
 	int fe_id, int session_type,
 	struct msm_pcm_channel_mixer *params);
 
+#ifdef CONFIG_AUTO_AUDIO
 int msm_pcm_routing_set_channel_mixer_runtime(
 	int fe_id, int be_id, int session_id,
 	int session_type,
 	struct msm_pcm_channel_mixer *params);
+#else
+int msm_pcm_routing_set_channel_mixer_runtime(
+         int be_id, int session_id,
+         int session_type,
+         struct msm_pcm_channel_mixer *params);
+#endif
 
 int msm_pcm_routing_set_stream_ec_ref_chmix_cfg(
 	int fedai_id, struct msm_pcm_channel_mixer *cfg_data);
