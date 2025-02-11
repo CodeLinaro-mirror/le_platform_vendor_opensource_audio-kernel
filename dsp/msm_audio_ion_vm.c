@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -204,7 +204,10 @@ static int msm_audio_dma_buf_unmap(struct dma_buf *dma_buf, bool cma_mem)
 			dma_buf_put(alloc_data->dma_buf);
 
 			list_del(&(alloc_data->list));
-			kfree(alloc_data->vmap);
+			if (alloc_data->vmap != NULL) {
+				kfree(alloc_data->vmap);
+				alloc_data->vmap = NULL;
+			}
 			kfree(alloc_data);
 			alloc_data = NULL;
 			break;
@@ -645,14 +648,16 @@ int msm_audio_ion_alloc(void **handle, size_t bufsz,
 		pr_err("%s: ION alloc fail err ptr=%ld, smmu_enabled=%d\n",
 		       __func__, err_ion_ptr, msm_audio_ion_data.smmu_enabled);
 		rc = -ENOMEM;
-		kfree(iosys_vmap);
+		if (iosys_vmap != NULL)
+			kfree(iosys_vmap);
 		goto err;
 	}
 
 	rc = msm_audio_ion_map_buf(*handle, paddr, plen, iosys_vmap);
 	if (rc) {
 		pr_err("%s: failed to map ION buf, rc = %d\n", __func__, rc);
-		kfree(iosys_vmap);
+		if (iosys_vmap != NULL)
+			kfree(iosys_vmap);
 		goto err;
 	}
 
