@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2011-2014, 2017-2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -98,8 +98,7 @@ static int msm_pcm_hostless_prepare(struct snd_soc_component *component,
 
 	runtime = substream->runtime;
 	runtime->stop_threshold = runtime->boundary;
-	if (cpu_latency_qos_request_active(&substream->latency_pm_qos_req))
-		cpu_latency_qos_remove_request(&substream->latency_pm_qos_req);
+	cpu_latency_qos_remove_request(&substream->latency_pm_qos_req);
 	return 0;
 }
 
