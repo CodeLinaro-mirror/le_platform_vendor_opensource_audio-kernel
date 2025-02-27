@@ -165,7 +165,8 @@ free_alloc_data:
 	return rc;
 }
 
-static int msm_audio_dma_buf_unmap(struct dma_buf *dma_buf, bool cma_mem)
+static int msm_audio_get_alloc_data(struct dma_buf *dma_buf, bool cma_mem,
+		struct msm_audio_alloc_data *alloc_data_ref )
 {
 	int rc = 0;
 	struct msm_audio_alloc_data *alloc_data = NULL;
@@ -192,19 +193,7 @@ static int msm_audio_dma_buf_unmap(struct dma_buf *dma_buf, bool cma_mem)
 
 		if (alloc_data->dma_buf == dma_buf) {
 			found = true;
-			dma_buf_unmap_attachment(alloc_data->attach,
-						 alloc_data->table,
-						 DMA_BIDIRECTIONAL);
-
-			dma_buf_detach(alloc_data->dma_buf,
-				       alloc_data->attach);
-
-			dma_buf_put(alloc_data->dma_buf);
-
-			list_del(&(alloc_data->list));
-			kfree(alloc_data->vmap);
-			kfree(alloc_data);
-			alloc_data = NULL;
+			alloc_data_ref = alloc_data;
 			break;
 		}
 	}
@@ -216,6 +205,53 @@ static int msm_audio_dma_buf_unmap(struct dma_buf *dma_buf, bool cma_mem)
 			__func__, dma_buf);
 		rc = -EINVAL;
 	}
+
+	return rc;
+}
+
+static int msm_audio_dma_buf_del_list(struct msm_audio_alloc_data *alloc_data )
+{
+	int rc = 0;
+
+	mutex_lock(&(msm_audio_ion_data.list_mutex));
+	if (alloc_data) {
+		list_del(&(alloc_data->list));
+		kfree(alloc_data);
+		alloc_data = NULL;
+	}
+	mutex_unlock(&(msm_audio_ion_data.list_mutex));
+
+	return rc;
+}
+
+static int msm_audio_dma_buf_kfree_vmap(struct msm_audio_alloc_data *alloc_data)
+{
+	int rc = 0;
+
+	mutex_lock(&(msm_audio_ion_data.list_mutex));
+	if (alloc_data) {
+		if (alloc_data->vmap) {
+			kfree(alloc_data->vmap);
+			alloc_data->vmap = NULL;
+		}
+	}
+	mutex_unlock(&(msm_audio_ion_data.list_mutex));
+
+	return rc;
+}
+
+static int msm_audio_dma_buf_unmap(struct msm_audio_alloc_data *alloc_data )
+{
+	int rc = 0;
+
+	dma_buf_unmap_attachment(alloc_data->attach,
+					alloc_data->table,
+					DMA_BIDIRECTIONAL);
+
+	dma_buf_detach(alloc_data->dma_buf,
+				alloc_data->attach);
+
+	dma_buf_put(alloc_data->dma_buf);
 
 	return rc;
 }
@@ -557,6 +593,7 @@ static int msm_audio_ion_map_buf(struct dma_buf *dma_buf, dma_addr_t *paddr,
 				 size_t *plen, struct dma_buf_map *dma_vmap)
 {
 	int rc = 0;
+	struct msm_audio_alloc_data *alloc_data = NULL;
 
 	if (!dma_buf || !paddr || !plen) {
 		pr_err("%s: Invalid params\n", __func__);
@@ -576,8 +613,7 @@ static int msm_audio_ion_map_buf(struct dma_buf *dma_buf, dma_addr_t *paddr,
 		pr_err("%s: ION memory mapping for AUDIO failed, err:%d\n",
 				__func__, rc);
 		rc = -ENOMEM;
-		msm_audio_dma_buf_unmap(dma_buf, false);
-		goto err;
+		goto err_unmap;
 	}
 
 	if (msm_audio_ion_data.smmu_enabled) {
@@ -586,9 +622,16 @@ static int msm_audio_ion_map_buf(struct dma_buf *dma_buf, dma_addr_t *paddr,
 			pr_err("%s: failed to do smmu map, err = %d\n",
 				__func__, rc);
 			msm_audio_ion_unmap_kernel(dma_buf);
-			msm_audio_dma_buf_unmap(dma_buf, false);
-			goto err;
+			goto err_unmap;
 		}
+	}
+	return rc;
+
+err_unmap:
+	msm_audio_get_alloc_data(dma_buf, false, alloc_data);
+	if (alloc_data) {
+		msm_audio_dma_buf_unmap(alloc_data);
+		msm_audio_dma_buf_del_list(alloc_data);
 	}
 err:
 	return rc;
@@ -758,7 +801,9 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 err_ion_flag:
 	dma_buf_put(*dma_buf);
 err:
-	kfree(dma_vmap);
+	if(dma_vmap){
+		kfree(dma_vmap);
+	}
 	*dma_buf = NULL;
 	return rc;
 }
@@ -836,7 +881,7 @@ EXPORT_SYMBOL(msm_audio_ion_import_cma);
 int msm_audio_ion_free(struct dma_buf *dma_buf)
 {
 	int ret = 0;
-
+	struct msm_audio_alloc_data *alloc_data = NULL;
 	if (!dma_buf) {
 		pr_err("%s: dma_buf invalid\n", __func__);
 		return -EINVAL;
@@ -853,7 +898,12 @@ int msm_audio_ion_free(struct dma_buf *dma_buf)
 				__func__, ret);
 	}
 
-	msm_audio_dma_buf_unmap(dma_buf, false);
+	msm_audio_get_alloc_data(dma_buf, false, alloc_data);
+	if (alloc_data) {
+		msm_audio_dma_buf_unmap(alloc_data);
+		msm_audio_dma_buf_kfree_vmap(alloc_data);
+		msm_audio_dma_buf_del_list(alloc_data);
+	}
 
 	return 0;
 }
@@ -869,12 +919,19 @@ EXPORT_SYMBOL(msm_audio_ion_free);
  */
 int msm_audio_ion_free_cma(struct dma_buf *dma_buf)
 {
+	struct msm_audio_alloc_data *alloc_data = NULL;
+
 	if (!dma_buf) {
 		pr_err("%s: dma_buf invalid\n", __func__);
 		return -EINVAL;
 	}
 
-	msm_audio_dma_buf_unmap(dma_buf, true);
+	msm_audio_get_alloc_data(dma_buf, false, alloc_data);
+	if (alloc_data) {
+		msm_audio_dma_buf_unmap(alloc_data);
+		msm_audio_dma_buf_kfree_vmap(alloc_data);
+		msm_audio_dma_buf_del_list(alloc_data);
+	}
 
 	return 0;
 }
