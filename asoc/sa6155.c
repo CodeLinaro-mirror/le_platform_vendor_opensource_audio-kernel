@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 /*
  * Copyright 2011, The Android Open Source Project
@@ -40,6 +40,7 @@
 #include <linux/of_device.h>
 #include <linux/pm_qos.h>
 #include <linux/version.h>
+#include <linux/bootmarker_kernel.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -50,7 +51,6 @@
 #include <dsp/audio_notifier.h>
 #include <dsp/q6afe-v2.h>
 #include <dsp/q6core.h>
-#include <soc/qcom/boot_stats.h>
 #include "device_event.h"
 #include "msm-pcm-routing-v2.h"
 #include "msm_dailink.h"
@@ -7411,11 +7411,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	static int first_probe = 1;
 
 	if (first_probe) {
-#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
-		place_marker("M - DRIVER Audio Init");
-#else
-		pr_err("boot_kpi: M - DRIVER Audio Init\n");
-#endif
+		bootmarker_place_marker("M - DRIVER Audio Init");
 		first_probe = 0;
 	}
 
@@ -7497,11 +7493,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		pr_err("%s: Registration with SND event FWK failed ret = %d\n",
 			__func__, ret);
 
-#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
-	place_marker("M - DRIVER Audio Ready");
-#else
-	pr_err("boot_kpi: M - DRIVER Audio Ready\n");
-#endif
+	bootmarker_place_marker("M - DRIVER Audio Ready");
 	return 0;
 err:
 	msm_release_pinctrl(pdev);
