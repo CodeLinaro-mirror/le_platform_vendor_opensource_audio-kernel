@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -3020,7 +3020,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.capture = {
 			.stream_name = "MultiMedia31 Capture",
-			.rates = (SNDRV_PCM_RATE_8000_384000 |
+			.rates = (SNDRV_PCM_RATE_8000_48000 |
 				  SNDRV_PCM_RATE_KNOT),
 			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
 				    SNDRV_PCM_FMTBIT_S24_LE |
@@ -3051,7 +3051,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.capture = {
 			.stream_name = "MultiMedia32 Capture",
-			.rates = (SNDRV_PCM_RATE_8000_384000 |
+			.rates = (SNDRV_PCM_RATE_8000_48000 |
 				  SNDRV_PCM_RATE_KNOT),
 			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
 				    SNDRV_PCM_FMTBIT_S24_LE |
@@ -3082,7 +3082,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.capture = {
 			.stream_name = "MultiMedia33 Capture",
-			.rates = (SNDRV_PCM_RATE_8000_384000 |
+			.rates = (SNDRV_PCM_RATE_8000_48000 |
 				  SNDRV_PCM_RATE_KNOT),
 			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
 				    SNDRV_PCM_FMTBIT_S24_LE |
@@ -3113,7 +3113,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.capture = {
 			.stream_name = "MultiMedia34 Capture",
-			.rates = (SNDRV_PCM_RATE_8000_384000 |
+			.rates = (SNDRV_PCM_RATE_8000_48000 |
 				  SNDRV_PCM_RATE_KNOT),
 			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
 				    SNDRV_PCM_FMTBIT_S24_LE |
