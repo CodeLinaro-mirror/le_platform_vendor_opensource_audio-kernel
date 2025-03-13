@@ -118,6 +118,11 @@ else
 			export
 			INCS    +=  -include $(AUDIO_ROOT)/config/mdm9607autoconf.h
 		endif
+                ifeq ($(CONFIG_ARCH_MDM9650), y)
+                        include $(AUDIO_ROOT)/config/mdm9650auto.conf
+                        export
+                        INCS    +=  -include $(AUDIO_ROOT)/config/mdm9650autoconf.h
+                endif
 	endif
 endif
 
