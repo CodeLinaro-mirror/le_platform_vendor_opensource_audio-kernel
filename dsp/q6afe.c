@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/debugfs.h>
@@ -396,8 +396,11 @@ static int q6afe_load_avcs_modules(int num_modules, u16 port_id,
 		if (pm[i] == NULL) {
 			port_struct_size = sizeof(payload_map);
 			pm[i] = kzalloc(port_struct_size, GFP_KERNEL);
-			if (!pm[i])
+			if (!pm[i]) {
+				pr_err("%s: mem alloc failed for port_mapping at usecase: %d\n",
+					__func__, i);
 				return -ENOMEM;
+			}
 
 			pm[i]->port_id = port_id;
 			payload_size = sizeof(uint32_t) + (sizeof(sec_payload)
@@ -1653,8 +1656,10 @@ static int q6afe_set_params_v2(u16 port_id, int index,
 	if (packed_param_data != NULL)
 		size += packed_data_size;
 	set_param = kzalloc(size, GFP_KERNEL);
-	if (set_param == NULL)
+	if (set_param == NULL) {
+		pr_err("%s, set_param memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	set_param->apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
@@ -1702,8 +1707,10 @@ static int q6afe_set_params_v3(u16 port_id, int index,
 	if (packed_param_data != NULL)
 		size += packed_data_size;
 	set_param = kzalloc(size, GFP_KERNEL);
-	if (set_param == NULL)
+	if (set_param == NULL) {
+		pr_err("%s, set_param memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	set_param->apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
@@ -1956,8 +1963,10 @@ static int q6afe_svc_set_params_v1(int index, struct mem_mapping_hdr *mem_hdr,
 	if (packed_param_data != NULL)
 		size += packed_data_size;
 	svc_set_param = kzalloc(size, GFP_KERNEL);
-	if (svc_set_param == NULL)
+	if (svc_set_param == NULL) {
+		pr_err("%s, svc_set_param memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	svc_set_param->apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
@@ -2003,8 +2012,10 @@ static int q6afe_svc_set_params_v2(int index, struct mem_mapping_hdr *mem_hdr,
 	if (packed_param_data != NULL)
 		size += packed_data_size;
 	svc_set_param = kzalloc(size, GFP_KERNEL);
-	if (svc_set_param == NULL)
+	if (svc_set_param == NULL) {
+		pr_err("%s, svc_set_param memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	svc_set_param->apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
@@ -2050,8 +2061,10 @@ static int q6afe_clk_set_params_v1(int index, struct mem_mapping_hdr *mem_hdr,
 	if (packed_param_data != NULL)
 		size += packed_data_size;
 	svc_set_param = kzalloc(size, GFP_KERNEL);
-	if (svc_set_param == NULL)
+	if (svc_set_param == NULL) {
+		pr_err("%s, svc_set_param memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	svc_set_param->apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
@@ -2097,8 +2110,10 @@ static int q6afe_clk_set_params_v2(int index, struct mem_mapping_hdr *mem_hdr,
 	if (packed_param_data != NULL)
 		size += packed_data_size;
 	svc_set_param = kzalloc(size, GFP_KERNEL);
-	if (svc_set_param == NULL)
+	if (svc_set_param == NULL) {
+		pr_err("%s, svc_set_param memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	svc_set_param->apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
@@ -3209,6 +3224,8 @@ static int afe_get_cal_topology_id(u16 port_id, u32 *topology_id,
 		return -EINVAL;
 	}
 	*topology_id = 0;
+
+	pr_debug("%s: port_id 0x%x\n", __func__, port_id);
 
 	mutex_lock(&this_afe.cal_data[cal_type_index]->lock);
 	cal_block = afe_find_cal_topo_id_by_port(
@@ -11217,8 +11234,11 @@ static int afe_get_cal_hw_delay(int32_t path,
 	mutex_lock(&this_afe.cal_data[AFE_HW_DELAY_CAL]->lock);
 	cal_block = afe_find_hw_delay_by_path(
 		this_afe.cal_data[AFE_HW_DELAY_CAL], path);
-	if (cal_block == NULL)
+	if (cal_block == NULL) {
+		pr_debug("%s: afe_find_hw_delay_by_path returned NULL for the path %d\n",
+			__func__, path);
 		goto unlock;
+	}
 
 	hw_delay_info = &((struct audio_cal_info_hw_delay *)
 		cal_block->cal_info)->data;
