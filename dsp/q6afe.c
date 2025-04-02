@@ -675,13 +675,7 @@ static void av_dev_drift_afe_cb_handler(uint32_t opcode, uint32_t *payload,
 		return;
 	}
 
-	if (!this_afe.av_dev_drift_resp.status) {
-		atomic_set(&this_afe.state, 0);
-	} else {
-		pr_debug("%s: av_dev_drift_resp status: %d\n", __func__,
-			 this_afe.av_dev_drift_resp.status);
-		atomic_set(&this_afe.state, -1);
-	}
+	atomic_set(&this_afe.state, 0);
 }
 
 static void doa_tracking_mon_afe_cb_handler(uint32_t opcode, uint32_t *payload,
@@ -2235,12 +2229,15 @@ static int afe_send_cal_block(u16 port_id, struct cal_block_data *cal_block)
 		result = -EINVAL;
 		goto done;
 	}
-	if (cal_block->cal_data.size <= 0) {
+	if (cal_block->cal_data.size < 0) {
 		pr_debug("%s: AFE cal has invalid size!\n", __func__);
 		result = -EINVAL;
 		goto done;
 	}
-
+	if (cal_block->cal_data.size == 0) {
+		pr_debug("%s: AFE cal size is zero!\n", __func__);
+		goto done;
+	}
 	payload_size = cal_block->cal_data.size;
 	mem_hdr.data_payload_addr_lsw =
 		lower_32_bits(cal_block->cal_data.paddr);

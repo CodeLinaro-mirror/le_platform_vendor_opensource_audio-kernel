@@ -13,6 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -2196,8 +2197,12 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 					payload[0], payload[1],
 					data->src_port, data->dest_port);
 				if (payload[1] != 0) {
-					pr_err("%s: cmd = 0x%x returned error = 0x%x\n",
-						__func__, payload[0], payload[1]);
+					if (adsp_err_get_lnx_err_code(payload[1]) != -EALREADY)
+						pr_err("%s: cmd = 0x%x returned error = 0x%x\n",
+							__func__, payload[0], payload[1]);
+					else
+						pr_debug("%s: cmd = 0x%x returned error = 0x%x\n",
+							__func__, payload[0], payload[1]);
 					if (wakeup_flag) {
 						if ((is_adsp_reg_event(payload[0]) >=
 						     0) ||
@@ -3459,11 +3464,12 @@ static int __q6asm_open_read(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	if (atomic_read(&ac->cmd_state) > 0) {
-		pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
 		rc = adsp_err_get_lnx_err_code(
 				atomic_read(&ac->cmd_state));
+		if (rc != -EALREADY)
+			pr_err("%s: DSP returned error[%s]\n",
+					__func__, adsp_err_get_err_str(
+					atomic_read(&ac->cmd_state)));
 		goto fail_cmd;
 	}
 
@@ -3870,11 +3876,12 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		goto fail_cmd;
 	}
 	if (atomic_read(&ac->cmd_state) > 0) {
-		pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
 		rc = adsp_err_get_lnx_err_code(
 				atomic_read(&ac->cmd_state));
+		if (rc != -EALREADY)
+			pr_err("%s: DSP returned error[%s]\n",
+					__func__, adsp_err_get_err_str(
+					atomic_read(&ac->cmd_state)));
 		goto fail_cmd;
 	}
 	ac->io_mode |= TUN_WRITE_IO_MODE;
@@ -4220,11 +4227,12 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 		goto fail_cmd;
 	}
 	if (atomic_read(&ac->cmd_state) > 0) {
-		pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
 		rc = adsp_err_get_lnx_err_code(
 				atomic_read(&ac->cmd_state));
+		if (rc != -EALREADY)
+			pr_err("%s: DSP returned error[%s]\n",
+					__func__, adsp_err_get_err_str(
+					atomic_read(&ac->cmd_state)));
 		goto fail_cmd;
 	}
 
@@ -11377,7 +11385,7 @@ static int q6asm_get_asm_topology_apptype(struct q6asm_cal_info *cal_info, struc
 			goto unlock;
 		}
 	} else {
-		cal_block = q6asm_find_cal_by_buf_number(ASM_TOPOLOGY_CAL, 0, 0, ac->fedai_id);
+		cal_block = q6asm_find_cal_by_buf_number(ASM_TOPOLOGY_CAL, 0, 0, path);
 		if (cal_block == NULL) {
 			pr_debug("%s: Couldn't find cal_block with buf_number, re-routing "
 				"search using CAL type only\n", __func__);
