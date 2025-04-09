@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -565,7 +565,8 @@ static int msm_audio_ion_map_buf(struct dma_buf *dma_buf, dma_addr_t *paddr,
 
 	if (!dma_buf || !paddr || !plen) {
 		pr_err("%s: Invalid params\n", __func__);
-		return -EINVAL;
+		rc = -EINVAL;
+		goto err_free;
 	}
 
 	rc = msm_audio_ion_get_phys(dma_buf, paddr, plen);
@@ -573,7 +574,7 @@ static int msm_audio_ion_map_buf(struct dma_buf *dma_buf, dma_addr_t *paddr,
 		pr_err("%s: ION Get Physical for AUDIO failed, rc = %d\n",
 				__func__, rc);
 		dma_buf_put(dma_buf);
-		goto err;
+		goto err_free;
 	}
 
 	rc = msm_audio_ion_map_kernel(dma_buf, iosys_vmap);
@@ -596,6 +597,10 @@ static int msm_audio_ion_map_buf(struct dma_buf *dma_buf, dma_addr_t *paddr,
 		}
 	}
 err:
+	return rc;
+err_free:
+	if(iosys_vmap != NULL)
+		kfree(iosys_vmap);
 	return rc;
 }
 
@@ -657,9 +662,6 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 	rc = msm_audio_ion_map_buf(*dma_buf, paddr, plen, iosys_vmap);
 	if (rc) {
 		pr_err("%s: failed to map ION buf, rc = %d\n", __func__, rc);
-		if (iosys_vmap != NULL) {
-		    kfree(iosys_vmap);
-		}
 		goto err;
 	}
 
@@ -755,7 +757,7 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 	rc = msm_audio_ion_map_buf(*dma_buf, paddr, plen, iosys_vmap);
 	if (rc) {
 		pr_err("%s: failed to map ION buf, rc = %d\n", __func__, rc);
-		goto err;
+		goto err_ion_map;
 	}
 
 	*vaddr = iosys_vmap->vaddr;
@@ -767,7 +769,9 @@ int msm_audio_ion_import(struct dma_buf **dma_buf, int fd,
 err_ion_flag:
 	dma_buf_put(*dma_buf);
 err:
-	kfree(iosys_vmap);
+	if(iosys_vmap != NULL)
+		kfree(iosys_vmap);
+err_ion_map:
 	*dma_buf = NULL;
 	return rc;
 }

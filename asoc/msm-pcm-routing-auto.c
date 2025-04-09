@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -1889,12 +1889,12 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 	int topology = NULL_COPP_TOPOLOGY;
 	int app_type = 0, acdb_dev_id = 0;
 
-	pr_debug("%s: fedai_id %d, session_type %d, be_id %d\n",
-	       __func__, fedai_id, session_type, be_id);
-
 	app_type = fe_dai_app_type_cfg[fedai_id][session_type][be_id].app_type;
 	acdb_dev_id =
 		fe_dai_app_type_cfg[fedai_id][session_type][be_id].acdb_dev_id;
+
+	pr_debug("%s: fedai_id %d, session_type %d, be_id %d, app_type %d, acdb_dev_id %d\n",
+		__func__, fedai_id, session_type, be_id, app_type, acdb_dev_id);
 
 	pr_debug("%s: Check for exact LSM topology\n", __func__);
 	topology = msm_routing_find_topology_on_index(fedai_id,
@@ -1911,8 +1911,11 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 						      acdb_dev_id,
 						      ADM_TOPOLOGY_CAL_TYPE_IDX,
 						      false /*exact*/);
-		if (topology < 0)
+		if (topology < 0) {
 			topology = NULL_COPP_TOPOLOGY;
+			pr_debug("%s: No matching cal block found. Assigning default copp topology.\n",
+				__func__);
+		}
 	}
 
 	pr_debug("%s: Using topology %d\n", __func__, topology);
