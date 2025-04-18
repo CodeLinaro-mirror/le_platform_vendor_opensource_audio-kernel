@@ -141,8 +141,6 @@ struct mdm_wsa881x_dev_info {
 
 static int clk_users;
 
-static struct snd_soc_aux_dev *mdm_aux_dev;
-static struct snd_soc_codec_conf *mdm_codec_conf;
 
 static int mdm_auxpcm_rate = 8000;
 
@@ -168,8 +166,6 @@ static int mdm_enable_codec_ext_clk(struct snd_soc_component *component,
 					int enable, bool dapm);
 
 static void *def_tasha_mbhc_cal(void);
-//static void *adsp_state_notifier;
-//static bool dummy_device_registered;
 
 static struct wcd_mbhc_config wcd_mbhc_cfg = {
 	.read_fw_bin = false,
@@ -179,54 +175,6 @@ static struct wcd_mbhc_config wcd_mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 };
-
-static int mdm_wsa881x_init(struct snd_soc_component *component)
-{
-	u8 spkleft_ports[WSA881X_MAX_SWR_PORTS] = {100, 101, 102, 106};
-	u8 spkright_ports[WSA881X_MAX_SWR_PORTS] = {103, 104, 105, 107};
-	unsigned int ch_rate[WSA881X_MAX_SWR_PORTS] = {2400, 600, 300, 1200};
-	unsigned int ch_mask[WSA881X_MAX_SWR_PORTS] = {0x1, 0xF, 0x3, 0x3};
-	struct mdm_machine_data *pdata;
-	struct snd_soc_dapm_context *dapm;
-
-	if (!component) {
-		pr_err("%s component is NULL\n", __func__);
-		return -EINVAL;
-	}
-
-	dapm = snd_soc_component_get_dapm(component);
-
-	if (!strcmp(component->name_prefix, "SpkrLeft")) {
-		dev_dbg(component->dev, "%s: setting left ch map to codec %s\n",
-			__func__, component->name);
-		wsa881x_set_channel_map(component, &spkleft_ports[0],
-				WSA881X_MAX_SWR_PORTS, &ch_mask[0],
-				&ch_rate[0], NULL);
-		if (dapm->component) {
-			snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft IN");
-			snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft SPKR");
-		}
-	} else if (!strcmp(component->name_prefix, "SpkrRight")) {
-		dev_dbg(component->dev, "%s: setting right ch map to codec %s\n",
-			__func__, component->name);
-		wsa881x_set_channel_map(component, &spkright_ports[0],
-				WSA881X_MAX_SWR_PORTS, &ch_mask[0],
-				&ch_rate[0], NULL);
-		if (dapm->component) {
-			snd_soc_dapm_ignore_suspend(dapm, "SpkrRight IN");
-			snd_soc_dapm_ignore_suspend(dapm, "SpkrRight SPKR");
-		}
-	} else {
-		dev_err(component->dev, "%s: wrong codec name %s\n", __func__,
-			component->name);
-		return -EINVAL;
-	}
-	pdata = snd_soc_card_get_drvdata(component->card);
-	if (pdata && pdata->codec_root)
-		wsa881x_codec_info_create_codec_entry(pdata->codec_root, component);
-
-	return 0;
-}
 
 static int mdm_mi2s_clk_ctl(struct snd_soc_pcm_runtime *rtd, bool enable,
 				int rate, u16 mode)
@@ -1013,7 +961,6 @@ static int mdm_mi2s_get_spk(struct snd_kcontrol *kcontrol,
 
 static void mdm_ext_control(struct snd_soc_dapm_context *dapm)
 {
-	//struct snd_soc_dapm_context *dapm = &codec->dapm;
 
 	pr_debug("%s mdm_spk_control %d", __func__, mdm_spk_control);
 
@@ -2145,10 +2092,10 @@ static struct snd_soc_card snd_soc_card_mdm_auto = {
 static int mdm_populate_dai_link_component_of_node(
 					struct snd_soc_card *card)
 {
-	int i, index, ret = 0;
+	int i, j, index, ret = 0;
 	struct device *cdev = card->dev;
 	struct snd_soc_dai_link *dai_link = card->dai_link;
-	struct device_node *np;
+	struct device_node *np = NULL;
 
 	if (!cdev) {
 		pr_err("%s: Sound card device memory NULL\n", __func__);
@@ -2156,18 +2103,20 @@ static int mdm_populate_dai_link_component_of_node(
 	}
 
 	for (i = 0; i < card->num_links; i++) {
+
 		if (dai_link[i].platforms->of_node && dai_link[i].cpus->of_node)
 			continue;
 
 		/* populate platform_of_node for snd card dai links */
-		if (dai_link[i].platforms->dai_name &&
+		if (dai_link[i].platforms->name &&
 		    !dai_link[i].platforms->of_node) {
 			index = of_property_match_string(cdev->of_node,
 						"asoc-platform-names",
-						dai_link[i].platforms->dai_name);
+						dai_link[i].platforms->name);
+
 			if (index < 0) {
 				pr_debug("%s: No match found for platform name: %s\n",
-					__func__, dai_link[i].platforms->dai_name);
+					__func__, dai_link[i].platforms->name);
 				ret = index;
 				goto err;
 			}
@@ -2176,13 +2125,13 @@ static int mdm_populate_dai_link_component_of_node(
 					      index);
 			if (!np) {
 				pr_err("%s: retrieving phandle for platform %s, index %d failed\n",
-					__func__, dai_link[i].platforms->dai_name,
+					__func__, dai_link[i].platforms->name,
 					index);
 				ret = -ENODEV;
 				goto err;
 			}
 			dai_link[i].platforms->of_node = np;
-			dai_link[i].platforms->dai_name = NULL;
+			dai_link[i].platforms->name = NULL;
 		}
 
 		/* populate cpu_of_node for snd card dai links */
@@ -2205,23 +2154,28 @@ static int mdm_populate_dai_link_component_of_node(
 			}
 		}
 
-		/* populate codec_of_node for snd card dai links */
-		if (dai_link[i].codecs->dai_name && !dai_link[i].codecs->of_node) {
+                /* populate codec_of_node for snd card dai links */
+                if (dai_link[i].num_codecs > 0) {
+			for (j = 0; j < dai_link[i].num_codecs; j++) {
+				if (dai_link[i].codecs[j].of_node ||
+						!dai_link[i].codecs[j].name)
+					continue;
 			index = of_property_match_string(cdev->of_node,
 						 "asoc-codec-names",
-						 dai_link[i].codecs->dai_name);
+						 dai_link[i].codecs[j].name);
 			if (index < 0)
 				continue;
 			np = of_parse_phandle(cdev->of_node, "asoc-codec",
 					      index);
 			if (!np) {
 				pr_err("%s: retrieving phandle for codec %s failed\n",
-					__func__, dai_link[i].codecs->dai_name);
+					__func__, dai_link[i].codecs[j].name);
 				ret = -ENODEV;
 				goto err;
 			}
-			dai_link[i].codecs->of_node = np;
-			dai_link[i].codecs->dai_name = NULL;
+			dai_link[i].codecs[j].of_node = np;
+			dai_link[i].codecs[j].name = NULL;
+                        }
 		}
 	}
 
@@ -2233,20 +2187,10 @@ err:
 static int mdm_init_wsa_dev(struct platform_device *pdev,
 				struct snd_soc_card *card)
 {
-	struct device_node *wsa_of_node;
 	u32 wsa_max_devs;
 	u32 wsa_dev_cnt;
-	char *dev_name_str = NULL;
-	struct mdm_wsa881x_dev_info *wsa881x_dev_info;
-        struct snd_soc_dai_link_component *dlc;
-	const char *wsa_auxdev_name_prefix[1];
-	int found = 0;
-	int i;
+        struct mdm_machine_data *pdata;
 	int ret;
-
-        dlc = devm_kcalloc(&pdev->dev, 1,
-                        sizeof(struct snd_soc_dai_link_component),
-                        GFP_KERNEL);
 
 	/* Get maximum WSA device count for this platform */
 	ret = of_property_read_u32(pdev->dev.of_node,
@@ -2290,111 +2234,10 @@ static int mdm_init_wsa_dev(struct platform_device *pdev,
 		wsa_max_devs = wsa_dev_cnt;
 	}
 
-	/* Make sure prefix string passed for each WSA device */
-	ret = of_property_count_strings(pdev->dev.of_node,
-					"qcom,wsa-aux-dev-prefix");
-	if (ret != wsa_dev_cnt) {
-		dev_err(&pdev->dev,
-			"%s: expecting %d wsa prefix. Defined only %d in DT\n",
-			__func__, wsa_dev_cnt, ret);
-		return -EINVAL;
-	}
-
-	/*
-	 * Alloc mem to store phandle and index info of WSA device, if already
-	 * registered with ALSA core
-	 */
-	wsa881x_dev_info = devm_kcalloc(&pdev->dev, wsa_max_devs,
-					sizeof(struct mdm_wsa881x_dev_info),
-					GFP_KERNEL);
-	if (!wsa881x_dev_info)
-		return -ENOMEM;
-
-	/*
-	 * search and check whether all WSA devices are already
-	 * registered with ALSA core or not. If found a node, store
-	 * the node and the index in a local array of struct for later
-	 * use.
-	 */
-	for (i = 0; i < wsa_dev_cnt; i++) {
-		wsa_of_node = of_parse_phandle(pdev->dev.of_node,
-					    "qcom,wsa-devs", i);
-		if (unlikely(!wsa_of_node)) {
-			/* we should not be here */
-			dev_err(&pdev->dev,
-				"%s: wsa dev node is not present\n",
-				__func__);
-			return -EINVAL;
-		}
-                /*dlc->of_node = wsa_of_node;
-                dlc->name = NULL;
-		if (soc_find_component(dlc)) {*/
-			/* WSA device registered with ALSA core */
-		/*	wsa881x_dev_info[found].of_node = wsa_of_node;
-			wsa881x_dev_info[found].index = i;
-			found++;
-			if (found == wsa_max_devs)
-				break;
-		}*/
-	}
-
-	if (found < wsa_max_devs) {
-		dev_dbg(&pdev->dev,
-			"%s: failed to find %d components. Found only %d\n",
-			__func__, wsa_max_devs, found);
-		return -EPROBE_DEFER;
-	}
-	dev_info(&pdev->dev,
-		"%s: found %d wsa881x devices registered with ALSA core\n",
-		__func__, found);
+        pdata = snd_soc_card_get_drvdata(card);
 
 	card->num_aux_devs = wsa_max_devs;
 	card->num_configs = wsa_max_devs;
-
-	/* Alloc array of AUX devs struct */
-	mdm_aux_dev = devm_kcalloc(&pdev->dev, card->num_aux_devs,
-				       sizeof(struct snd_soc_aux_dev),
-				       GFP_KERNEL);
-	if (!mdm_aux_dev)
-		return -ENOMEM;
-
-	/* Alloc array of codec conf struct */
-	mdm_codec_conf = devm_kcalloc(&pdev->dev, card->num_aux_devs,
-					  sizeof(struct snd_soc_codec_conf),
-					  GFP_KERNEL);
-	if (!mdm_codec_conf)
-		return -ENOMEM;
-
-	for (i = 0; i < card->num_aux_devs; i++) {
-		dev_name_str = devm_kzalloc(&pdev->dev, DEV_NAME_STR_LEN,
-					    GFP_KERNEL);
-		if (!dev_name_str)
-			return -ENOMEM;
-
-		ret = of_property_read_string_index(pdev->dev.of_node,
-						    "qcom,wsa-aux-dev-prefix",
-						    wsa881x_dev_info[i].index,
-						    wsa_auxdev_name_prefix);
-		if (ret) {
-			dev_err(&pdev->dev,
-				"%s: failed to read wsa aux dev prefix, ret = %d\n",
-				__func__, ret);
-			return -EINVAL;
-		}
-
-		snprintf(dev_name_str, strlen("wsa881x.%d"), "wsa881x.%d", i);
-		mdm_aux_dev[i].dlc.name = dev_name_str;
-		mdm_aux_dev[i].dlc.dai_name = NULL;
-		mdm_aux_dev[i].dlc.of_node =
-					wsa881x_dev_info[i].of_node;
-		mdm_aux_dev[i].init = mdm_wsa881x_init;
-		mdm_codec_conf[i].dev_name = NULL;
-		mdm_codec_conf[i].name_prefix = wsa_auxdev_name_prefix[0];
-		mdm_codec_conf[i].of_node =
-					wsa881x_dev_info[i].of_node;
-	}
-	card->codec_conf = mdm_codec_conf;
-	card->aux_dev = mdm_aux_dev;
 
 	return 0;
 }
@@ -2631,55 +2474,6 @@ static struct platform_driver mdm_asoc_machine_driver = {
 	.probe = mdm_asoc_machine_probe,
 	.remove = mdm_asoc_machine_remove,
 };
-
-/*static int dummy_machine_probe(struct platform_device *pdev)
-{
-	return 0;
-}
-
-static int dummy_machine_remove(struct platform_device *pdev)
-{
-	return 0;
-}
-
-static struct platform_device dummy_machine_device = {
-		.name = "dummymachinedriver",
-};
-
-static struct platform_driver mdm_asoc_machine_dummy_driver = {
-	.driver = {
-		.name = "dummymachinedriver",
-		.owner = THIS_MODULE,
-	},
-	.probe = dummy_machine_probe,
-	.remove = dummy_machine_remove,
-};*/
-
-/*static int  mdm_adsp_state_callback(struct notifier_block *nb,
-					unsigned long value, void *priv)
-{
-	if (!dummy_device_registered && SUBSYS_AFTER_POWERUP == value) {
-		platform_driver_register(&mdm_asoc_machine_dummy_driver);
-		platform_device_register(&dummy_machine_device);
-		dummy_device_registered = true;
-	}
-
-		return NOTIFY_OK;
-}*/
-
-/*static struct notifier_block adsp_state_notifier_block = {
-	.notifier_call = mdm_adsp_state_callback,
-	.priority = -INT_MAX,
-};*/
-
-/*static int __init mdm_soc_platform_init(void)
-{
-	adsp_state_notifier = subsys_notif_register_notifier("modem",
-						&adsp_state_notifier_block);
-	return 0;
-}*/
-
-/*module_init(mdm_soc_platform_init);*/
 
 module_platform_driver(mdm_asoc_machine_driver);
 
