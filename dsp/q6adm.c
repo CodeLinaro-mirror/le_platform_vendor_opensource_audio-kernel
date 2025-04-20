@@ -2864,6 +2864,8 @@ static int adm_arrange_mch_map_v8(
 {
 	int rc = 0, idx;
 
+	pr_debug("%s: channel mode %d\n", __func__, channel_mode);
+
 	memset(ep_payload->dev_channel_mapping,
 			0, PCM_FORMAT_MAX_NUM_CHANNEL_V8);
 	switch (path) {
@@ -3201,8 +3203,10 @@ static int adm_copp_set_ec_ref_mfc_cfg_v2(int port_id, int copp_idx,
 	struct adm_device_endpoint_payload ep_payload = {0, 0, 0, {0} };
 	int in_channels, out_channels;
 
-	if (!cfg)
+	if (!cfg) {
+		pr_err("%s, Invalid msm_pcm_channel_mixer received\n", __func__);
 		return -EINVAL;
+	}
 	in_channels = cfg->input_channel;
 	out_channels = cfg->output_channel;
 
