@@ -3179,7 +3179,6 @@ static struct snd_soc_dai_link sdx_common_dai_links[] = {
 		.stream_name = "Primary MI2S_RX Hostless Playback",
 		.dynamic = 1,
 		.dpcm_playback = 1,
-		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
