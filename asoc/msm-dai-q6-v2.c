@@ -8607,6 +8607,8 @@ static struct platform_driver msm_dai_tdm_q6 = {
 	},
 };
 
+#ifdef QC_TDM_DATA_FORMAT_AND_HEADER_TYPE
+
 static int msm_dai_q6_tdm_data_format_put(struct snd_kcontrol *kcontrol,
 				      struct snd_ctl_elem_value *ucontrol)
 {
@@ -10310,7 +10312,7 @@ static const struct snd_kcontrol_new tdm_config_controls_header[] = {
 			msm_dai_q6_tdm_header_get,
 			msm_dai_q6_tdm_header_put),
 };
-
+#endif
 static int msm_dai_q6_tdm_set_clk(
 		struct msm_dai_q6_tdm_dai_data *dai_data,
 		u16 port_id, bool enable)
@@ -10664,13 +10666,14 @@ static int msm_dai_q6_dai_tdm_probe(struct snd_soc_dai *dai)
 	int rc = 0;
 	int port_idx = 0;
 	struct msm_dai_q6_tdm_dai_data *tdm_dai_data = NULL;
+#ifdef QC_TDM_DATA_FORMAT_AND_HEADER_TYPE 
 	struct snd_kcontrol *data_format_kcontrol = NULL;
 	struct snd_kcontrol *header_type_kcontrol = NULL;
 	struct snd_kcontrol *header_kcontrol = NULL;
 	const struct snd_kcontrol_new *data_format_ctrl = NULL;
 	const struct snd_kcontrol_new *header_type_ctrl = NULL;
 	const struct snd_kcontrol_new *header_ctrl = NULL;
-
+#endif
 	tdm_dai_data = dev_get_drvdata(dai->dev);
 
 	msm_dai_q6_set_dai_id(dai);
@@ -10682,6 +10685,8 @@ static int msm_dai_q6_dai_tdm_probe(struct snd_soc_dai *dai)
 		rc = -EINVAL;
 		goto rtn;
 	}
+
+#ifdef QC_TDM_DATA_FORMAT_AND_HEADER_TYPE
 
 	data_format_ctrl =
 		&tdm_config_controls_data_format[port_idx];
@@ -10734,7 +10739,7 @@ static int msm_dai_q6_dai_tdm_probe(struct snd_soc_dai *dai)
 			goto rtn;
 		}
 	}
-
+#endif
 	/* add AFE port logging controls */
 	if (!afe_port_loggging_control_added) {
 		rc = msm_pcm_add_afe_port_logging_control(dai);

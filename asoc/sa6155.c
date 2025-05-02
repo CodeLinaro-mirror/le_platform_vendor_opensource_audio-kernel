@@ -1865,6 +1865,7 @@ static int tdm_tx_ch_put(struct snd_kcontrol *kcontrol,
 	return ret;
 }
 
+#ifdef QC_SLOTMAP_SUPPORT
 static int tdm_get_slot_num_val(int slot_num)
 {
 	int slot_num_val = 0;
@@ -2146,7 +2147,7 @@ static int tdm_tx_slot_mapping_put(struct snd_kcontrol *kcontrol,
 	}
 	return ret;
 }
-
+#endif
 static int tdm_paired_rx_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
@@ -3318,6 +3319,7 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 	SOC_ENUM_EXT("QUIN_TDM_TX_3 Channels", tdm_tx_chs,
 			tdm_tx_ch_get,
 			tdm_tx_ch_put),
+#ifdef QC_SLOTMAP_SUPPORT
 	SOC_ENUM_EXT("PRI_TDM SlotNumber", tdm_slot_num,
 			tdm_slot_num_get, tdm_slot_num_put),
 	SOC_ENUM_EXT("PRI_TDM SlotWidth", tdm_slot_width,
@@ -3461,6 +3463,7 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 	SOC_SINGLE_MULTI_EXT("QUIN_TDM_TX_3 SlotMapping",
 		SND_SOC_NOPM, 0, 0xFFFF, 0, TDM_SLOT_OFFSET_MAX,
 		tdm_tx_slot_mapping_get, tdm_tx_slot_mapping_put),
+#endif
 	SOC_ENUM_EXT("PRIM_AUX_PCM_RX SampleRate", prim_aux_pcm_rx_sample_rate,
 			aux_pcm_rx_sample_rate_get,
 			aux_pcm_rx_sample_rate_put),
@@ -5540,6 +5543,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.ops = &msm_fe_qos_ops,
 		SND_SOC_DAILINK_REG(multimedia5),
 	},
+#ifdef QC_LSM_SUPPORT
 	{
 		.name = "Listen 1 Audio Service",
 		.stream_name = "Listen 1 Audio Service",
@@ -5552,6 +5556,8 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_LSM1,
 		SND_SOC_DAILINK_REG(listen1),
 	},
+#endif
+#ifdef QC_COMPRESS_SUPPORT
 	/* Multiple Tunnel instances */
 	{
 		.name = MSM_DAILINK_NAME(Compress2),
@@ -5566,6 +5572,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA7,
 		SND_SOC_DAILINK_REG(multimedia7),
 	},
+#endif
 	{
 		.name = MSM_DAILINK_NAME(MultiMedia10),
 		.stream_name = "MultiMedia10",
@@ -5622,6 +5629,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_VOICEMMODE2,
 		SND_SOC_DAILINK_REG(voicemmode2_hostless),
 	},
+#ifdef QC_LSM_SUPPORT
 	/* LSM FE */
 	{
 		.name = "Listen 2 Audio Service",
@@ -5707,6 +5715,8 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_LSM8,
 		SND_SOC_DAILINK_REG(listen8),
 	},
+#endif
+#ifdef QC_COMPRESS_SUPPORT
 	/* - Multimedia9 */
 	{
 		.name = MSM_DAILINK_NAME(Compress4),
@@ -5773,6 +5783,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA15,
 		SND_SOC_DAILINK_REG(multimedia15),
 	},
+#endif
 	{
 		.name = MSM_DAILINK_NAME(ULL_NOIRQ_2),
 		.stream_name = "MM_NOIRQ_2",
@@ -5820,6 +5831,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.ignore_pmdown_time = 1,
 		SND_SOC_DAILINK_REG(usbaudio_hostless),
 	},
+#ifdef QC_COMPRESS_SUPPORT
 	/* - SLIMBUS_7 Hostless */
 	{
 		.name = "Compress Capture",
@@ -5833,6 +5845,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.id = MSM_FRONTEND_DAI_MULTIMEDIA17,
 		SND_SOC_DAILINK_REG(multimedia17),
 	},
+#endif
 };
 
 static struct snd_soc_dai_link msm_auto_fe_dai_links[] = {
