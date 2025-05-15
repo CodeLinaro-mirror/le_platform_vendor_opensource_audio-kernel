@@ -33,6 +33,7 @@
 #include <dsp/q6core.h>
 #include "codecs/wcd-gpio-ctrl.h"
 #include "../include/asoc/wcd9xxx-common.h"
+#include "../include/asoc/msm-cdc-pinctrl.h"
 #include "codecs/wcd9335.h"
 #include "codecs/wsa881x.h"
 #include <sound/tlv320aic3x.h>
@@ -139,6 +140,8 @@ struct mdm_wsa881x_dev_info {
 	u32 index;
 };
 
+static struct snd_soc_aux_dev *mdm_aux_dev;
+static struct snd_soc_codec_conf *mdm_codec_conf;
 static int clk_users;
 
 
@@ -175,6 +178,47 @@ static struct wcd_mbhc_config wcd_mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 };
+static int mdm_wsa881x_init(struct snd_soc_component *component)
+{
+	u8 spkleft_ports[WSA881X_MAX_SWR_PORTS] = {100, 101, 102, 106};
+	u8 spkright_ports[WSA881X_MAX_SWR_PORTS] = {103, 104, 105, 107};
+	unsigned int ch_rate[WSA881X_MAX_SWR_PORTS] = {2400, 600, 300, 1200};
+	unsigned int ch_mask[WSA881X_MAX_SWR_PORTS] = {0x1, 0xF, 0x3, 0x3};
+
+	struct mdm_machine_data *pdata;
+	struct snd_soc_dapm_context *dapm = snd_soc_component_get_dapm(component);
+
+	if (!strcmp(component->name_prefix, "SpkrLeft")) {
+		dev_dbg(component->dev, "%s: setting left ch map to codec %s\n",
+			__func__, component->name);
+		wsa881x_set_channel_map(component, &spkleft_ports[0],
+				WSA881X_MAX_SWR_PORTS, &ch_mask[0],
+				&ch_rate[0], NULL);
+		if (dapm->component) {
+			snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft IN");
+			snd_soc_dapm_ignore_suspend(dapm, "SpkrLeft SPKR");
+		}
+	} else if (!strcmp(component->name_prefix, "SpkrRight")) {
+		dev_dbg(component->dev, "%s: setting right ch map to codec %s\n",
+			__func__, component->name);
+		wsa881x_set_channel_map(component, &spkright_ports[0],
+				WSA881X_MAX_SWR_PORTS, &ch_mask[0],
+				&ch_rate[0], NULL);
+		if (dapm->component) {
+			snd_soc_dapm_ignore_suspend(dapm, "SpkrRight IN");
+			snd_soc_dapm_ignore_suspend(dapm, "SpkrRight SPKR");
+		}
+	} else {
+		dev_err(component->dev, "%s: wrong codec name %s\n", __func__,
+			component->name);
+		return -EINVAL;
+	}
+	pdata = snd_soc_card_get_drvdata(component->card);
+	if (pdata && pdata->codec_root)
+		wsa881x_codec_info_create_codec_entry(pdata->codec_root, component);
+
+	return 0;
+}
 
 static int mdm_mi2s_clk_ctl(struct snd_soc_pcm_runtime *rtd, bool enable,
 				int rate, u16 mode)
@@ -257,10 +301,10 @@ static void mdm_mi2s_shutdown(struct snd_pcm_substream *substream)
 			pr_err("%s Clock disable failed\n", __func__);
 
 		if (pdata->prim_mi2s_mode == 1)
-                        ret = wcd_gpio_ctrl_select_sleep_state
+                        ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->prim_master_p);
 		else
-                        ret = wcd_gpio_ctrl_select_sleep_state
+                        ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->prim_slave_p);
 		if (ret)
 			pr_err("%s: failed to set pri gpios to sleep: %d\n",
@@ -286,6 +330,7 @@ static int mdm_mi2s_startup(struct snd_pcm_substream *substream)
 				ret = -EINVAL;
 				goto err;
 			}
+			mdm_enable_codec_ext_clk(codec_dai->component, 1, true);
 			iowrite32(I2S_SEL << I2S_PCM_SEL_OFFSET,
 					pdata->lpaif_pri_muxsel_virt_addr);
 			if (pdata->lpass_mux_spkr_ctl_virt_addr != NULL) {
@@ -315,7 +360,7 @@ static int mdm_mi2s_startup(struct snd_pcm_substream *substream)
 		 * 0 means external clock slave mode.
 		 */
 		if (pdata->prim_mi2s_mode == 1) {
-                        ret = wcd_gpio_ctrl_select_active_state
+                        ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->prim_master_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
@@ -348,18 +393,18 @@ static int mdm_mi2s_startup(struct snd_pcm_substream *substream)
 					"%s Set fmt for codec dai failed\n",
 					__func__);
 			}
-			/*ret = snd_soc_dai_set_sysclk(codec_dai,
-					CLKIN_MCLK,
+			ret = snd_soc_dai_set_sysclk(codec_dai,
+					0,
 					pdata->mclk_freq, SND_SOC_CLOCK_OUT);
 			if (ret < 0)
 				pr_err("%s Set sysclk for codec dai failed\n",
-					__func__);*/
+					__func__);
 		} else {
 			/*
 			 * Disable bit clk in slave mode for QC codec.
 			 * Enable only mclk.
 			 */
-			ret = wcd_gpio_ctrl_select_active_state
+			ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->prim_slave_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
@@ -472,10 +517,10 @@ static void mdm_sec_mi2s_shutdown(struct snd_pcm_substream *substream)
 			pr_err("%s Clock disable failed\n", __func__);
 
 		if (pdata->sec_mi2s_mode == 1)
-                        ret = wcd_gpio_ctrl_select_sleep_state
+                        ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->sec_master_p);
 		else
-                        ret = wcd_gpio_ctrl_select_sleep_state
+                        ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->sec_slave_p);
 		if (ret)
 			pr_err("%s: failed to set sec gpios to sleep: %d\n",
@@ -530,7 +575,7 @@ static int mdm_sec_mi2s_startup(struct snd_pcm_substream *substream)
 		 * 0 means external clock slave mode.
 		 */
 		if (pdata->sec_mi2s_mode == 1) {
-			ret = wcd_gpio_ctrl_select_active_state
+			ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->sec_master_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
@@ -558,7 +603,7 @@ static int mdm_sec_mi2s_startup(struct snd_pcm_substream *substream)
 			 * Enable mclk here, if needed for external codecs.
 			 * Optional. Refer primary mi2s slave interface.
 			 */
-			ret = wcd_gpio_ctrl_select_active_state
+			ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->sec_slave_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
@@ -1073,10 +1118,10 @@ static void mdm_auxpcm_shutdown(struct snd_pcm_substream *substream)
 	struct mdm_machine_data *pdata = snd_soc_card_get_drvdata(card);
 
 	if (pdata->prim_auxpcm_mode == 1)
-                ret = wcd_gpio_ctrl_select_sleep_state
+                ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->prim_master_p);
 	else
-                ret = wcd_gpio_ctrl_select_sleep_state
+                ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->prim_slave_p);
 	if (ret)
 		pr_err("%s: failed to set prim gpios to sleep: %d\n",
@@ -1119,12 +1164,12 @@ static int mdm_auxpcm_startup(struct snd_pcm_substream *substream)
 	}
 
 	if (pdata->prim_auxpcm_mode == 1) {
-                ret = wcd_gpio_ctrl_select_active_state
+                ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->prim_master_p);
 		if (ret < 0)
 			pr_err("%s pinctrl set failed\n", __func__);
 	} else {
-                ret = wcd_gpio_ctrl_select_active_state
+                ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->prim_slave_p);
 		if (ret < 0)
 			pr_err("%s pinctrl set failed\n", __func__);
@@ -1147,10 +1192,10 @@ static void mdm_sec_auxpcm_shutdown(struct snd_pcm_substream *substream)
 	struct mdm_machine_data *pdata = snd_soc_card_get_drvdata(card);
 
 	if (pdata->sec_auxpcm_mode == 1)
-                ret = wcd_gpio_ctrl_select_sleep_state
+                ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->sec_master_p);
 	else
-                ret = wcd_gpio_ctrl_select_sleep_state
+                ret = msm_cdc_pinctrl_select_sleep_state
                                                 (pdata->sec_slave_p);
 	if (ret)
 		pr_err("%s: failed to set sec gpios to sleep: %d\n",
@@ -1194,12 +1239,12 @@ static int mdm_sec_auxpcm_startup(struct snd_pcm_substream *substream)
 	}
 
 	if (pdata->sec_auxpcm_mode == 1) {
-		ret = wcd_gpio_ctrl_select_active_state
+		ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->sec_master_p);
 		if (ret < 0)
 			pr_err("%s pinctrl set failed\n", __func__);
 	} else {
-                ret = wcd_gpio_ctrl_select_active_state
+                ret = msm_cdc_pinctrl_select_active_state
                                                 (pdata->sec_slave_p);
 		if (ret < 0)
 			pr_err("%s pinctrl set failed\n", __func__);
@@ -2192,8 +2237,13 @@ static int mdm_init_wsa_dev(struct platform_device *pdev,
 {
 	u32 wsa_max_devs;
 	u32 wsa_dev_cnt;
-        struct mdm_machine_data *pdata;
 	int ret;
+	struct device_node *wsa_of_node;
+	char *dev_name_str = NULL;
+	struct mdm_wsa881x_dev_info *wsa881x_dev_info;
+	const char *wsa_auxdev_name_prefix[1];
+	int found = 0;
+	int i;
 
 	/* Get maximum WSA device count for this platform */
 	ret = of_property_read_u32(pdev->dev.of_node,
@@ -2225,6 +2275,10 @@ static int mdm_init_wsa_dev(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
+	if (wsa_max_devs == 1){
+		pr_err("%s: mdm_init_wsa_dev erroring out \n",__func__);
+		return 0;
+	}
 	/*
 	 * Expect total phandles count to be NOT less than maximum possible
 	 * WSA count. However, if it is less, then assign same value to
@@ -2237,10 +2291,107 @@ static int mdm_init_wsa_dev(struct platform_device *pdev,
 		wsa_max_devs = wsa_dev_cnt;
 	}
 
-        pdata = snd_soc_card_get_drvdata(card);
+	/* Make sure prefix string passed for each WSA device */
+	ret = of_property_count_strings(pdev->dev.of_node,
+					"qcom,wsa-aux-dev-prefix");
+	if (ret != wsa_dev_cnt) {
+		dev_err(&pdev->dev,
+			"%s: expecting %d wsa prefix. Defined only %d in DT\n",
+			__func__, wsa_dev_cnt, ret);
+		return -EINVAL;
+	}
+
+	/*
+	 * Alloc mem to store phandle and index info of WSA device, if already
+	 * registered with ALSA core
+	 */
+	wsa881x_dev_info = devm_kcalloc(&pdev->dev, wsa_max_devs,
+					sizeof(struct mdm_wsa881x_dev_info),
+					GFP_KERNEL);
+	if (!wsa881x_dev_info)
+		return -ENOMEM;
+
+	/*
+	 * search and check whether all WSA devices are already
+	 * registered with ALSA core or not. If found a node, store
+	 * the node and the index in a local array of struct for later
+	 * use.
+	 */
+	for (i = 0; i < wsa_dev_cnt; i++) {
+		wsa_of_node = of_parse_phandle(pdev->dev.of_node,
+					    "qcom,wsa-devs", i);
+		if (unlikely(!wsa_of_node)) {
+			/* we should not be here */
+			dev_err(&pdev->dev,
+				"%s: wsa dev node is not present\n",
+				__func__);
+			return -EINVAL;
+		}
+			/* WSA device registered with ALSA core */
+			wsa881x_dev_info[found].of_node = wsa_of_node;
+			wsa881x_dev_info[found].index = i;
+			found++;
+			if (found == wsa_max_devs)
+				break;
+	}
+
+	if (found < wsa_max_devs) {
+		dev_dbg(&pdev->dev,
+			"%s: failed to find %d components. Found only %d\n",
+			__func__, wsa_max_devs, found);
+		return -EPROBE_DEFER;
+	}
+	dev_info(&pdev->dev,
+		"%s: found %d wsa881x devices registered with ALSA core\n",
+		__func__, found);
 
 	card->num_aux_devs = wsa_max_devs;
 	card->num_configs = wsa_max_devs;
+	/* Alloc array of AUX devs struct */
+	mdm_aux_dev = devm_kcalloc(&pdev->dev, card->num_aux_devs,
+				       sizeof(struct snd_soc_aux_dev),
+				       GFP_KERNEL);
+	if (!mdm_aux_dev)
+		return -ENOMEM;
+
+	/* Alloc array of codec conf struct */
+	mdm_codec_conf = devm_kcalloc(&pdev->dev, card->num_aux_devs,
+					  sizeof(struct snd_soc_codec_conf),
+					  GFP_KERNEL);
+	if (!mdm_codec_conf)
+		return -ENOMEM;
+
+	for (i = 0; i < card->num_aux_devs; i++) {
+		dev_name_str = devm_kzalloc(&pdev->dev, DEV_NAME_STR_LEN,
+					    GFP_KERNEL);
+		if (!dev_name_str)
+			return -ENOMEM;
+
+		ret = of_property_read_string_index(pdev->dev.of_node,
+						    "qcom,wsa-aux-dev-prefix",
+						    wsa881x_dev_info[i].index,
+						    wsa_auxdev_name_prefix);
+		if (ret) {
+			dev_err(&pdev->dev,
+				"%s: failed to read wsa aux dev prefix, ret = %d\n",
+				__func__, ret);
+			return -EINVAL;
+		}
+
+		snprintf(dev_name_str, strlen("wsa881x.%d"), "wsa881x.%d", i);
+		mdm_aux_dev[i].dlc.name = dev_name_str;
+		/* mdm_aux_dev[i].codec_name = NULL; */
+		mdm_aux_dev[i].dlc.of_node =
+					wsa881x_dev_info[i].of_node;
+		mdm_aux_dev[i].init = mdm_wsa881x_init;
+		mdm_codec_conf[i].dev_name = dev_name_str;
+		mdm_codec_conf[i].name_prefix = wsa_auxdev_name_prefix[0];
+		mdm_codec_conf[i].of_node =
+					wsa881x_dev_info[i].of_node;
+	}
+	card->codec_conf = mdm_codec_conf;
+	card->aux_dev = mdm_aux_dev;
+
 
 	return 0;
 }

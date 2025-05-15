@@ -57,7 +57,7 @@ SND_SOC_DAILINK_DEFS(multimedia2,
 SND_SOC_DAILINK_DEFS(multimedia6,
 	DAILINK_COMP_ARRAY(COMP_CPU("MultiMedia6")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-dsp.0")));
+	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback")));
 
 SND_SOC_DAILINK_DEFS(msmvoip,
 	DAILINK_COMP_ARRAY(COMP_CPU("VoIP")),
