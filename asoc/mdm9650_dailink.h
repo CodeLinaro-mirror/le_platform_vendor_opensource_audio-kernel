@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <sound/soc.h>
@@ -233,7 +233,8 @@ SND_SOC_DAILINK_DEFS(sec_auxpcm_tx,
 
 SND_SOC_DAILINK_DEFS(tasha_i2s_rx1,
         DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-mi2s.0")),
-        DAILINK_COMP_ARRAY(COMP_CODEC("tasha_codec", "tasha_i2s_rx1")),
+        DAILINK_COMP_ARRAY(COMP_CODEC("tasha_codec", "tasha_i2s_rx1"),
+        COMP_CODEC("wsa-codec.1", "wsa_rx1")),
         DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
 
 SND_SOC_DAILINK_DEFS(tasha_i2s_tx1,
