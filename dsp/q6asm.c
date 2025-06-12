@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022,2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -638,8 +638,11 @@ static int q6asm_session_register(struct audio_client *ac)
 
 	pr_debug("%s: Registering the common port with APR\n", __func__);
 	ac->mmap_apr = q6asm_mmap_apr_reg();
-	if (ac->mmap_apr == NULL)
+	if (ac->mmap_apr == NULL) {
+		pr_err("%s: q6asm_mmap_apr_reg failed\n",
+			__func__);
 		goto fail_mmap;
+	}
 
 	return 0;
 
@@ -3740,7 +3743,7 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		return -EINVAL;
 	}
 
-	dev_vdbg(ac->dev, "%s: session[%d] wr_format[0x%x]\n",
+	pr_debug("%s: session[%d] wr_format[0x%x]\n",
 		__func__, ac->session, format);
 
 	q6asm_stream_add_hdr(ac, &open.hdr, sizeof(open), TRUE, stream_id);

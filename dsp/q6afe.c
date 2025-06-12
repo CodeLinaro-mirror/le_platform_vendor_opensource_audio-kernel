@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/slab.h>
 #include <linux/debugfs.h>
@@ -3222,6 +3222,8 @@ static int afe_get_cal_topology_id(u16 port_id, u32 *topology_id,
 		return -EINVAL;
 	}
 	*topology_id = 0;
+
+	pr_debug("%s: port_id 0x%x\n", __func__, port_id);
 
 	mutex_lock(&this_afe.cal_data[cal_type_index]->lock);
 	cal_block = afe_find_cal_topo_id_by_port(
@@ -11230,8 +11232,11 @@ static int afe_get_cal_hw_delay(int32_t path,
 	mutex_lock(&this_afe.cal_data[AFE_HW_DELAY_CAL]->lock);
 	cal_block = afe_find_hw_delay_by_path(
 		this_afe.cal_data[AFE_HW_DELAY_CAL], path);
-	if (cal_block == NULL)
+	if (cal_block == NULL) {
+		pr_debug("%s: afe_find_hw_delay_by_path returned NULL for the path %d\n",
+			__func__, path);
 		goto unlock;
+	}
 
 	hw_delay_info = &((struct audio_cal_info_hw_delay *)
 		cal_block->cal_info)->data;
