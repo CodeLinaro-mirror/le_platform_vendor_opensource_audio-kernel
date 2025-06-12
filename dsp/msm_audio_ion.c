@@ -289,10 +289,12 @@ static int msm_audio_protect_memory_region(struct platform_device *pdev)
 	struct reserved_mem *rmem = NULL;
 	u64 size = 0;
 	struct device_node *node = NULL;
+#if !IS_ENABLED(CONFIG_QCOM_SCM_DIRECT_PHYS)
 	int srcVM[1] = {VMID_HLOS};
 	int destVM[2] = {VMID_MSS_MSA, VMID_HLOS};
 	int destVMperm[2] = {PERM_READ | PERM_WRITE,
-	                     PERM_READ | PERM_WRITE};
+	                    PERM_READ | PERM_WRITE};
+#endif
 
 	node = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
 	if (!node) {
@@ -317,8 +319,14 @@ static int msm_audio_protect_memory_region(struct platform_device *pdev)
 	size = (size_t)rmem->size;
 
 	pr_err("%s: addr = %p size = %zu \n", __func__, (void*)(phys_addr_t)addr, (size_t)size);
+#if IS_ENABLED(CONFIG_QCOM_SCM_DIRECT_PHYS)
+	ret = qcom_scm_mem_protect_audio(addr, (size_t)size);
+	if (ret)
+		pr_err("%s: qcom_scm_mem_protect_audio failed, ret is %d\n", __func__, ret);
+	goto exit;
+#else
 	return hyp_assign_phys(addr, size, srcVM, 1, destVM, destVMperm, 2);
-
+#endif
 exit:
 	return ret;
 }
