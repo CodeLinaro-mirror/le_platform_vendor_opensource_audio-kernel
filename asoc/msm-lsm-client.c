@@ -4070,6 +4070,7 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
+	mutex_lock(&prtd->lsm_api_lock);
 	/*pack lsm_params to handle 32/64 bit issue*/
 	temp_ptr = (void *)p_data;
 	ptr_32 = (uintptr_t)(*((__u8 **) temp_ptr));
@@ -4084,7 +4085,8 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev, "%s: %s: Invalid num_params %d\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				lsm_params.num_params);
-		return -EINVAL;
+		err = -EINVAL;
+		goto err_free_pdata;
 	}
 
 	p_size = lsm_params.num_params *
@@ -4095,12 +4097,15 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 			"%s: %s: Invalid data_size(%u) against expected(%zd)\n",
 				__func__, "SET_MODULE_PARAMS(_V2)",
 				lsm_params.data_size, p_size);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_pdata;
 	}
 
 	params = kzalloc(p_size, GFP_KERNEL);
-	if (!params)
-		return -ENOMEM;
+	if (!params) {
+		err = -ENOMEM;
+		goto err_free_pdata;
+	}
 
 	if (copy_from_user(params, lsm_params.params,
 				lsm_params.data_size)) {
@@ -4108,7 +4113,8 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 				"%s: %s: copy_from_user failed, size = %d\n",
 				__func__, "set module params", lsm_params.data_size);
 		kfree(params);
-		return -EFAULT;
+		err = -EFAULT;
+		goto err_free_pdata;
 	}
 
 	memset(&info_v2, 0, sizeof(info_v2));
@@ -4140,8 +4146,15 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	}
 	kfree(params_temp);
 	kfree(p_data);
+	mutex_unlock(&prtd->lsm_api_lock);
 	mutex_unlock(&lsm_dev->lock);
 	return 0;
+
+err_free_pdata:
+	kfree(p_data);
+	mutex_unlock(&prtd->lsm_api_lock);
+	mutex_unlock(&lsm_dev->lock);
+	return err;
 }
 
 /*place holder for control get function*/
