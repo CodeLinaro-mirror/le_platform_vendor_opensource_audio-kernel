@@ -4088,6 +4088,7 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
+	mutex_lock(&prtd->lsm_api_lock);
 #ifdef __LP64__
 	lsm_params = *p_data;
 #else
@@ -4181,11 +4182,13 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	}
 	kfree(params_temp);
 	kfree(p_data);
+	mutex_unlock(&prtd->lsm_api_lock);
 	mutex_unlock(&lsm_dev->lock);
 	return 0;
 
 err_free_pdata:
 	kfree(p_data);
+	mutex_unlock(&prtd->lsm_api_lock);
 	mutex_unlock(&lsm_dev->lock);
 	return err;
 }
