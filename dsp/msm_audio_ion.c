@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
  */
 
 #include <linux/init.h>
@@ -315,8 +315,8 @@ static int msm_audio_protect_memory_region(struct platform_device *pdev)
 	}
 	addr = rmem->base;
 	size = (size_t)rmem->size;
-
-	pr_err("%s: addr = %p size = %zu \n", __func__, (void*)(phys_addr_t)addr, (size_t)size);
+	pr_err("%s: addr = %llx size = %zu sizeof(phys_addr_t)%d\n",
+               __func__,(unsigned long long)addr,(size_t)size,sizeof(phys_addr_t));
 	return hyp_assign_phys(addr, size, srcVM, 1, destVM, destVMperm, 2);
 
 exit:
