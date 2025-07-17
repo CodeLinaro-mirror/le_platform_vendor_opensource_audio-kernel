@@ -4162,13 +4162,37 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 	struct snd_pcm_substream *substream;
 	struct lsm_params_info_v2 p_info = {0};
 	struct snd_lsm_sound_model_v2 snd_model_v2;
+	struct lsm_char_dev *lsm_dev;
+	struct snd_soc_component *component = NULL;
 
-	get_substream_info(kcontrol, &substream);
+	if (get_substream_info(kcontrol, &substream))
+		return -ENODEV;
 
 	runtime = substream->runtime;
-	prtd = runtime->private_data;
 	rtd = substream->private_data;
+        component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: invalid component", __func__);
+		return -EINVAL;
+	}
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
 
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
 	p_info.stage_idx = LSM_STAGE_INDEX_FIRST;
 	p_info.param_type = LSM_DEREG_SND_MODEL;
 	sm = &prtd->lsm_client->stage_cfg[p_info.stage_idx].sound_model;
@@ -4179,6 +4203,7 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 			sizeof(struct snd_lsm_sound_model_v2))) {
 		dev_err(rtd->dev, "%s: copy_from_user failed\n",
 				__func__);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 	if (snd_model_v2.num_confidence_levels >
@@ -4187,6 +4212,7 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 				"%s: Invalid conf_levels = %d, maximum allowed = %d\n",
 				__func__, snd_model_v2.num_confidence_levels,
 				MAX_NUM_CONFIDENCE);
+		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 	rc = q6lsm_snd_model_buf_alloc(prtd->lsm_client,
@@ -4195,6 +4221,7 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev,
 				"%s: q6lsm buffer alloc failed V2, size %d\n",
 				__func__, snd_model_v2.data_size);
+		mutex_unlock(&lsm_dev->lock);
 		return rc;
 	}
 	if (memcpy(sm->data, snd_model_v2.data,
@@ -4204,6 +4231,7 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 				"data %pK size %d\n", __func__,
 				snd_model_v2.data, snd_model_v2.data_size);
 		q6lsm_snd_model_buf_free(prtd->lsm_client, &p_info, sm);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 
@@ -4220,6 +4248,7 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 		dev_err(rtd->dev,
 				"%s: get_conf_levels failed, err = %d\n",
 				__func__, rc);
+		mutex_unlock(&lsm_dev->lock);
 		return rc;
 	}
 
@@ -4236,6 +4265,7 @@ static int msm_lsm_reg_snd_model_put(struct snd_kcontrol *kcontrol,
 		kfree(prtd->lsm_client->confidence_levels);
 		prtd->lsm_client->confidence_levels = NULL;
 	}
+	mutex_unlock(&lsm_dev->lock);
 	return 0;
 }
 
@@ -4255,17 +4285,42 @@ static int msm_lsm_input_hw_params_put(struct snd_kcontrol *kcontrol,
 	struct lsm_hw_params *in_params;
 	struct snd_pcm_substream *substream;
 	struct snd_lsm_input_hw_params params;
+	struct lsm_char_dev *lsm_dev;
+	struct snd_soc_component *component = NULL;
 
-	get_substream_info(kcontrol, &substream);
+	if (get_substream_info(kcontrol, &substream))
+		return -ENODEV;
 
 	runtime = substream->runtime;
-	prtd = runtime->private_data;
 	rtd = substream->private_data;
+	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: invalid component\n", __func__);
+		return -EINVAL;
+	}
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
 
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
 	if (copy_from_user(&params, bytes, size)) {
 		dev_err(rtd->dev, "%s: %s: copy_from_user failed\n",
 				__func__, "LSM_SET_INPUT_HW_PARAMS");
 		__pm_relax(prtd->ws);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 
@@ -4273,6 +4328,7 @@ static int msm_lsm_input_hw_params_put(struct snd_kcontrol *kcontrol,
 	in_params->sample_rate = params.sample_rate;
 	in_params->sample_size = params.bit_width;
 	in_params->num_chs = params.num_channels;
+	mutex_unlock(&lsm_dev->lock);
 
 	return 0;
 }
@@ -4296,15 +4352,37 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 	struct snd_lsm_event_status *user;
 	struct snd_pcm_substream *substream;
 	uint16_t status = 0, payload_size = 0;
+	struct lsm_char_dev *lsm_dev;
+	struct snd_soc_component *component = NULL;
 
 	if (get_substream_info(kcontrol, &substream))
-		return 0;
+		return -ENODEV;
 
 	runtime = substream->runtime;
-	prtd = runtime->private_data;
 	rtd = substream->private_data;
+	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: invalid component", __func__);
+		return -EINVAL;
+	}
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
 
-
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
 	user_payload_size = size - sizeof(struct snd_lsm_event_status);
 
 	if (user_payload_size > LISTEN_MAX_STATUS_PAYLOAD_SIZE) {
@@ -4312,12 +4390,15 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 			"%s: payload_size %d is invalid, max allowed = %d\n",
 				__func__, user_payload_size,
 				LISTEN_MAX_STATUS_PAYLOAD_SIZE);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 
 	user = kzalloc(size, GFP_KERNEL);
-	if (!user)
+	if (!user) {
+		mutex_unlock(&lsm_dev->lock);
 		return -ENOMEM;
+	}
 
 	user->payload_size = user_payload_size;
 
@@ -4373,6 +4454,7 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
 		kfree(user);
+		mutex_unlock(&lsm_dev->lock);
 		return -EFAULT;
 	}
 
@@ -4383,6 +4465,7 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 		return -EFAULT;
 	}
 	kfree(user);
+	mutex_unlock(&lsm_dev->lock);
 	return 0;
 }
 
@@ -4811,6 +4894,7 @@ static int msm_lsm_create_char_dev(struct platform_device *pdev)
 		goto destroy_device;
 	}
 
+	mutex_init(&lsm_dev->lock);
 	dev_set_drvdata(&pdev->dev, lsm_dev);
 
 	return 0;
@@ -4849,6 +4933,7 @@ static int msm_lsm_remove(struct platform_device *pdev)
 #ifdef ENABLE_SVA_MIXER_CTL
 	struct lsm_char_dev *lsm_dev;
 	lsm_dev = dev_get_drvdata(&pdev->dev);
+	mutex_destroy(&lsm_dev->lock);
 
 	msm_lsm_destroy_char_dev(lsm_dev);
 #endif
