@@ -157,7 +157,7 @@ endif
 
 # for BENGAL sound card driver
 ifdef CONFIG_SND_SOC_BENGAL
-        ifeq ($(TARGET_PRODUCT),bengal_2w_v2)
+        ifeq ($(filter $(TARGET_PRODUCT), bengal_2w_v2 bengal_auto), $(TARGET_PRODUCT))
 		MACHINE_OBJS += bengal-v2.o
         else
 		MACHINE_OBJS += bengal.o

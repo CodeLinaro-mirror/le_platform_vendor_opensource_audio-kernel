@@ -51,7 +51,7 @@ COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
 # for ROULEUR Codec
 ifdef CONFIG_SND_SOC_ROULEUR
-        ifeq ($(TARGET_PRODUCT),bengal_2w_v2)
+        ifeq ($(filter $(TARGET_PRODUCT), bengal_2w_v2 bengal_auto), $(TARGET_PRODUCT))
 		ROULEUR_OBJS += rouleur-v2.o
         else
 		ROULEUR_OBJS += rouleur.o
