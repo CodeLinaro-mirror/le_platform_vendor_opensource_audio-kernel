@@ -33,8 +33,13 @@ ifeq ($(CONFIG_SND_SOC_AUTO), y)
 		INCS    +=  -include $(AUDIO_ROOT)/config/sa6155autoconf.h
 	endif
 	ifdef CONFIG_SND_SOC_GVM
-		include $(AUDIO_ROOT)/config/gvmauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
+		ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
+			include $(AUDIO_ROOT)/config/gvmautolv.conf
+			INCS    +=  -include $(AUDIO_ROOT)/config/gvmautolvconf.h
+		else
+			include $(AUDIO_ROOT)/config/gvmauto.conf
+			INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
+		endif
 	endif
 	ifdef CONFIG_SND_SOC_GVM_SA8295
 		include $(AUDIO_ROOT)/config/sa8295gvmauto.conf
@@ -94,8 +99,13 @@ else
 			INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
 		endif
 		ifeq ($(CONFIG_QTI_QUIN_GVM), y)
-			include $(AUDIO_ROOT)/config/gvmauto.conf
-			INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
+			ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
+				include $(AUDIO_ROOT)/config/gvmautolv.conf
+				INCS    +=  -include $(AUDIO_ROOT)/config/gvmautolvconf.h
+			else
+				include $(AUDIO_ROOT)/config/gvmauto.conf
+				INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
+			endif
 		endif
 	endif
 endif

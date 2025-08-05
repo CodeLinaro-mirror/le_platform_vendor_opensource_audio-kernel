@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 /*
  * Copyright 2011, The Android Open Source Project
@@ -10787,7 +10787,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	const struct of_device_id *match;
 
 	if (first_probe) {
+#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
 		bootmarker_place_marker("M - DRIVER Audio Init");
+#else
+		dev_err(&pdev->dev, "M - DRIVER Audio Init\n");
+#endif
 		first_probe = 0;
 	}
 
@@ -10893,7 +10897,12 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	snd_card_set_card_status(SND_CARD_STATUS_ONLINE);
 
-	bootmarker_place_marker("M - DRIVER Audio Ready");
+#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
+		bootmarker_place_marker("M - DRIVER Audio Ready");
+#else
+		dev_err(&pdev->dev, "M - DRIVER Audio Ready\n");
+#endif
+
 	return 0;
 err:
 	msm_release_pinctrl(pdev);

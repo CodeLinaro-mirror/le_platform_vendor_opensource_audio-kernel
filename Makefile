@@ -1,12 +1,20 @@
 # auto-detect subdirs
+ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
+LEGACY_PATH=$(PWD)/../../../../vendor/qcom/opensource/audio-kernel
+else
 ifeq ($(QTI_TECHPACK), true)
 LEGACY_PATH=$(PWD)/../vendor/qcom/opensource/audio-kernel
 else
 LEGACY_PATH=$(PWD)/../vendor/qcom/opensource/audio-kernel/legacy
 endif
+endif
 ifneq ($(CONFIG_ARCH_QTI_VM), y)
 ifeq ($(CONFIG_QTI_QUIN_GVM), y)
+ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
+include $(LEGACY_PATH)/config/gvmautolv.conf
+else
 include $(LEGACY_PATH)/config/gvmauto.conf
+endif
 endif
 ifeq ($(CONFIG_ARCH_SDXPOORWILLS), y)
 include $(LEGACY_PATH)/config/sdxpoorwillsauto.conf
@@ -51,8 +59,13 @@ LINUXINCLUDE    += \
                 -I$(LEGACY_PATH)/include
 
 ifeq ($(CONFIG_QTI_QUIN_GVM), y)
+ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
+LINUXINCLUDE    += \
+                -include $(LEGACY_PATH)/config/gvmautolvconf.h
+else
 LINUXINCLUDE    += \
                 -include $(LEGACY_PATH)/config/gvmautoconf.h
+endif
 endif
 ifeq ($(CONFIG_ARCH_SDXPOORWILLS), y)
 LINUXINCLUDE    += \
