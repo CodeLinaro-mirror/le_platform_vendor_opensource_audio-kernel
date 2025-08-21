@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -2052,8 +2052,11 @@ static int adm_memory_map_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 			* bufcnt;
 
 	mmap_region_cmd = kzalloc(cmd_size, GFP_KERNEL);
-	if (!mmap_region_cmd)
+	if (!mmap_region_cmd) {
+		pr_err("%s, mmap_region_cmd memory alloc failed, with cmd_size %d\n",
+			__func__, cmd_size);
 		return -ENOMEM;
+	}
 
 	mmap_regions = (struct avs_cmd_shared_mem_map_regions *)mmap_region_cmd;
 	mmap_regions->hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -2863,6 +2866,8 @@ static int adm_arrange_mch_map_v8(
 {
 	int rc = 0, idx;
 
+	pr_debug("%s: channel mode %d", __func__, channel_mode);
+
 	memset(ep_payload->dev_channel_mapping,
 			0, PCM_FORMAT_MAX_NUM_CHANNEL_V8);
 	switch (path) {
@@ -3201,8 +3206,10 @@ static int adm_copp_set_ec_ref_mfc_cfg_v2(int port_id, int copp_idx,
 	struct adm_device_endpoint_payload ep_payload = {0, 0, 0, {0} };
 	int in_channels, out_channels;
 
-	if (!cfg)
+	if (!cfg) {
+		pr_err("%s, Invalid msm_pcm_channel_mixer received\n", __func__);
 		return -EINVAL;
+	}
 	in_channels = cfg->input_channel;
 	out_channels = cfg->output_channel;
 
@@ -3269,8 +3276,10 @@ static int adm_copp_set_ec_ref_mfc_cfg_v2(int port_id, int copp_idx,
 
 	pr_debug("%s: chmixer param sz = %d\n", __func__, param_size);
 	chmixer_params = kzalloc(param_size, GFP_KERNEL);
-	if (!chmixer_params)
+	if (!chmixer_params) {
+		pr_err("%s, chmixer_params memory alloc failed\n", __func__);
 		return -ENOMEM;
+	}
 
 	/* param[0] and [1] represents chmixer rule(always 0) */
 	param_index = 2;
@@ -3707,8 +3716,10 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 
 			open_v8.hdr.pkt_size = param_size;
 			adm_params = kzalloc(param_size, GFP_KERNEL);
-			if (!adm_params)
+			if (!adm_params) {
+				pr_err("%s: memory allocation failure for adm_params\n", __func__);
 				return -ENOMEM;
+			}
 			memcpy(adm_params, &open_v8, sizeof(open_v8));
 			memcpy(adm_params + sizeof(open_v8),
 					(void *)&ep1_payload,
@@ -3913,10 +3924,14 @@ void adm_copp_mfc_cfg(int port_id, int copp_idx, int dst_sample_rate)
 		pr_err("%s: unable to get channal map\n", __func__);
 		goto fail_cmd;
 	}
-
-	for (i = 0; i < mfc_cfg.num_channels; i++)
-		mfc_cfg.channel_type[i] =
+	if (mfc_cfg.num_channels <= AUDPROC_MFC_OUT_CHANNELS_MAX) {
+		for (i = 0; i < mfc_cfg.num_channels; i++)
+			mfc_cfg.channel_type[i] =
 			(uint16_t) open.dev_channel_mapping[i];
+	} else {
+		pr_err("%s: size of  num_channels is greater than channel type\n", __func__);
+		goto fail_cmd;
+	}
 
 	atomic_set(&this_adm.copp.stat[port_idx][copp_idx], -1);
 

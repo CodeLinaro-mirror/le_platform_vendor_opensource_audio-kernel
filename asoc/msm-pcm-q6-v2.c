@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -12,6 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/version.h>
+#include <linux/bootmarker_kernel.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -31,9 +32,6 @@
 #include <dsp/q6audio-v2.h>
 #include <dsp/q6core.h>
 #include <dsp/q6asm-v2.h>
-#ifdef CONFIG_MSM_BOOT_STATS
-#include <soc/qcom/boot_stats.h>
-#endif
 
 #include "msm-pcm-q6-v2.h"
 #include "msm-pcm-routing-v2.h"
@@ -935,13 +933,7 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (first_time) {
-#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
-#ifdef CONFIG_MSM_BOOT_STATS
-			place_marker("K - Early chime");
-#endif
-#else
-			pr_err("boot_kpi: K - Early chime\n");
-#endif
+			bootmarker_place_marker("K - Early chime");
 			first_time = 0;
 		}
 		pr_debug("%s: Trigger start\n", __func__);
@@ -2678,10 +2670,17 @@ static int msm_pcm_channel_mixer_cfg_ctl_put(struct snd_kcontrol *kcontrol,
 	if (chmixer_pspd->enable && prtd && prtd->audio_client) {
 		stream_id = prtd->audio_client->session;
 		be_id = chmixer_pspd->port_idx;
+#ifdef CONFIG_AUTO_AUDIO
 		msm_pcm_routing_set_channel_mixer_runtime(fe_id, be_id,
 				stream_id,
 				session_type,
 				chmixer_pspd);
+#else
+		msm_pcm_routing_set_channel_mixer_runtime(be_id,
+				stream_id,
+				session_type,
+				chmixer_pspd);
+#endif
 	}
 
 	if (reset_override_out_ch_map)

@@ -1,5 +1,5 @@
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -23,6 +23,7 @@
 #include <linux/of_device.h>
 #include <linux/pm_qos.h>
 #include <linux/version.h>
+#include <linux/bootmarker_kernel.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -30,7 +31,6 @@
 #include <sound/pcm_params.h>
 #include <sound/info.h>
 #include <dsp/audio_notifier.h>
-#include <soc/qcom/boot_stats.h>
 #include "msm_dailink.h"
 
 
@@ -832,11 +832,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	struct msm_asoc_mach_data *pdata;
 	int ret;
 
-#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
-	place_marker("M - DRIVER Audio Init");
-#else
-	pr_err("boot_kpi: M - DRIVER Audio Init\n");
-#endif
+	bootmarker_place_marker("M - DRIVER Audio Init");
 
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "No platform supplied from device tree\n");
@@ -889,11 +885,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	dev_info(&pdev->dev, "Sound card %s registered\n", card->name);
 	pr_err("Sound card %s registered\n", card->name);
 
-#if (KERNEL_VERSION(6, 1, 0) > LINUX_VERSION_CODE)
-	place_marker("M - DRIVER Audio Ready");
-#else
-	pr_err("boot_kpi: M - DRIVER Audio Ready\n");
-#endif
+	bootmarker_place_marker("M - DRIVER Audio Ready");
 
 	spdev = pdev;
 
