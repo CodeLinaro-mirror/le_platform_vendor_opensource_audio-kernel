@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 /*
 * Add support for 24 and 32bit format for ASM loopback and playback session.
@@ -601,10 +601,10 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	prtd->channel_mode = runtime->channels;
 	if (prtd->enabled) {
 
-		pr_info("%s: start=%d, out_needed=%d, out_count=%d, periods=%d\n", __func__,
-			atomic_read(&prtd->start), atomic_read(&prtd->out_needed), atomic_read(&prtd->out_count), runtime->periods);
+		pr_info("%s: start=%d, out_needed=%d, out_count=%d, periods=%d, mmap=%d, state=%d\n", __func__,
+			atomic_read(&prtd->start), atomic_read(&prtd->out_needed), atomic_read(&prtd->out_count), runtime->periods, prtd->mmap_flag, substream->runtime->status->state);
 
-		if (!atomic_read(&prtd->start)) {
+		if (!atomic_read(&prtd->start) && (substream->runtime->status->state == SNDRV_PCM_STATE_XRUN)) {
 			while (atomic_read(&prtd->out_needed) && (runtime->periods > atomic_read(&prtd->out_count)))  {
 				q6asm_cpu_buf_release(IN, prtd->audio_client);
 				atomic_dec(&prtd->out_needed);
