@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -2451,6 +2451,12 @@ int msm_pcm_routing_set_channel_mixer_runtime(int fe_id, int be_id, int session_
 	}
 	pr_debug("%s: port_id - %d, copp_idx %d session id - %d\n",
 		 __func__, port_id, copp_idx, session_id);
+
+	if (copp_idx < 0) {
+		pr_err("%s: invalid copp id %d\n", __func__,
+					copp_idx);
+		return -EINVAL;
+	}
 
 	if ((params->input_channel < 0) ||
 		(params->input_channel > ADM_MAX_CHANNELS)) {
