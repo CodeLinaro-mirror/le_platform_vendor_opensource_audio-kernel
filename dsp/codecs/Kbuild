@@ -61,6 +61,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_YUPIK), y)
+		include $(AUDIO_ROOT)/config/lahainaauto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
+	endif
 	ifeq ($(CONFIG_QTI_QUIN_GVM), y)
 		ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
 			include $(AUDIO_ROOT)/config/gvmautolv.conf
