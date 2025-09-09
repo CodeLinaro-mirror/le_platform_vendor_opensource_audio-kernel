@@ -49,8 +49,8 @@ ddk_headers(
     hdrs = [":audio_common_headers",  ":audio_uapi_headers", ":audio_src_headers", ":audio_configs"]
 )
 
-load(":build/mdm9607.bzl", "define_mdm9607")
+load(":build/lahaina.bzl", "define_lahaina")
 
-define_mdm9607()
+define_lahaina()
 
 
