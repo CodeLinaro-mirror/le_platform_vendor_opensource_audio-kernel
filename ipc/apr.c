@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/kernel.h>
@@ -322,7 +322,11 @@ static void apr_adsp_up(void)
 {
 	if (apr_get_q6_state() != APR_SUBSYS_LOADED) {
 		pr_info("%s: Q6 is Up\n", __func__);
-		bootmarker_place_marker("M - ADSP Ready");
+		#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
+			bootmarker_place_marker("M - ADSP Ready");
+		#else
+			dev_err(&pdev->dev, "M - ADSP Ready\n");
+		#endif
 		apr_set_q6_state(APR_SUBSYS_LOADED);
 
 		spin_lock(&apr_priv->apr_lock);
