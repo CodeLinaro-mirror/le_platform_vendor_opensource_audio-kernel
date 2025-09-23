@@ -2939,7 +2939,11 @@ static int msm_pcm_add_platform_controls(struct snd_kcontrol_new *kctl,
 	}
 
 	kctl->name = mixer_name;
+#ifdef QC_CHANNEL_MIXER_SUPPORT
 	ret = snd_soc_add_component_controls(component, kctl, 1);
+#else
+	ret = 0;
+#endif
 	kfree(mixer_name);
 	return ret;
 }
@@ -2960,7 +2964,9 @@ static int msm_pcm_add_channel_mixer_output_map_controls(
 {
 	struct snd_pcm *pcm = rtd->pcm;
 	const char *playback_mixer_ctl_name	= "AudStr";
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	const char *capture_mixer_ctl_name	= "AudStr Capture";
+#endif
 	const char *suffix		= "ChMixer Output Map";
 	int session_type = 0, ret = 0, channel = -1;
 	struct snd_kcontrol_new channel_mixer_output_map_control = {
@@ -2980,7 +2986,7 @@ static int msm_pcm_add_channel_mixer_output_map_controls(
 		if (ret < 0)
 			goto fail;
 	}
-
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream != NULL) {
 		session_type = SESSION_TYPE_TX;
 		ret = msm_pcm_add_platform_controls(&channel_mixer_output_map_control,
@@ -2988,6 +2994,7 @@ static int msm_pcm_add_channel_mixer_output_map_controls(
 		if (ret < 0)
 			goto fail;
 	}
+#endif
 	return 0;
 
 fail:
@@ -3012,7 +3019,9 @@ static int msm_pcm_add_channel_mixer_input_map_controls(
 {
 	struct snd_pcm *pcm = rtd->pcm;
 	const char *playback_mixer_ctl_name	= "AudStr";
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	const char *capture_mixer_ctl_name	= "AudStr Capture";
+#endif
 	const char *suffix = "ChMixer Input Map";
 	int session_type = 0, ret = 0, channel = -1;
 	struct snd_kcontrol_new channel_mixer_input_map_control = {
@@ -3032,7 +3041,7 @@ static int msm_pcm_add_channel_mixer_input_map_controls(
 		if (ret < 0)
 			goto fail;
 	}
-
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream != NULL) {
 		session_type = SESSION_TYPE_TX;
 		ret = msm_pcm_add_platform_controls(&channel_mixer_input_map_control,
@@ -3040,6 +3049,7 @@ static int msm_pcm_add_channel_mixer_input_map_controls(
 		if (ret < 0)
 			goto fail;
 	}
+#endif
 	return 0;
 
 fail:
@@ -3066,7 +3076,9 @@ static int msm_pcm_add_channel_mixer_cfg_controls(
 {
 	struct snd_pcm *pcm = rtd->pcm;
 	const char *playback_mixer_ctl_name	= "AudStr";
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	const char *capture_mixer_ctl_name	= "AudStr Capture";
+#endif
 	const char *suffix		= "ChMixer Cfg";
 	int session_type = 0, ret = 0, channel = -1;
 	struct msm_plat_data *pdata = NULL;
@@ -3099,7 +3111,7 @@ static int msm_pcm_add_channel_mixer_cfg_controls(
 		if (ret < 0)
 			goto fail;
 	}
-
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream != NULL) {
 		session_type = SESSION_TYPE_TX;
 		ret = msm_pcm_add_platform_controls(&channel_mixer_cfg_control,
@@ -3107,6 +3119,7 @@ static int msm_pcm_add_channel_mixer_cfg_controls(
 		if (ret < 0)
 			goto fail;
 	}
+#endif
 	return 0;
 
 fail:
@@ -3133,7 +3146,9 @@ static int msm_pcm_add_channel_mixer_weight_controls(
 {
 	struct snd_pcm *pcm = rtd->pcm;
 	const char *playback_mixer_ctl_name	= "AudStr";
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	const char *capture_mixer_ctl_name	= "AudStr Capture";
+#endif
 	const char *suffix		= "ChMixer Weight Ch";
 	int session_type = 0, ret = 0;
 	struct snd_kcontrol_new channel_mixer_weight_control = {
@@ -3153,7 +3168,7 @@ static int msm_pcm_add_channel_mixer_weight_controls(
 		if (ret < 0)
 			goto fail;
 	}
-
+#ifdef QC_CAP_CHANNEL_MIXER_SUPPORT
 	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream != NULL) {
 		session_type = SESSION_TYPE_TX;
 		ret = msm_pcm_add_platform_controls(&channel_mixer_weight_control,
@@ -3161,6 +3176,7 @@ static int msm_pcm_add_channel_mixer_weight_controls(
 		if (ret < 0)
 			goto fail;
 	}
+#endif
 	return 0;
 
 fail:
@@ -3169,6 +3185,8 @@ fail:
 
 	return ret;
 }
+
+#ifdef QC_EC_CHANNEL_MIXER_SUPPORT
 
 static int msm_pcm_chmixer_ec_ref_cfg_info(struct snd_kcontrol *kcontrol,
 				       struct snd_ctl_elem_info *uinfo)
@@ -3246,6 +3264,7 @@ static int msm_pcm_chmixer_ec_ref_cfg_ctl_put(
 
 	return 0;
 }
+
 
 static int msm_pcm_add_chmixer_ec_ref_controls(
 		struct snd_soc_pcm_runtime *rtd)
@@ -3621,7 +3640,7 @@ fail:
 		 __func__, ret);
 	return ret;
 }
-
+#endif
 static int msm_pcm_add_channel_mixer_controls(struct snd_soc_pcm_runtime *rtd)
 {
 	int i, ret = 0;
@@ -3700,6 +3719,8 @@ static int msm_pcm_add_channel_mixer_controls(struct snd_soc_pcm_runtime *rtd)
 		goto fail;
 	}
 
+#ifdef QC_EC_CHANNEL_MIXER_SUPPORT
+
 	ret = msm_pcm_add_chmixer_ec_ref_controls(rtd);
 	if (ret) {
 		pr_err("%s: pcm add ef_ref channel mixer cfg controls failed:%d\n",
@@ -3719,7 +3740,7 @@ static int msm_pcm_add_channel_mixer_controls(struct snd_soc_pcm_runtime *rtd)
 				__func__, ret);
 		goto fail;
 	}
-
+#endif
 	for (i = 1; i <= PCM_FORMAT_MAX_NUM_CHANNEL_V8; i++) {
 		ret =  msm_pcm_add_channel_mixer_weight_controls(rtd, i);
 		if (ret) {
@@ -3727,13 +3748,14 @@ static int msm_pcm_add_channel_mixer_controls(struct snd_soc_pcm_runtime *rtd)
 				__func__, ret);
 			goto fail;
 		}
-
+#ifdef QC_EC_CHANNEL_MIXER_SUPPORT
 		ret =  msm_pcm_add_chmixer_ec_ref_weight_controls(rtd, i);
 		if (ret) {
 			pr_err("%s: pcm add ec_ref channel weight controls failed:%d\n",
 				__func__, ret);
 			goto fail;
 		}
+#endif
 	}
 	return 0;
 

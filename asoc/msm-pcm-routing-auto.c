@@ -3515,6 +3515,7 @@ static int msm_routing_put_fm_pcmrx_switch_mixer(struct snd_kcontrol *kcontrol,
 	return 1;
 }
 
+#ifdef QC_LSM_SUPPORT
 static void msm_routing_get_lsm_fe_idx(struct snd_kcontrol *kcontrol,
 						u8 *fe_idx)
 {
@@ -3790,7 +3791,7 @@ static int msm_routing_lsm_func_put(struct snd_kcontrol *kcontrol,
 		 mad_type);
 	return afe_port_set_mad_type(port_id, mad_type);
 }
-
+#endif
 static const char *const adm_override_chs_text[] = {"Zero", "One", "Two", "Three", "Four"};
 
 static SOC_ENUM_SINGLE_EXT_DECL(adm_override_chs,
@@ -6515,7 +6516,7 @@ static const struct snd_kcontrol_new sen_mi2s_rx_switch_mixer_controls =
 	msm_routing_put_sen_mi2s_switch_mixer);
 #endif
 
-
+#ifdef QC_INTERNAL_BT
 static const struct snd_kcontrol_new int_bt_sco_rx_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia1", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_INT_BT_SCO_RX,
@@ -6690,6 +6691,7 @@ static const struct snd_kcontrol_new int_bt_a2dp_rx_mixer_controls[] = {
 	msm_routing_put_audio_mixer),
 };
 
+#endif
 static const struct snd_kcontrol_new int_fm_rx_mixer_controls[] = {
 	SOC_DOUBLE_EXT("MultiMedia1", SND_SOC_NOPM,
 	MSM_BACKEND_DAI_INT_FM_RX,
@@ -25153,6 +25155,7 @@ static const char * const lsm_func_text[] = {
 static const struct soc_enum lsm_func_enum =
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(lsm_func_text), lsm_func_text);
 
+#ifdef QC_LSM_SUPPORT
 static const struct snd_kcontrol_new lsm_controls[] = {
 	/* kcontrol of lsm_function */
 	SOC_ENUM_EXT(TERT_MI2S_TX_TEXT" "LSM_FUNCTION_TEXT, lsm_func_enum,
@@ -25193,7 +25196,7 @@ static const struct snd_kcontrol_new lsm_controls[] = {
 			  msm_routing_lsm_port_get,
 			  msm_routing_lsm_port_put),
 };
-
+#endif
 
 static int msm_routing_get_app_type_cfg_control(struct snd_kcontrol *kcontrol,
 					  struct snd_ctl_elem_value *ucontrol)
@@ -25912,11 +25915,13 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_DAPM_MIXER("MultiMedia34 Mixer", SND_SOC_NOPM, 0, 0,
 	mmul34_mixer_controls, ARRAY_SIZE(mmul34_mixer_controls)),
 	/* Voice Mixer */
+#ifdef QC_INTERNAL_BT
 	SND_SOC_DAPM_MIXER("INTERNAL_BT_SCO_RX Audio Mixer", SND_SOC_NOPM, 0, 0,
 	int_bt_sco_rx_mixer_controls, ARRAY_SIZE(int_bt_sco_rx_mixer_controls)),
 	SND_SOC_DAPM_MIXER("INTERNAL_A2DP_RX Audio Mixer", SND_SOC_NOPM, 0, 0,
 			int_bt_a2dp_rx_mixer_controls,
 			ARRAY_SIZE(int_bt_a2dp_rx_mixer_controls)),
+#endif
 	SND_SOC_DAPM_MIXER("AFE_PCM_RX Audio Mixer", SND_SOC_NOPM, 0, 0,
 	afe_pcm_rx_mixer_controls, ARRAY_SIZE(afe_pcm_rx_mixer_controls)),
 	SND_SOC_DAPM_MIXER("AFE_PCM_RX1 Audio Mixer", SND_SOC_NOPM, 0, 0,
@@ -25929,6 +25934,7 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	SND_SOC_NOPM, 0, 0, afe_pcm_rx_port_mixer_controls,
 	ARRAY_SIZE(afe_pcm_rx_port_mixer_controls)),
 	/* lsm mixer definitions */
+#ifdef QC_LSM_SUPPORT
 	SND_SOC_DAPM_MIXER("LSM1 Mixer", SND_SOC_NOPM, 0, 0,
 	lsm1_mixer_controls, ARRAY_SIZE(lsm1_mixer_controls)),
 	SND_SOC_DAPM_MIXER("LSM2 Mixer", SND_SOC_NOPM, 0, 0,
@@ -25945,6 +25951,7 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 	lsm7_mixer_controls, ARRAY_SIZE(lsm7_mixer_controls)),
 	SND_SOC_DAPM_MIXER("LSM8 Mixer", SND_SOC_NOPM, 0, 0,
 	lsm8_mixer_controls, ARRAY_SIZE(lsm8_mixer_controls)),
+#endif
 	/* Virtual Pins to force backends ON atm */
 	SND_SOC_DAPM_OUTPUT("BE_OUT"),
 	SND_SOC_DAPM_INPUT("BE_IN"),
@@ -32888,6 +32895,7 @@ static const struct snd_kcontrol_new port_multi_channel_map_mixer_controls[] = {
 			msm_routing_put_port_chmap_mixer),
 };
 
+#ifdef QC_BACKEND_TABLE
 static int msm_routing_be_dai_name_table_info(struct snd_kcontrol *kcontrol,
 					      struct snd_ctl_elem_info *uinfo)
 {
@@ -32946,6 +32954,8 @@ static const struct snd_kcontrol_new
 		}
 	},
 };
+
+#endif
 
 static int msm_routing_put_mclk_src_cfg(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
@@ -33911,25 +33921,28 @@ static int msm_routing_probe(struct snd_soc_component *component)
 	snd_soc_dapm_add_routes_aux_pcm(component);
 	snd_soc_dapm_new_widgets(component->dapm.card);
 
+#ifdef QC_LSM_SUPPORT
 	snd_soc_add_component_controls(component, lsm_controls,
 				      ARRAY_SIZE(lsm_controls));
-
+#endif
 	snd_soc_add_component_controls(component, app_type_cfg_controls,
 				      ARRAY_SIZE(app_type_cfg_controls));
 
+#ifdef QC_LSM_SUPPORT
 	snd_soc_add_component_controls(component, lsm_app_type_cfg_controls,
 				      ARRAY_SIZE(lsm_app_type_cfg_controls));
-
+#endif
 	snd_soc_add_component_controls(component, module_cfg_controls,
 				      ARRAY_SIZE(module_cfg_controls));
 
 	snd_soc_add_component_controls(component, ec_ref_param_controls,
 				ARRAY_SIZE(ec_ref_param_controls));
 	msm_qti_pp_add_controls(component);
+#ifdef QC_BACKEND_TABLE
 	snd_soc_add_component_controls(component,
 		msm_routing_be_dai_name_table_mixer_controls,
 		ARRAY_SIZE(msm_routing_be_dai_name_table_mixer_controls));
-
+#endif
 	/* Add doa control based on config */
 	snd_soc_add_component_controls(component, adm_channel_config_controls,
 				ARRAY_SIZE(adm_channel_config_controls));
