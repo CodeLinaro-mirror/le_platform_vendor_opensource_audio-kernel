@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2014, 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -178,7 +178,11 @@ load_adsp:
 	{
 		adsp_state = apr_get_q6_state();
 		if (adsp_state == APR_SUBSYS_DOWN) {
+#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
 			bootmarker_place_marker("M - Start ADSP");
+#else
+			dev_err(&pdev->dev, "M - Start ADSP\n");
+#endif
 			rc = rproc_boot(priv->pil_h);
 
 			if (rc) {
