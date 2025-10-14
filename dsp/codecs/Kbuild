@@ -62,8 +62,13 @@ ifeq ($(KERNEL_BUILD), 0)
 		INCS    +=  -include $(AUDIO_ROOT)/config/qcs405autoconf.h
 	endif
 	ifeq ($(CONFIG_QTI_QUIN_GVM), y)
-		include $(AUDIO_ROOT)/config/gvmauto.conf
-		INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
+		ifeq ($(QTI_TECHPACK_KERNEL_6_1), true)
+			include $(AUDIO_ROOT)/config/gvmautolv.conf
+			INCS    +=  -include $(AUDIO_ROOT)/config/gvmautolvconf.h
+		else
+			include $(AUDIO_ROOT)/config/gvmauto.conf
+			INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
+		endif
 	endif
 endif
 

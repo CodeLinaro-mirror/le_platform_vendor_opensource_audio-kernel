@@ -1,5 +1,5 @@
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -832,7 +832,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	struct msm_asoc_mach_data *pdata;
 	int ret;
 
+#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
 	bootmarker_place_marker("M - DRIVER Audio Init");
+#else
+	dev_err(&pdev->dev, "M - DRIVER Audio Init\n");
+#endif
 
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "No platform supplied from device tree\n");
@@ -885,7 +889,11 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	dev_info(&pdev->dev, "Sound card %s registered\n", card->name);
 	pr_err("Sound card %s registered\n", card->name);
 
+#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
 	bootmarker_place_marker("M - DRIVER Audio Ready");
+#else
+	dev_err(&pdev->dev, "M - DRIVER Audio Ready\n");
+#endif
 
 	spdev = pdev;
 
