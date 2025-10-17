@@ -10,6 +10,7 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/ratelimit.h>
@@ -107,7 +108,7 @@ int bolero_rsc_clk_reset(struct device *dev, int clk_id)
 	int count = 0;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null \n", __func__);
 		return -EINVAL;
 	}
 
@@ -153,7 +154,7 @@ void bolero_clk_rsc_enable_all_clocks(struct device *dev, bool enable)
 	int i = 0;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null \n", __func__);
 		return;
 	}
 
@@ -451,7 +452,7 @@ void bolero_clk_rsc_fs_gen_request(struct device *dev, bool enable)
 	struct bolero_clk_rsc *priv = NULL;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null \n", __func__);
 		return;
 	}
 	clk_dev = bolero_get_rsc_clk_device_ptr(dev->parent);
@@ -527,7 +528,7 @@ int bolero_clk_rsc_request_clock(struct device *dev,
 	bool mux_switch = false;
 
 	if (!dev) {
-		pr_err("%s: dev is null %d\n", __func__);
+		pr_err("%s: dev is null \n", __func__);
 		return -EINVAL;
 	}
 	if ((clk_id_req < 0 || clk_id_req >= MAX_CLK) &&
@@ -724,18 +725,29 @@ err:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void bolero_clk_rsc_remove(struct platform_device *pdev)
+#else
 static int bolero_clk_rsc_remove(struct platform_device *pdev)
+#endif
 {
+	int rc = 0;
 	struct bolero_clk_rsc *priv = dev_get_drvdata(&pdev->dev);
 
 	bolero_unregister_res_clk(&pdev->dev);
 	of_platform_depopulate(&pdev->dev);
-	if (!priv)
-		return -EINVAL;
+	if (!priv) {
+		rc = -EINVAL;
+		goto exit;
+	}
 	mutex_destroy(&priv->rsc_clk_lock);
 	mutex_destroy(&priv->fs_gen_lock);
-
-	return 0;
+exit:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
+	return rc;
+#endif
 }
 
 static const struct of_device_id bolero_clk_rsc_dt_match[] = {
