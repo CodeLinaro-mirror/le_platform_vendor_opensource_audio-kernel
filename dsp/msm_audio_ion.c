@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -12,18 +12,30 @@
 #include <linux/slab.h>
 #include <linux/mutex.h>
 #include <linux/list.h>
-#include <linux/dma-mapping.h>
+#include <linux/dma-map-ops.h>
 #include <linux/dma-buf.h>
-#include <linux/iosys-map.h>
+#include <linux/dma-mapping.h>
 #include <linux/dma-heap.h>
+#include <linux/iosys-map.h>
 #include <linux/platform_device.h>
+#include <linux/of_platform.h>
 #include <linux/of_device.h>
 #include <linux/export.h>
+#include <linux/ioctl.h>
+#include <linux/compat.h>
+#include <linux/cdev.h>
+#include <linux/fs.h>
+#include <linux/device.h>
+#include <linux/version.h>
+#ifndef CONFIG_SPF_CORE
 #include <ipc/apr.h>
+#endif
 #include <dsp/msm_audio_ion.h>
+#include <linux/msm_audio.h>
+#include <linux/firmware/qcom/qcom_scm.h>
 #include <soc/qcom/secure_buffer.h>
+#include <linux/of.h>
 #include <linux/of_reserved_mem.h>
-#include <linux/qcom_scm.h>
 
 MODULE_IMPORT_NS(DMA_BUF);
 
@@ -40,6 +52,10 @@ enum msm_audio_mem_type {
 	MSM_AUDIO_MEM_TYPE_DMA,
 };
 
+#define TZ_PIL_PROTECT_MEM_SUBSYS_ID 0x0C
+#define TZ_PIL_CLEAR_PROTECT_MEM_SUBSYS_ID 0x0D
+#define MSM_AUDIO_ION_DRIVER_NAME "msm_audio_ion"
+#define MINOR_NUMBER_COUNT 1
 struct msm_audio_ion_private {
 	bool smmu_enabled;
 	struct device *cb_dev;
@@ -154,8 +170,13 @@ static int msm_audio_ion_dma_buf_map(struct dma_buf *dma_buf,
 	 * read buffer, hence the request is bi-directional
 	 * to accommodate both read and write mappings.
 	 */
+#if (KERNEL_VERSION(6, 2, 0) <= LINUX_VERSION_CODE)
+	alloc_data->table = dma_buf_map_attachment_unlocked(alloc_data->attach,
+				DMA_BIDIRECTIONAL);
+#else
 	alloc_data->table = dma_buf_map_attachment(alloc_data->attach,
 				DMA_BIDIRECTIONAL);
+#endif
 	if (IS_ERR(alloc_data->table)) {
 		rc = PTR_ERR(alloc_data->table);
 		dev_err(cb_dev,
@@ -430,7 +451,10 @@ static int msm_audio_ion_map_buf(void *handle, dma_addr_t *paddr,
 		pr_err("%s: ION memory mapping for AUDIO failed, err:%d\n",
 				__func__, rc);
 		rc = -ENOMEM;
+		mutex_lock(&(msm_audio_ion_data.list_mutex));
+		//msm_audio_dma_buf_unmap(dma_buf, ion_data);
 		msm_audio_dma_buf_unmap((struct dma_buf *)handle, false);
+		mutex_unlock(&(msm_audio_ion_data.list_mutex));
 		goto err;
 	}
 
@@ -907,6 +931,7 @@ static int msm_audio_ion_probe(struct platform_device *pdev)
 	struct of_phandle_args iommuspec;
 
 
+	dev_err(dev, "%s: msm_audio_ion_probe\n", __func__);
 	if (dev->of_node == NULL) {
 		dev_err(dev,
 			"%s: device tree is not found\n",
@@ -1004,7 +1029,11 @@ exit:
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_audio_ion_remove(struct platform_device *pdev)
+#else
 static int msm_audio_ion_remove(struct platform_device *pdev)
+#endif
 {
 	struct device *audio_cb_dev;
 
@@ -1013,7 +1042,9 @@ static int msm_audio_ion_remove(struct platform_device *pdev)
 	msm_audio_ion_data.smmu_enabled = 0;
 	msm_audio_ion_data.device_status = 0;
 	mutex_destroy(&(msm_audio_ion_data.list_mutex));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static struct platform_driver msm_audio_ion_driver = {
@@ -1029,6 +1060,7 @@ static struct platform_driver msm_audio_ion_driver = {
 
 int __init msm_audio_ion_init(void)
 {
+	pr_debug("%s: msm_audio_ion_init called \n",__func__);
 	return platform_driver_register(&msm_audio_ion_driver);
 }
 

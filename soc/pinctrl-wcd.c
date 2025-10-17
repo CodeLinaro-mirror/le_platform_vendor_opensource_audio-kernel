@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2017, 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
-#include <linux/gpio.h>
+#include <linux/gpio/driver.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/pinctrl/pinconf-generic.h>
@@ -13,6 +14,7 @@
 #include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#include <linux/version.h>
 #include <asoc/wcd934x_registers.h>
 
 #include "core.h"
@@ -396,13 +398,21 @@ err_priv_alloc:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void wcd_pinctrl_remove(struct platform_device *pdev)
+#else
 static int wcd_pinctrl_remove(struct platform_device *pdev)
+#endif
 {
 	struct wcd_gpio_priv *priv_data = platform_get_drvdata(pdev);
 
 	gpiochip_remove(&priv_data->chip);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
 	return 0;
+#endif
 }
 
 static const struct of_device_id wcd_pinctrl_of_match[] = {

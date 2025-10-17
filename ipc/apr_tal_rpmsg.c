@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/module.h>
@@ -10,6 +11,7 @@
 #include <linux/delay.h>
 #include <linux/rpmsg.h>
 #include <ipc/apr_tal.h>
+#include <linux/of.h>
 #include <linux/of_device.h>
 
 enum apr_channel_state {

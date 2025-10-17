@@ -28,7 +28,14 @@
 #define SSR_RESET_CMD 1
 #define IMAGE_UNLOAD_CMD 0
 #define MAX_FW_IMAGES 4
-#define BOOT_FOR_EARLY_CHIME_CMD 2
+#define ADSP_LOADER_APM_TIMEOUT_MS 10000
+
+enum spf_subsys_state {
+	SPF_SUBSYS_DOWN,
+	SPF_SUBSYS_UP,
+	SPF_SUBSYS_LOADED,
+	SPF_SUBSYS_UNKNOWN,
+};
 
 static ssize_t adsp_boot_store(struct kobject *kobj,
 	struct kobj_attribute *attr,
@@ -43,6 +50,7 @@ struct adsp_loader_private {
 	struct kobject *boot_adsp_obj;
 	struct attribute_group *attr_group;
 	char *adsp_fw_name;
+	bool ssr_triggered;
 };
 
 static struct kobj_attribute adsp_boot_attribute =
@@ -178,11 +186,7 @@ load_adsp:
 	{
 		adsp_state = apr_get_q6_state();
 		if (adsp_state == APR_SUBSYS_DOWN) {
-#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
-			bootmarker_place_marker("M - Start ADSP");
-#else
 			dev_err(&pdev->dev, "M - Start ADSP\n");
-#endif
 			rc = rproc_boot(priv->pil_h);
 
 			if (rc) {
@@ -234,8 +238,9 @@ static ssize_t adsp_ssr_store(struct kobject *kobj,
 	if (!adsp_dev)
 		return -EINVAL;
 
-	dev_err(&pdev->dev, "Requesting for ADSP restart\n");
+	dev_err(&pdev->dev, "requesting for ADSP restart\n");
 
+	priv->ssr_triggered = true;
 	rproc_shutdown(adsp_dev);
 	adsp_loader_do(adsp_private);
 
@@ -261,11 +266,7 @@ static ssize_t adsp_boot_store(struct kobject *kobj,
 	} else if (boot == IMAGE_UNLOAD_CMD) {
 		pr_debug("%s: going to call adsp_unloader\n", __func__);
 		adsp_loader_unload(adsp_private);
-	} else if (boot == BOOT_FOR_EARLY_CHIME_CMD) {
-		pr_debug("%s: going to call adsp_load_fw\n", __func__);
-		adsp_load_fw(NULL);
 	}
-
 	return count;
 }
 
@@ -300,6 +301,7 @@ static int adsp_loader_init_sysfs(struct platform_device *pdev)
 
 	priv->pil_h = NULL;
 	priv->boot_adsp_obj = NULL;
+	priv->ssr_triggered = false;
 	priv->attr_group = devm_kzalloc(&pdev->dev,
 				sizeof(*(priv->attr_group)),
 				GFP_KERNEL);
@@ -339,14 +341,18 @@ error_return:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void adsp_loader_remove(struct platform_device *pdev)
+#else
 static int adsp_loader_remove(struct platform_device *pdev)
+#endif
 {
 	struct adsp_loader_private *priv = NULL;
 
 	priv = platform_get_drvdata(pdev);
 
 	if (!priv)
-		return 0;
+		goto exit;
 
 	if (priv->pil_h) {
 		rproc_shutdown(priv->pil_h);
@@ -358,8 +364,12 @@ static int adsp_loader_remove(struct platform_device *pdev)
 		kobject_del(priv->boot_adsp_obj);
 		priv->boot_adsp_obj = NULL;
 	}
-
+exit:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
 	return 0;
+#endif
 }
 
 static int adsp_loader_probe(struct platform_device *pdev)
@@ -377,14 +387,34 @@ static int adsp_loader_probe(struct platform_device *pdev)
 	int ret = 0;
 	u32 adsp_fuse_not_supported = 0;
 	const char *adsp_fw_name;
+	struct property *prop;
+	int size;
+	phandle rproc_phandle;
+	struct rproc *adsp;
+
+	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle",
+				&size);
+	if (!prop) {
+		dev_err(&pdev->dev, "Missing remotproc handle\n");
+		return -ENOPARAM;
+	}
+	rproc_phandle = be32_to_cpup(prop->value);
+	adsp = rproc_get_by_phandle(rproc_phandle);
+	if (!adsp) {
+		dev_err(&pdev->dev, "fail to get rproc\n");
+		return -EPROBE_DEFER;
+	}
 
 	ret = adsp_loader_init_sysfs(pdev);
 	if (ret != 0) {
 		dev_err(&pdev->dev, "%s: Error in initing sysfs\n", __func__);
+		rproc_put(adsp);
 		return ret;
 	}
 
 	priv = platform_get_drvdata(pdev);
+	priv->pil_h = adsp;
+
 	/* get adsp variant idx */
 	cell = nvmem_cell_get(&pdev->dev, "adsp_variant");
 	if (IS_ERR_OR_NULL(cell)) {
@@ -423,7 +453,7 @@ static int adsp_loader_probe(struct platform_device *pdev)
 						GFP_KERNEL);
 			if (!priv->adsp_fw_name)
 				goto wqueue;
-			strlcpy(priv->adsp_fw_name, adsp_fw_name,
+			strscpy(priv->adsp_fw_name, adsp_fw_name,
 				fw_name_size);
 		}
 		goto wqueue;
@@ -435,12 +465,14 @@ static int adsp_loader_probe(struct platform_device *pdev)
 		goto wqueue;
 	}
 	if (len <= 0 || len > sizeof(u32)) {
-		dev_dbg(&pdev->dev, "%s: nvmem cell length out of range: %d\n",
+		dev_dbg(&pdev->dev, "%s: nvmem cell length out of range: %lu\n",
 			__func__, len);
 		kfree(buf);
 		goto wqueue;
 	}
 	memcpy(&adsp_var_idx, buf, len);
+	dev_info(&pdev->dev, "%s: adsp variant fuse reg value: 0x%x\n",
+		__func__, adsp_var_idx);
 	kfree(buf);
 
 	/* Get count of fw images */
@@ -492,7 +524,7 @@ static int adsp_loader_probe(struct platform_device *pdev)
 						GFP_KERNEL);
 			if (!priv->adsp_fw_name)
 				goto wqueue;
-			strlcpy(priv->adsp_fw_name, adsp_fw_name_array[i],
+			strscpy(priv->adsp_fw_name, adsp_fw_name_array[i],
 				fw_name_size);
 			break;
 		}
@@ -503,6 +535,7 @@ wqueue:
 		devm_kfree(&pdev->dev, adsp_fw_bit_values);
 	if (adsp_fw_name_array)
 		devm_kfree(&pdev->dev, adsp_fw_name_array);
+
 	return 0;
 
 }

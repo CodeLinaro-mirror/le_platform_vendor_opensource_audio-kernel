@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2008 Google, Inc.
  * Copyright (c) 2012, 2014, 2017, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _UAPI_LINUX_MSM_AUDIO_H
@@ -12,9 +12,10 @@
 #include <linux/types.h>
 #include <linux/ioctl.h>
 
-/* PCM Audio */
-
 #define AUDIO_IOCTL_MAGIC 'a'
+
+#define IOCTL_MAP_PHYS_ADDR _IOW(AUDIO_IOCTL_MAGIC, 97, int)
+#define IOCTL_UNMAP_PHYS_ADDR _IOW(AUDIO_IOCTL_MAGIC, 98, int)
 
 #define AUDIO_START        _IOW(AUDIO_IOCTL_MAGIC, 0, unsigned int)
 #define AUDIO_STOP         _IOW(AUDIO_IOCTL_MAGIC, 1, unsigned int)
@@ -109,7 +110,13 @@
 #define AUDIO_PM_AWAKE      _IOW(AUDIO_IOCTL_MAGIC, 105, unsigned int)
 #define AUDIO_PM_RELAX      _IOW(AUDIO_IOCTL_MAGIC, 106, unsigned int)
 
-#define	AUDIO_MAX_COMMON_IOCTL_NUM	107
+
+#define IOCTL_MAP_HYP_ASSIGN _IOW(AUDIO_IOCTL_MAGIC, 109, int)
+#define IOCTL_UNMAP_HYP_ASSIGN _IOW(AUDIO_IOCTL_MAGIC, 110, int)
+#define IOCTL_MAP_HYP_ASSIGN_V2 _IOW(AUDIO_IOCTL_MAGIC, 111, struct msm_mdf_data)
+#define IOCTL_UNMAP_HYP_ASSIGN_V2 _IOW(AUDIO_IOCTL_MAGIC, 112, struct msm_mdf_data)
+
+#define AUDIO_MAX_COMMON_IOCTL_NUM 113
 
 
 #define HANDSET_MIC			0x01
@@ -274,6 +281,16 @@ struct msm_cad_volume_config {
 };
 
 #define CAD_SET_VOLUME _IOW(SND_IOCTL_MAGIC, 3, struct msm_cad_volume_config *)
+
+/* ss_masks is generated from sys_ids
+ * for id in sys_ids
+ * ss_masks |= 1 << (id - 1)
+  */
+struct msm_mdf_data {
+	__u64 ss_masks;
+	__u32 mem_fd;
+	__u32 reserved;
+};
 
 /* Returns the number of SND endpoints supported. */
 
@@ -462,7 +479,7 @@ struct msm_hwacc_effects_config {
 struct msm_adsp_event_data {
 	__u32 event_type;
 	__u32 payload_len;
-	__u8 payload[0];
+	__u8 payload[1];
 };
 
 struct module_info_data {
