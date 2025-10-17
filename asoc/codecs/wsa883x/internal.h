@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef WSA883X_INTERNAL_H
@@ -90,9 +91,11 @@ struct wsa883x_priv {
 	bool visense_enable;
 	bool ext_vdd_spk;
 	bool dapm_bias_off;
+	bool pdm_wd_enabled;
 	struct swr_port port[WSA883X_MAX_SWR_PORTS];
 	int global_pa_cnt;
 	int dev_mode;
+	int comp_offset;
 	struct mutex res_lock;
 	struct snd_info_entry *entry;
 	struct snd_info_entry *version_entry;
@@ -125,6 +128,8 @@ struct wsa883x_priv {
 	char *wsa883x_name_prefix;
 	struct snd_soc_dai_driver *dai_driver;
 	struct snd_soc_component_driver *driver;
+	unsigned long port_status_mask;
+	struct proc_dir_entry *wsa883x_proc_entry;
 };
 
 #endif /* WSA883X_INTERNAL_H */

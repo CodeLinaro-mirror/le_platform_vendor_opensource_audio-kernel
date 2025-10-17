@@ -11,13 +11,11 @@
 #include <linux/of.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
-#ifndef CONFIG_ARCH_MDM9607
-#include "../../../drivers/clk/qcom/common.h"
-#endif
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <bindings/qcom,audio-ext-clk.h>
 #include <linux/ratelimit.h>
+#include <linux/version.h>
 #include <dsp/q6afe-v2.h>
 #include "audio-ext-clk-up.h"
 
@@ -601,11 +599,17 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void audio_ref_clk_remove(struct platform_device *pdev)
+#else
 static int audio_ref_clk_remove(struct platform_device *pdev)
+#endif
 {
 	audio_put_pinctrl(pdev);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id audio_ref_clk_match[] = {

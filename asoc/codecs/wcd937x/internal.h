@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _WCD937X_INTERNAL_H
@@ -8,6 +9,7 @@
 #include <asoc/wcd-clsh.h>
 #include <asoc/wcd-mbhc-v2.h>
 #include <asoc/wcd-irq.h>
+#include <soc/soundwire.h>
 #include "wcd937x-mbhc.h"
 #include "wcd937x.h"
 
@@ -18,6 +20,7 @@
 #define MAX_PORT 8
 #define MAX_CH_PER_PORT 8
 #define MAX_TX_PWR_CH 2
+#define SWR_NUM_PORTS 4
 
 #define WCD937X_MAX_SLAVE_PORT_TYPES 10
 extern struct regmap_config wcd937x_regmap_config;
@@ -58,6 +61,7 @@ struct wcd937x_priv {
 	u32 hph_mode;
 	bool comp1_enable;
 	bool comp2_enable;
+	bool bcs_dis;
 
 	struct irq_domain *virq;
 	struct wcd_irq_info irq_info;
@@ -72,6 +76,8 @@ struct wcd937x_priv {
 			tx_port_mapping[MAX_PORT][MAX_CH_PER_PORT];
 	struct codec_port_info
 			rx_port_mapping[MAX_PORT][MAX_CH_PER_PORT];
+	struct swr_port_params tx_port_params[SWR_UC_MAX][SWR_NUM_PORTS];
+	struct swr_dev_frame_config swr_tx_port_params[SWR_UC_MAX];
 	struct regulator_bulk_data *supplies;
 	struct notifier_block nblock;
 	/* wcd callback to bolero */
@@ -89,6 +95,7 @@ struct wcd937x_priv {
 	struct snd_info_entry *variant_entry;
 	int ear_rx_path;
 	int ana_clk_count;
+	int adc_count;
 	struct mutex ana_tx_clk_lock;
 	u8 tx_master_ch_map[WCD937X_MAX_SLAVE_CH_TYPES];
 	bool usbc_hs_status;
