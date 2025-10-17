@@ -12,6 +12,7 @@
 #include <linux/mutex.h>
 #include <linux/of_device.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -144,6 +145,18 @@ enum {
 #define AFE_PCM_TX_TEXT "AFE_PCM_TX"
 
 #define LSM_FUNCTION_TEXT "LSM Function"
+
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount, \
+	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_volsw, \
+	.get = xhandler_get, .put = xhandler_put, \
+	.private_value = (unsigned long)&(struct soc_mixer_control) { \
+		.reg = xreg, .shift = xshift, .rshift = xshift, .max = xcount, \
+		.platform_max = xmax, .invert = xinvert \
+	} \
+}
+
 static const char * const lsm_port_text[] = {
 	"None",
 	SLIMBUS_0_TX_TEXT, SLIMBUS_1_TX_TEXT, SLIMBUS_2_TX_TEXT,
@@ -4237,7 +4250,7 @@ static int msm_pcm_get_out_chs(struct snd_kcontrol *kcontrol,
 {
 	u16 fe_id = 0;
 
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
@@ -4253,7 +4266,7 @@ static int msm_pcm_put_out_chs(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
 	u16 fe_id = 0, out_ch = 0;
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	out_ch = ucontrol->value.integer.value[0];
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
@@ -4424,7 +4437,7 @@ static int msm_pcm_get_ctl_enum_info(struct snd_ctl_elem_info *uinfo,
 		sizeof(uinfo->value.enumerated.name),
 		"ALSA: too long item name '%s'\n",
 		names[uinfo->value.enumerated.item]);
-	strlcpy(uinfo->value.enumerated.name,
+	strscpy(uinfo->value.enumerated.name,
 		names[uinfo->value.enumerated.item],
 		sizeof(uinfo->value.enumerated.name));
 	return 0;
@@ -4555,9 +4568,9 @@ static int msm_pcm_channel_weight_put(struct snd_kcontrol *kcontrol,
 	u16 fe_id = 0, out_ch = 0;
 	int i, weight;
 
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
-	out_ch = ((struct soc_multi_mixer_control *)
+	out_ch = ((struct soc_mixer_control *)
 			kcontrol->private_value)->rshift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
@@ -4596,9 +4609,9 @@ static int msm_pcm_channel_weight_get(struct snd_kcontrol *kcontrol,
 	u16 fe_id = 0, out_ch = 0;
 	int i;
 
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
-	out_ch = ((struct soc_multi_mixer_control *)
+	out_ch = ((struct soc_mixer_control *)
 			kcontrol->private_value)->rshift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
@@ -4645,7 +4658,7 @@ static int msm_pcm_channel_output_map_put(struct snd_kcontrol *kcontrol,
 	u16 fe_id = 0;
 	int i, ch_map;
 
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
@@ -4674,7 +4687,7 @@ static int msm_pcm_channel_output_map_get(struct snd_kcontrol *kcontrol,
 	u16 fe_id = 0;
 	int i;
 
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
@@ -4871,7 +4884,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 0,}
 	},
 	{
@@ -4881,7 +4894,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 1, }
 	},
 	{
@@ -4891,7 +4904,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 2,}
 	},
 	{
@@ -4901,7 +4914,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 3,}
 	},
 	{
@@ -4911,7 +4924,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 4,}
 	},
 	{
@@ -4921,7 +4934,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 5,}
 	},
 	{
@@ -4931,7 +4944,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 6,}
 	},
 	{
@@ -4941,7 +4954,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 7,}
 	},
 	{
@@ -4951,7 +4964,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 8,}
 	},
 	{
@@ -4961,7 +4974,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 9,}
 	},
 	{
@@ -4971,7 +4984,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 10,}
 	},
 	{
@@ -4981,7 +4994,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 11,}
 	},
 	{
@@ -4991,7 +5004,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 12,}
 	},
 	{
@@ -5001,7 +5014,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1, .rshift = 13,}
 	},
 	{
@@ -5011,7 +5024,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA2, .rshift = 0,}
 	},
 	{
@@ -5021,7 +5034,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA2, .rshift = 1,}
 	},
 	{
@@ -5031,7 +5044,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA2, .rshift = 2,}
 	},
 	{
@@ -5041,7 +5054,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA3, .rshift = 0,}
 	},
 	{
@@ -5051,7 +5064,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA3, .rshift = 1,}
 	},
 	{
@@ -5061,7 +5074,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 0,}
 	},
 	{
@@ -5071,7 +5084,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 1, }
 	},
 	{
@@ -5081,7 +5094,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 2,}
 	},
 	{
@@ -5091,7 +5104,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 3,}
 	},
 	{
@@ -5101,7 +5114,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 4,}
 	},
 	{
@@ -5111,7 +5124,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 5,}
 	},
 	{
@@ -5121,7 +5134,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 6,}
 	},
 	{
@@ -5131,7 +5144,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 7,}
 	},
 	{
@@ -5141,7 +5154,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 8,}
 	},
 	{
@@ -5151,7 +5164,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 9,}
 	},
 	{
@@ -5161,7 +5174,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 10,}
 	},
 	{
@@ -5171,7 +5184,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 11,}
 	},
 	{
@@ -5181,7 +5194,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 12,}
 	},
 	{
@@ -5191,7 +5204,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18, .rshift = 13,}
 	},
 	{
@@ -5201,7 +5214,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 0,}
 	},
 	{
@@ -5211,7 +5224,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 1, }
 	},
 	{
@@ -5221,7 +5234,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 2,}
 	},
 	{
@@ -5231,7 +5244,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 3,}
 	},
 	{
@@ -5241,7 +5254,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 4,}
 	},
 	{
@@ -5251,7 +5264,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 5,}
 	},
 	{
@@ -5261,7 +5274,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 6,}
 	},
 	{
@@ -5271,7 +5284,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 7,}
 	},
 	{
@@ -5281,7 +5294,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 8,}
 	},
 	{
@@ -5291,7 +5304,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 9,}
 	},
 	{
@@ -5301,7 +5314,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 10,}
 	},
 	{
@@ -5311,7 +5324,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 11,}
 	},
 	{
@@ -5321,7 +5334,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 12,}
 	},
 	{
@@ -5331,7 +5344,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19, .rshift = 13,}
 	},
 	{
@@ -5341,7 +5354,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 0,}
 	},
 	{
@@ -5351,7 +5364,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 1, }
 	},
 	{
@@ -5361,7 +5374,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 2,}
 	},
 	{
@@ -5371,7 +5384,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 3,}
 	},
 	{
@@ -5381,7 +5394,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 4,}
 	},
 	{
@@ -5391,7 +5404,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 5,}
 	},
 	{
@@ -5401,7 +5414,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 6,}
 	},
 	{
@@ -5411,7 +5424,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 7,}
 	},
 	{
@@ -5421,7 +5434,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 8,}
 	},
 	{
@@ -5431,7 +5444,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 9,}
 	},
 	{
@@ -5441,7 +5454,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 10,}
 	},
 	{
@@ -5451,7 +5464,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 11,}
 	},
 	{
@@ -5461,7 +5474,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 12,}
 	},
 	{
@@ -5471,7 +5484,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28, .rshift = 13,}
 	},
 	{
@@ -5481,7 +5494,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 0,}
 	},
 	{
@@ -5491,7 +5504,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 1, }
 	},
 	{
@@ -5501,7 +5514,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 2,}
 	},
 	{
@@ -5511,7 +5524,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 3,}
 	},
 	{
@@ -5521,7 +5534,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 4,}
 	},
 	{
@@ -5531,7 +5544,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 5,}
 	},
 	{
@@ -5541,7 +5554,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 6,}
 	},
 	{
@@ -5551,7 +5564,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 7,}
 	},
 	{
@@ -5561,7 +5574,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 8,}
 	},
 	{
@@ -5571,7 +5584,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 9,}
 	},
 	{
@@ -5581,7 +5594,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 10,}
 	},
 	{
@@ -5591,7 +5604,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 11,}
 	},
 	{
@@ -5601,7 +5614,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 12,}
 	},
 	{
@@ -5611,7 +5624,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29, .rshift = 13,}
 	},
 	{
@@ -5621,7 +5634,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 0,}
 	},
 	{
@@ -5631,7 +5644,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 1, }
 	},
 	{
@@ -5641,7 +5654,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 2,}
 	},
 	{
@@ -5651,7 +5664,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 3,}
 	},
 	{
@@ -5661,7 +5674,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 4,}
 	},
 	{
@@ -5671,7 +5684,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 5,}
 	},
 	{
@@ -5681,7 +5694,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 6,}
 	},
 	{
@@ -5691,7 +5704,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 7,}
 	},
 	{
@@ -5701,7 +5714,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 8,}
 	},
 	{
@@ -5711,7 +5724,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 9,}
 	},
 	{
@@ -5721,7 +5734,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 10,}
 	},
 	{
@@ -5731,7 +5744,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 11,}
 	},
 	{
@@ -5741,7 +5754,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 12,}
 	},
 	{
@@ -5751,7 +5764,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_weight_info,
 	.get = msm_pcm_channel_weight_get,
 	.put = msm_pcm_channel_weight_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30, .rshift = 13,}
 	},
 	{
@@ -5925,7 +5938,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA1,}
 	},
 	{
@@ -5935,7 +5948,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA2,}
 	},
 	{
@@ -5945,7 +5958,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA3,}
 	},
 	{
@@ -5955,7 +5968,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA4,}
 	},
 	{
@@ -5965,7 +5978,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA5,}
 	},
 	{
@@ -5975,7 +5988,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA6,}
 	},
 	{
@@ -5985,7 +5998,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA18,}
 	},
 	{
@@ -5995,7 +6008,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA19,}
 	},
 	{
@@ -6005,7 +6018,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA28,}
 	},
 	{
@@ -6015,7 +6028,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA29,}
 	},
 	{
@@ -6025,7 +6038,7 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.info = msm_pcm_channel_output_map_info,
 	.get = msm_pcm_channel_output_map_get,
 	.put = msm_pcm_channel_output_map_put,
-	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+	.private_value = (unsigned long)&(struct soc_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30,}
 	},
 };
@@ -6071,7 +6084,7 @@ static int msm_ec_ref_chmixer_weights_get(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
 	int i = 0, ret = 0;
-	int out_channel_idx = ((struct soc_multi_mixer_control *)
+	int out_channel_idx = ((struct soc_mixer_control *)
 				kcontrol->private_value)->shift;
 
 	for (; i < PCM_FORMAT_MAX_NUM_CHANNEL_V8; i++)
@@ -6085,7 +6098,7 @@ static int msm_ec_ref_chmixer_weights_put(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
 	int i = 0, ret = 0;
-	int out_channel_idx = ((struct soc_multi_mixer_control *)
+	int out_channel_idx = ((struct soc_mixer_control *)
 				kcontrol->private_value)->shift;
 
 	for (; i < PCM_FORMAT_MAX_NUM_CHANNEL_V8; i++)
@@ -6672,13 +6685,13 @@ static int msm_pcm_asm_format_put(struct snd_kcontrol *kcontrol,
 
 		if((fe_id < MSM_FRONTEND_DAI_MULTIMEDIA1) ||
 		   (fe_id >= MSM_FRONTEND_DAI_MAX)) {
-			pr_err("%s: Received invalid fe_id %lu\n", __func__, fe_id);
+			pr_err("%s: Received invalid fe_id %d\n", __func__, fe_id);
 			ret = -EINVAL;
 			goto done;
 		}
 		if((mode < MSM_ASM_PLAYBACK_MODE) ||
 		   (mode >= MSM_ASM_MAX_MODE)) {
-			pr_err("%s: Received invalid mode %lu\n", __func__, mode);
+			pr_err("%s: Received invalid mode %d\n", __func__, mode);
 			ret = -EINVAL;
 			goto done;
 		}
@@ -6699,7 +6712,7 @@ static int msm_pcm_asm_format_put(struct snd_kcontrol *kcontrol,
 					loopback_cfg[fe_id].bit_format = format;
 			}
 		}else {
-			pr_err("%s: Received invalid foramt %lu\n", __func__,
+			pr_err("%s: Received invalid foramt %d\n", __func__,
 					asm_cfg_params[2]);
 			ret = -EINVAL;
 			goto done;
@@ -6719,7 +6732,7 @@ static int msm_pcm_asm_format_get(struct snd_kcontrol *kcontrol,
 	ucontrol->value.integer.value[3] = 0;
 	mutex_unlock(&routing_lock);
 
-	pr_debug("%s: fe_id:%d, mode:%d, format:%d, set:%d\n",__func__,
+	pr_debug("%s: fe_id:%ld, mode:%ld, format:%ld, set:%ld\n",__func__,
 			ucontrol->value.integer.value[0],
 			ucontrol->value.integer.value[1],
 			ucontrol->value.integer.value[2],
@@ -32441,7 +32454,7 @@ static int msm_routing_put_app_type_cfg_control(struct snd_kcontrol *kcontrol,
 	mutex_lock(&routing_lock);
 	if (ucontrol->value.integer.value[0] > MAX_APP_TYPES ||
 	    ucontrol->value.integer.value[0] < 0) {
-		pr_err("%s: number of app types %d is invalid\n",
+		pr_err("%s: number of app types %ld is invalid\n",
 			__func__, ucontrol->value.integer.value[0]);
 		mutex_unlock(&routing_lock);
 		return -EINVAL;
@@ -32621,7 +32634,7 @@ static int msm_routing_get_lsm_app_type_cfg_control(
 					struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
-	int shift = ((struct soc_multi_mixer_control *)
+	int shift = ((struct soc_mixer_control *)
 				kcontrol->private_value)->shift;
 	int i = 0, j = 0;
 
@@ -32647,7 +32660,7 @@ static int msm_routing_put_lsm_app_type_cfg_control(
 					struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
-	int shift = ((struct soc_multi_mixer_control *)
+	int shift = ((struct soc_mixer_control *)
 				kcontrol->private_value)->shift;
 	int i = 0, j;
 
@@ -43186,7 +43199,7 @@ static int msm_routing_be_dai_name_table_tlv_get(struct snd_kcontrol *kcontrol,
 	 */
 	for (i = 0; i < MSM_BACKEND_DAI_MAX; i++) {
 		be_dai_name_table[i].be_id = i;
-		strlcpy(be_dai_name_table[i].be_name,
+		strscpy(be_dai_name_table[i].be_name,
 			msm_bedais[i].name,
 			LPASS_BE_NAME_MAX_LENGTH);
 	}
@@ -44315,10 +44328,19 @@ static int msm_routing_pcm_probe(struct platform_device *pdev)
 				NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_routing_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_routing_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_pcm_routing_dt_match[] = {

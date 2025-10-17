@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2014, 2017, 2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/init.h>
 #include <linux/module.h>
@@ -378,7 +378,7 @@ static struct platform_driver msm_dai_stub_driver = {
 	},
 };
 
-int __init msm_dai_stub_init(void)
+static int __init msm_dai_stub_init(void)
 {
 	int rc = 0;
 
@@ -402,14 +402,16 @@ dai_stub_dev_fail:
 fail:
 	return rc;
 }
+module_init(msm_dai_stub_init);
 
-void msm_dai_stub_exit(void)
+static void msm_dai_stub_exit(void)
 {
 	pr_debug("%s:\n", __func__);
 
 	platform_driver_unregister(&msm_dai_stub_dev);
 	platform_driver_unregister(&msm_dai_stub_driver);
 }
+module_exit(msm_dai_stub_exit);
 
 /* Module information */
 MODULE_DESCRIPTION("MSM Stub DSP DAI driver");
