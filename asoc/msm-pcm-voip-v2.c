@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -12,6 +12,7 @@
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
 #include <linux/of_device.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -166,6 +167,17 @@ struct voip_drv_info {
 	uint32_t evrc_min_rate;
 	uint32_t evrc_max_rate;
 };
+
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount, \
+	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_volsw, \
+	.get = xhandler_get, .put = xhandler_put, \
+	.private_value = (unsigned long)&(struct soc_mixer_control) { \
+		.reg = xreg, .shift = xshift, .rshift = xshift, .max = xcount, \
+		.platform_max = xmax, .invert = xinvert \
+	} \
+}
 
 static int voip_get_media_type(uint32_t mode, uint32_t rate_type,
 				unsigned int samp_rate,
@@ -802,6 +814,7 @@ err:
 	return ret;
 }
 
+#if 0
 static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 	unsigned long hwoff, void __user *buf, unsigned long fbytes)
 {
@@ -962,6 +975,7 @@ static int msm_pcm_copy(struct snd_soc_component *component,
 
 	return ret;
 }
+#endif
 
 static int msm_pcm_close(struct snd_soc_component *component,
 		struct snd_pcm_substream *substream)
@@ -1639,7 +1653,6 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.pcm_construct	= msm_asoc_pcm_new,
 	.probe		= msm_pcm_voip_probe,
 	.open			= msm_pcm_open,
-	.copy_user		= msm_pcm_copy,
 	.hw_params		= msm_pcm_hw_params,
 	.close		= msm_pcm_close,
 	.prepare		= msm_pcm_prepare,
@@ -1687,10 +1700,19 @@ done:
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_voip_dt_match[] = {

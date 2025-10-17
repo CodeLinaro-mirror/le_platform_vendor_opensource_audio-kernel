@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2014, 2017-2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -145,7 +145,7 @@ static void dtmf_rx_detected_cb(uint8_t *pkt,
 		buf_node->dtmf_det_pkt.high_freq = dtmf_det_pkt->high_freq;
 		buf_node->dtmf_det_pkt.low_freq = dtmf_det_pkt->low_freq;
 		if (session != NULL)
-			strlcpy(buf_node->dtmf_det_pkt.session,
+			strscpy(buf_node->dtmf_det_pkt.session,
 				session, MAX_SESSION_NAME_LEN);
 
 		buf_node->dtmf_det_pkt.dir = DTMF_IN_RX;

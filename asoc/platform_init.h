@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef __PLATFORM_INIT_H__
@@ -10,7 +10,7 @@ int msm_compress_dsp_init(void);
 int msm_fe_dai_init(void);
 int msm_dai_q6_hdmi_init(void);
 int msm_dai_q6_init(void);
-int msm_dai_stub_init(void);
+int msm_stub_init(void);
 int msm_lsm_client_init(void);
 int msm_pcm_afe_init(void);
 int msm_pcm_dtmf_init(void);
@@ -43,7 +43,7 @@ void msm_pcm_hostless_exit(void);
 void msm_pcm_dtmf_exit(void);
 void msm_pcm_afe_exit(void);
 void msm_lsm_client_exit(void);
-void msm_dai_stub_exit(void);
+void msm_stub_exit(void);
 void msm_dai_q6_exit(void);
 void msm_dai_q6_hdmi_exit(void);
 void msm_fe_dai_exit(void);

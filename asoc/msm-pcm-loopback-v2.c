@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -278,7 +278,7 @@ static int msm_pcm_loopback_get_session(struct snd_soc_pcm_runtime *rtd,
 		goto exit;
 	}
 
-	strlcpy(session_map[index].stream_name,
+	strscpy(session_map[index].stream_name,
 		rtd->dai_link->stream_name,
 		sizeof(session_map[index].stream_name));
 	dev_dbg(component->dev, "%s: stream %s index %d\n",
