@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 /* from Slave to bolero events */
@@ -24,4 +25,5 @@ enum {
 	BOLERO_SLV_EVT_PA_ON_POST_FSCLK,
 	BOLERO_SLV_EVT_PA_ON_POST_FSCLK_ADIE_LB,
 	BOLERO_SLV_EVT_CLK_NOTIFY,
+	BOLERO_SLV_EVT_RX_MACRO_PA_ON,
 };
