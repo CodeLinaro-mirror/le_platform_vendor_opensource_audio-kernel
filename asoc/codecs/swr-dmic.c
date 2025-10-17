@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/module.h>
@@ -50,7 +50,7 @@ static int swr_master_channel_map[] = {
 	SWRM_TX3_CH2,
 	SWRM_TX3_CH3,
 	SWRM_TX3_CH4,
-	SWRM_PCM_IN,
+	SWRM_TX_PCM_IN,
 };
 
 /*
@@ -374,39 +374,39 @@ static int swr_dmic_codec_probe(struct snd_soc_component *component)
 	}
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " ", sizeof(w_name));
 	strlcat(w_name, swr_dmic->dai_driver->capture.stream_name,
 				sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " SWR_DMIC", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " SMIC_PORT_EN", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " SWR_DMIC_OUTPUT", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " VA_SWR_DMIC", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " SMIC_VA_PORT_EN", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strlcpy(w_name, component->name_prefix, sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
 	strlcat(w_name, " SWR_DMIC_VA_OUTPUT", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
@@ -682,7 +682,7 @@ static int swr_dmic_probe(struct swr_device *pdev)
 		ret = -ENOMEM;
 		goto dev_err;
 	}
-	strlcpy(prefix_name, swr_dmic_name_prefix_of,
+	strscpy(prefix_name, swr_dmic_name_prefix_of,
 			strlen(swr_dmic_name_prefix_of) + 1);
 	component->name_prefix = prefix_name;
 

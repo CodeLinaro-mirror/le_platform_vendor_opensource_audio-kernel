@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2011-2014, 2017-2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
@@ -49,10 +50,18 @@ static int msm_stub_dev_probe(struct platform_device *pdev)
 	&soc_msm_stub, msm_stub_dais, ARRAY_SIZE(msm_stub_dais));
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_stub_dev_remove(struct platform_device *pdev)
+#else
 static int msm_stub_dev_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
 	return 0;
+#endif
 }
 static const struct of_device_id msm_stub_codec_dt_match[] = {
 	{ .compatible = "qcom,msm-stub-codec", },
