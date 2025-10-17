@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2013-2015, 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _LINUX_MSM_AUDIO_ION_H
@@ -8,6 +9,8 @@
 #include <dsp/q6asm-v2.h>
 #include <sound/pcm.h>
 #include <linux/msm_ion.h>
+#include <linux/dma-map-ops.h>
+#include <linux/dma-buf.h>
 #include <linux/dma-mapping.h>
 
 enum {
