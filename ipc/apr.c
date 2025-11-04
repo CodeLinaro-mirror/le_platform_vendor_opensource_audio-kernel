@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2010-2014, 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 #include <linux/kernel.h>
@@ -37,6 +39,7 @@
 
 
 #define APR_PKT_IPC_LOG_PAGE_CNT 2
+#define APR_LKEY_MAX_LEVEL 10
 
 static int apr_pkt_cnt_adsp_restart = 20;
 static int apr_reg_initial_bootup = true;
@@ -76,6 +79,10 @@ static struct apr_private *apr_priv;
 static bool apr_cf_debug;
 static struct work_struct apr_cb_work;
 static void state_notify_cb(struct work_struct *work);
+static struct apr_lockdep_keyset {
+    char name[APR_LKEY_MAX_LEVEL];
+    struct lock_class_key key;
+} apr_lockdep_keyset = {"apr_key"};
 
 #ifdef CONFIG_DEBUG_FS
 static struct dentry *debugfs_apr_debug;
@@ -1214,6 +1221,8 @@ static int apr_probe(struct platform_device *pdev)
 
 	apr_priv->dev = &pdev->dev;
 	spin_lock_init(&apr_priv->apr_lock);
+	lockdep_set_class_and_name(&apr_priv->apr_lock, &apr_lockdep_keyset.key,
+		apr_lockdep_keyset.name);
 	INIT_WORK(&apr_priv->add_chld_dev_work, apr_add_child_devices);
 
 	spin_lock(&apr_priv->apr_lock);
