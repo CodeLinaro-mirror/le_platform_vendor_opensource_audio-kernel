@@ -10,6 +10,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/pcm.h>
@@ -167,7 +168,7 @@ static void dtmf_rx_detected_cb(uint8_t *pkt,
 
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct dtmf_buf_node *buf_node = NULL;
@@ -186,9 +187,8 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 					struct dtmf_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
-			ret = copy_to_user(buf,
-					   &buf_node->dtmf_det_pkt,
-					   fbytes);
+			ret = copy_to_iter(&buf_node->dtmf_det_pkt,
+					   fbytes, iter);
 			if (ret) {
 				pr_err("%s: Copy to user returned %d\n",
 					__func__, ret);
@@ -216,14 +216,14 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 
 static int msm_pcm_copy(struct snd_soc_component *component,
 				struct snd_pcm_substream *substream, int a,
-	 			unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	 			unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 
 	pr_debug("%s() DTMF\n", __func__);
 
 	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-		ret = msm_pcm_capture_copy(substream, a, hwoff, buf, fbytes);
+		ret = msm_pcm_capture_copy(substream, a, hwoff, iter, fbytes);
 
 	return ret;
 }
@@ -491,7 +491,7 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.name		= DRV_NAME,
 	.pcm_construct	= msm_asoc_pcm_new,
 	.open           = msm_pcm_open,
-	.copy_user	= msm_pcm_copy,
+	.copy		= msm_pcm_copy,
 	.hw_params	= msm_pcm_hw_params,
 	.close          = msm_pcm_close,
 	.prepare        = msm_pcm_prepare,
@@ -508,10 +508,17 @@ static int msm_pcm_probe(struct platform_device *pdev)
 					 &msm_soc_component, NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_pcm_dtmf_dt_match[] = {

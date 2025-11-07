@@ -17,6 +17,7 @@ int msm_pcm_dtmf_init(void);
 int msm_pcm_hostless_init(void);
 int msm_voice_host_init(void);
 int msm_pcm_loopback_init(void);
+int msm_dai_stub_init(void);
 #ifndef CONFIG_SND_SOC_SA410M
 int msm_pcm_noirq_init(void);
 #endif
@@ -49,6 +50,7 @@ void msm_dai_q6_hdmi_exit(void);
 void msm_fe_dai_exit(void);
 void msm_compress_dsp_exit(void);
 void msm_common_exit(void);
+void msm_dai_stub_exit(void);
 
 #if IS_ENABLED(CONFIG_WCD9XXX_CODEC_CORE)
 int msm_dai_slim_init(void);

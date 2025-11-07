@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 
@@ -12,10 +12,16 @@
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
+#include <linux/version.h>
 
 #include "msm-compress-q6-v2.h"
 
-static struct snd_soc_dai_ops msm_fe_dai_ops = {};
+static int fe_dai_probe(struct snd_soc_dai *dai);
+
+
+static struct snd_soc_dai_ops msm_fe_dai_ops = {
+	.probe = fe_dai_probe,
+};
 
 /* Conventional and unconventional sample rate supported */
 static unsigned int supported_sample_rates[] = {
@@ -297,6 +303,8 @@ static int fe_dai_probe(struct snd_soc_dai *dai)
 
 static struct snd_soc_dai_ops msm_fe_Multimedia_dai_ops = {
 	.startup	= multimedia_startup,
+	.probe		= fe_dai_probe,
+	.compress_new	= msm_compr_new,
 };
 
 static const struct snd_soc_component_driver msm_fe_dai_component = {
@@ -333,7 +341,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia1",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -364,7 +371,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia2",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -389,7 +395,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VoIP",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -420,7 +425,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia3",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -437,9 +441,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia4",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -470,7 +473,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia5",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -501,7 +503,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia6",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -518,9 +519,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia7",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -551,7 +551,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia8",
-		.probe = fe_dai_probe,
 	},
 	/* FE DAIs created for hostless operation purpose */
 	{
@@ -578,7 +577,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -603,7 +601,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -628,7 +625,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -653,7 +649,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -668,7 +663,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -693,7 +687,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -718,7 +711,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SLIMBUS8_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -758,7 +750,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "CDC_DMA_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -780,7 +771,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TX3_CDC_DMA_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -803,7 +793,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "INT_FM_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -826,7 +815,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "INT_HFP_BT_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -867,7 +855,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "USBAUDIO_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -882,7 +869,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "HDMI_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -897,7 +883,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "DISPLAY_PORT_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -920,7 +905,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "AUXPCM_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -934,7 +918,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_AUXPCM_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -948,7 +931,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_AUXPCM_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -962,7 +944,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_AUXPCM_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -976,7 +957,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_AUXPCM_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -999,7 +979,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VOICE_STUB",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1022,7 +1001,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VoLTE",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1046,7 +1024,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "MI2S_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1060,7 +1037,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_I2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1075,7 +1051,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_MI2S_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1090,7 +1065,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_MI2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1105,7 +1079,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_MI2S_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1120,7 +1093,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_MI2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1135,7 +1107,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_MI2S_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1150,7 +1121,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_MI2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1165,7 +1135,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_MI2S_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1180,7 +1149,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_MI2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1195,7 +1163,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "INT0_MI2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1210,7 +1177,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "INT4_MI2S_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1225,7 +1191,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "INT3_MI2S_TX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	/* TDM Hostless */
 	{
@@ -1241,7 +1206,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1256,7 +1220,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1271,7 +1234,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1286,7 +1248,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1301,7 +1262,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1316,7 +1276,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1331,7 +1290,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1346,7 +1304,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1361,7 +1318,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1376,7 +1332,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1391,7 +1346,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1406,7 +1360,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1421,7 +1374,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1436,7 +1388,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1451,7 +1402,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_TX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1466,7 +1416,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "PRI_TDM_RX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1481,7 +1430,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1496,7 +1444,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1511,7 +1458,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1526,7 +1472,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1541,7 +1486,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1556,7 +1500,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1571,7 +1514,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1586,7 +1528,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1601,7 +1542,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1616,7 +1556,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1631,7 +1570,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1646,7 +1584,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1661,7 +1598,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1676,7 +1612,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1691,7 +1626,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_TX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1706,7 +1640,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "SEC_TDM_RX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1721,7 +1654,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1736,7 +1668,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1751,7 +1682,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1766,7 +1696,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1781,7 +1710,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1796,7 +1724,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1811,7 +1738,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1826,7 +1752,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1841,7 +1766,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1856,7 +1780,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1871,7 +1794,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1886,7 +1808,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1901,7 +1822,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1916,7 +1836,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1931,7 +1850,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_TX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1946,7 +1864,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "TERT_TDM_RX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1961,7 +1878,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -1976,7 +1892,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_0_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -1991,7 +1906,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2006,7 +1920,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_1_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2021,7 +1934,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2036,7 +1948,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_2_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2051,7 +1962,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2066,7 +1976,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_3_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2081,7 +1990,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2096,7 +2004,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_4_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2111,7 +2018,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2126,7 +2032,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_5_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2141,7 +2046,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2156,7 +2060,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_6_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2171,7 +2074,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_TX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2186,7 +2088,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUAT_TDM_RX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2201,7 +2102,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUIN_TDM_TX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2216,7 +2116,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QUIN_TDM_RX_7_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2230,7 +2129,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "DTMF_RX_HOSTLESS",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2267,7 +2165,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VOLTE_STUB",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2290,7 +2187,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VOICE2_STUB",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2317,7 +2213,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia9",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2340,7 +2235,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "QCHAT",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2356,7 +2250,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM1",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2372,7 +2265,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM2",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2388,7 +2280,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM3",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2404,7 +2295,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM4",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2420,7 +2310,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM5",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2436,7 +2325,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM6",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2452,7 +2340,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM7",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2468,7 +2355,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "LSM8",
-		.probe = fe_dai_probe,
 	},
 	/* FE DAIs created for multiple instances of offload playback */
 	{
@@ -2499,7 +2385,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia10",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2516,9 +2401,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia11",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2535,9 +2419,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia12",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2554,9 +2437,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia13",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2573,9 +2455,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia14",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2592,9 +2473,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia15",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2625,7 +2505,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia16",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2648,7 +2527,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VoiceMMode1",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2671,7 +2549,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "VoiceMMode2",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2687,9 +2564,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max =     192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia17",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2705,9 +2581,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max =     192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia18",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2723,9 +2598,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max =     192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia19",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2756,7 +2630,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia20",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2787,7 +2660,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia21",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2818,7 +2690,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia22",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2849,7 +2720,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia23",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2880,7 +2750,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia24",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2911,7 +2780,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia25",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -2928,9 +2796,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 384000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia26",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2946,9 +2813,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max = 192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia27",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2964,9 +2830,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		.rate_max =     192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia28",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -2982,9 +2847,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max =     192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia29",
-		.probe = fe_dai_probe,
 	},
 	{
 		.capture = {
@@ -3000,9 +2864,8 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_max =     192000,
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
-		.compress_new = msm_compr_new,
+		//.compress_new = msm_compr_new,
 		.name = "MultiMedia30",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3033,7 +2896,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia31",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3064,7 +2926,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia32",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3095,7 +2956,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia33",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3126,7 +2986,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia34",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3157,7 +3016,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia35",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3188,7 +3046,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_Multimedia_dai_ops,
 		.name = "MultiMedia36",
-		.probe = fe_dai_probe,
 	},
 	{
 		.playback = {
@@ -3211,7 +3068,6 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		},
 		.ops = &msm_fe_dai_ops,
 		.name = "CS-VOICE",
-		.probe = fe_dai_probe,
 	},
 };
 
@@ -3224,10 +3080,17 @@ static int msm_fe_dai_dev_probe(struct platform_device *pdev)
 		msm_fe_dais, ARRAY_SIZE(msm_fe_dais));
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_fe_dai_dev_remove(struct platform_device *pdev)
+#else
 static int msm_fe_dai_dev_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
+        return 0;
+#endif
 }
 
 static const struct of_device_id msm_dai_fe_dt_match[] = {

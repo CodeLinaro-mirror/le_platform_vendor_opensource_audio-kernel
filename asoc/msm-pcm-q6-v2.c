@@ -12,7 +12,6 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/version.h>
-#include <linux/bootmarker_kernel.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -213,7 +212,7 @@ static int msm_pcm_soft_volume_ctl_get(struct snd_kcontrol *kcontrol,
 	ucontrol->value.integer.value[0] = soft_params.period;
 	ucontrol->value.integer.value[1] = soft_params.step;
 	ucontrol->value.integer.value[2] = soft_params.rampingcurve;
-	pr_debug("%s: period = %d, step = %d , ramping curve: %d",__func__,
+	pr_debug("%s: period = %ld, step = %ld , ramping curve: %ld",__func__,
 				ucontrol->value.integer.value[0],
 				ucontrol->value.integer.value[1],
 				ucontrol->value.integer.value[2]);
@@ -272,7 +271,7 @@ static int msm_pcm_soft_volume_ctl_put(struct snd_kcontrol *kcontrol,
 	if (prtd) {
 		if ((ucontrol->value.integer.value[0] < 0) ||
 			(ucontrol->value.integer.value[0] > 15000)) {
-			pr_err("%s : Ramp period range (0 to 15000), input value is out of range: %d\n",
+			pr_err("%s : Ramp period range (0 to 15000), input value is out of range: %ld\n",
 				__func__, ucontrol->value.integer.value[0]);
 			goto exit;
 		} else {
@@ -280,7 +279,7 @@ static int msm_pcm_soft_volume_ctl_put(struct snd_kcontrol *kcontrol,
 		}
 		if ((ucontrol->value.integer.value[1] < 0) ||
 			(ucontrol->value.integer.value[1] > 15000000)) {
-			pr_err("%s : Ramp step range (0 to 15000000), input value is out of range: %d\n",
+			pr_err("%s : Ramp step range (0 to 15000000), input value is out of range: %ld\n",
 				__func__, ucontrol->value.integer.value[1]);
 			goto exit;
 		} else {
@@ -288,7 +287,7 @@ static int msm_pcm_soft_volume_ctl_put(struct snd_kcontrol *kcontrol,
 		}
 		if ((ucontrol->value.integer.value[2] < 0) ||
 			(ucontrol->value.integer.value[2] >= SOFT_VOLUME_CURVE_ENUM_MAX)) {
-			pr_err("%s : Ramping curve range (0 to 2), input value is out of range: %d\n",
+			pr_err("%s : Ramping curve range (0 to 2), input value is out of range: %ld\n",
 				__func__, ucontrol->value.integer.value[2]);
 			goto exit;
 		} else {
@@ -939,11 +938,7 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (first_time) {
-#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
-			bootmarker_place_marker("K - Early chime");
-#else
 			pr_debug("K - Early chime\n");
-#endif
 			first_time = 0;
 		}
 		pr_debug("%s: Trigger start\n", __func__);
@@ -1116,7 +1111,7 @@ static int msm_pcm_open(struct snd_soc_component *component, struct snd_pcm_subs
 }
 
 static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
-	unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	int xfer = 0;
@@ -1178,14 +1173,14 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 		if (bufptr) {
 			pr_debug("%s:fbytes =%lu: xfer=%d size=%d\n",
 				 __func__, fbytes, xfer, size);
-			if (copy_from_user(bufptr, buf, xfer)) {
+			if (copy_from_iter(bufptr, xfer, iter)) {
 				ret = -EFAULT;
 				pr_err("%s: copy_from_user failed\n",
 					__func__);
 				q6asm_cpu_buf_release(IN, prtd->audio_client);
 				goto fail;
 			}
-			buf += xfer;
+			iter += xfer;
 			fbytes -= xfer;
 			pr_debug("%s:fbytes = %lu: xfer=%d\n", __func__,
 				 fbytes, xfer);
@@ -1299,7 +1294,7 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 }
 
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
-		 int channel, unsigned long hwoff, void __user *buf,
+		 int channel, unsigned long hwoff, struct iov_iter *iter,
 						 unsigned long fbytes)
 {
 	int ret = 0;
@@ -1366,7 +1361,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 				size = xfer = fbytes;
 		}
 
-		if (copy_to_user(buf, bufptr+offset, xfer)) {
+		if (copy_to_iter(bufptr+offset, xfer, iter)) {
 			pr_err("Failed to copy buf to user\n");
 			ret = -EFAULT;
 			q6asm_cpu_buf_release(OUT, prtd->audio_client);
@@ -1437,14 +1432,14 @@ static int msm_pcm_capture_close(struct snd_pcm_substream *substream)
 
 static int msm_pcm_copy(struct snd_soc_component *component,
 	struct snd_pcm_substream *substream, int a,
-	 unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	 unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		ret = msm_pcm_playback_copy(substream, a, hwoff, buf, fbytes);
+		ret = msm_pcm_playback_copy(substream, a, hwoff, iter, fbytes);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-		ret = msm_pcm_capture_copy(substream, a, hwoff, buf, fbytes);
+		ret = msm_pcm_capture_copy(substream, a, hwoff, iter, fbytes);
 	return ret;
 }
 
@@ -2157,7 +2152,7 @@ static int msm_pcm_chmap_ctl_put(struct snd_kcontrol *kcontrol,
 	bool reset_override_out_ch_map = false;
 	bool reset_override_in_ch_map = false;
 
-	pr_debug("%s: chmap ctl for fe_id: %d, session_type: %d\n",
+	pr_debug("%s: chmap ctl for fe_id: %llu, session_type: %d\n",
 			__func__, fe_id, session_type);
 	substream = snd_pcm_chmap_substream(info, idx);
 	if (!substream)
@@ -2249,7 +2244,7 @@ static int msm_pcm_chmap_ctl_get(struct snd_kcontrol *kcontrol,
 	u64 fe_id = kcontrol->private_value & 0xFF;
 	int session_type = (kcontrol->private_value >> 8) & 0xFF;
 
-	pr_debug("%s: chmap ctl for fe_id: %d, session_type: %d\n",
+	pr_debug("%s: chmap ctl for fe_id: %llu, session_type: %d\n",
 			__func__, fe_id, session_type);
 
 	chmap = msm_pcm_get_chmap(fe_id, session_type);
@@ -3827,7 +3822,7 @@ static snd_pcm_sframes_t msm_pcm_delay_blk(struct snd_pcm_substream *substream,
 static struct snd_soc_component_driver msm_soc_component = {
 	.name			= DRV_NAME,
 	.open           	= msm_pcm_open,
-	.copy_user		= msm_pcm_copy,
+	.copy			= msm_pcm_copy,
 	.hw_params		= msm_pcm_hw_params,
 	.close          	= msm_pcm_close,
 	.ioctl          	= msm_pcm_ioctl,
@@ -3887,7 +3882,11 @@ static int msm_pcm_probe(struct platform_device *pdev)
 					NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	struct msm_plat_data *pdata;
 	int i = 0;
@@ -3903,7 +3902,10 @@ static int msm_pcm_remove(struct platform_device *pdev)
 	mutex_destroy(&pdata->lock);
 	kfree(pdata);
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 static const struct of_device_id msm_pcm_dt_match[] = {
 	{.compatible = "qcom,msm-pcm-dsp"},
