@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -939,7 +939,11 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (first_time) {
+#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
 			bootmarker_place_marker("K - Early chime");
+#else
+			pr_debug("K - Early chime\n");
+#endif
 			first_time = 0;
 		}
 		pr_debug("%s: Trigger start\n", __func__);
