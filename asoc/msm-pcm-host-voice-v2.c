@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -11,6 +11,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -50,6 +51,16 @@
 #define VoMMode2_TX_PLAYBACK_DAI_ID "VoiceMMode2 HOST TX PLAYBACK"
 #define VoMMode2_RX_CAPTURE_DAI_ID  "VoiceMMode2 HOST RX CAPTURE"
 #define VoMMode2_RX_PLAYBACK_DAI_ID "VoiceMMode2 HOST RX PLAYBACK"
+
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount,\
+	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_volsw, \
+	.get = xhandler_get, .put = xhandler_put, \
+	.private_value = (unsigned long)&(struct soc_mixer_control) \
+		{.reg = xreg, .shift = xshift, .rshift = xshift, .max = xcount, \
+		/*.count = xcount,*/ .platform_max = xmax, .invert = xinvert} }
+
 
 enum {
 	RX = 1,
@@ -1096,7 +1107,7 @@ done:
 }
 
 static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
-				 unsigned long hwoff, void __user *buf,
+				 unsigned long hwoff, struct iov_iter *iter,
 				 unsigned long fbytes)
 {
 	int ret = 0;
@@ -1125,8 +1136,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 						struct hpcm_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&dai_data->dsp_lock, dsp_flags);
-			ret = copy_from_user(&buf_node->frame.voc_pkt, buf,
-					     fbytes);
+			ret = copy_from_iter(&buf_node->frame.voc_pkt, fbytes, iter);
 			buf_node->frame.len = fbytes;
 			spin_lock_irqsave(&dai_data->dsp_lock, dsp_flags);
 			list_add_tail(&buf_node->list, &dai_data->filled_queue);
@@ -1149,7 +1159,7 @@ done:
 
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				 struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct hpcm_buf_node *buf_node = NULL;
@@ -1177,8 +1187,8 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 					struct hpcm_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&dai_data->dsp_lock, dsp_flags);
-			ret = copy_to_user(buf, &buf_node->frame.voc_pkt,
-					   buf_node->frame.len);
+			ret = copy_to_iter(&buf_node->frame.voc_pkt,
+					   buf_node->frame.len, iter);
 			if (ret) {
 				pr_err("%s: Copy to user returned %d\n",
 					__func__, ret);
@@ -1207,18 +1217,18 @@ done:
 }
 
 static int msm_pcm_copy(struct snd_soc_component *component,
-			struct snd_pcm_substream *substream, int channel,
-			unsigned long hwoff, void __user *buf,
-			unsigned long fbytes)
+	struct snd_pcm_substream *substream, int channel,
+	unsigned long hwoff,  struct iov_iter *iter,
+	unsigned long fbytes)
 {
 	int ret = 0;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		ret = msm_pcm_playback_copy(substream, channel,
-					    hwoff, buf, fbytes);
+					    hwoff, iter, fbytes);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 		ret = msm_pcm_capture_copy(substream, channel,
-					   hwoff, buf, fbytes);
+					   hwoff, iter, fbytes);
 
 	return ret;
 }
@@ -1478,7 +1488,7 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.prepare        = msm_pcm_prepare,
 	.trigger        = msm_pcm_trigger,
 	.pointer        = msm_pcm_pointer,
-	.copy_user      = msm_pcm_copy,
+	.copy		= msm_pcm_copy,
 	.close          = msm_pcm_close,
 };
 
@@ -1490,10 +1500,16 @@ static int msm_pcm_probe(struct platform_device *pdev)
 					  NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_voice_host_pcm_dt_match[] = {

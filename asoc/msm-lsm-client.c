@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.​
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -13,6 +13,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/of.h>
 #include <linux/freezer.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -3581,7 +3582,9 @@ static snd_pcm_uframes_t msm_lsm_pcm_pointer(
 
 static int msm_lsm_pcm_copy(struct snd_soc_component *component,
 	struct snd_pcm_substream *substream, int ch,
-	unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	unsigned long hwoff,
+	struct iov_iter *iter,
+	unsigned long fbytes)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct lsm_priv *prtd = runtime->private_data;
@@ -3629,7 +3632,7 @@ static int msm_lsm_pcm_copy(struct snd_soc_component *component,
 		"%s: copy the pcm data size %lu\n",
 		__func__, fbytes);
 	if (pcm_buf) {
-		if (copy_to_user(buf, pcm_buf, fbytes)) {
+		if (copy_to_iter(pcm_buf, fbytes, iter) != fbytes) {
 			dev_err(rtd->dev,
 				"%s: failed to copy bytes %lu\n",
 				__func__, fbytes);
@@ -5041,10 +5044,10 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.ioctl          	= msm_lsm_ioctl,
 	.prepare		= msm_lsm_prepare,
 	.hw_params      	= msm_lsm_hw_params,
-	.copy_user      	= msm_lsm_pcm_copy,
+	.copy      		= msm_lsm_pcm_copy,
 	.pointer        	= msm_lsm_pcm_pointer,
-	.pcm_construct	= msm_asoc_lsm_new,
-	.probe		= msm_asoc_lsm_probe,
+	.pcm_construct		= msm_asoc_lsm_new,
+	.probe			= msm_asoc_lsm_probe,
 };
 
 #ifdef ENABLE_SVA_MIXER_CTL
@@ -5178,7 +5181,7 @@ static int msm_lsm_create_char_dev(struct platform_device *pdev)
 		return ret;
 	}
 
-	lsm_dev->cls = class_create(THIS_MODULE, cdev_name);
+	lsm_dev->cls = class_create(cdev_name);
 	if (IS_ERR(lsm_dev->cls)) {
 		ret = PTR_ERR(lsm_dev->cls);
 		pr_err("%s: Failed to create class, dev %s, err %d\n",
@@ -5237,7 +5240,11 @@ static int msm_lsm_probe(struct platform_device *pdev)
 					  NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_lsm_remove(struct platform_device *pdev)
+#else
 static int msm_lsm_remove(struct platform_device *pdev)
+#endif
 {
 #ifdef ENABLE_SVA_MIXER_CTL
 	struct lsm_char_dev *lsm_dev;
@@ -5248,7 +5255,9 @@ static int msm_lsm_remove(struct platform_device *pdev)
 #endif
 	snd_soc_unregister_component(&pdev->dev);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_lsm_client_dt_match[] = {

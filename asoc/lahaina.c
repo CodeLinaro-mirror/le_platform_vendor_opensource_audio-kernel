@@ -5578,6 +5578,7 @@ err:
 	return ret;
 }
 
+#if 0
 static int msm_wcn_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
@@ -5612,6 +5613,7 @@ static int msm_wcn_hw_params(struct snd_pcm_substream *substream,
 err:
 	return ret;
 }
+#endif
 
 #ifndef CONFIG_AUXPCM_DISABLE
 static struct snd_soc_ops lahaina_aux_be_ops = {
@@ -5641,9 +5643,9 @@ static struct snd_soc_ops msm_cdc_dma_be_ops = {
 	.hw_params = msm_snd_cdc_dma_hw_params,
 };
 
-static struct snd_soc_ops msm_wcn_ops = {
+/*static struct snd_soc_ops msm_wcn_ops = {
 	.hw_params = msm_wcn_hw_params,
-};
+};*/
 
 static struct snd_soc_ops msm_wcn_ops_lito = {
 	.hw_params = msm_wcn_hw_params_lito,
@@ -5755,6 +5757,7 @@ static const struct snd_soc_dapm_widget msm_int_dapm_widgets[] = {
 	SND_SOC_DAPM_MIC("Digital Mic7", NULL),
 };
 
+#if 0
 static int msm_wcn_init(struct snd_soc_pcm_runtime *rtd)
 {
 	unsigned int rx_ch[WCN_CDC_SLIM_RX_CH_MAX] = {157, 158};
@@ -5764,6 +5767,7 @@ static int msm_wcn_init(struct snd_soc_pcm_runtime *rtd)
 	return snd_soc_dai_set_channel_map(codec_dai, ARRAY_SIZE(tx_ch),
 					   tx_ch, ARRAY_SIZE(rx_ch), rx_ch);
 }
+#endif
 
 static int msm_wcn_init_lito(struct snd_soc_pcm_runtime *rtd)
 {
@@ -6675,8 +6679,21 @@ static struct snd_soc_dai_link msm_common_be_dai_links[] = {
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(sen_tdm_tx_0),
 	},
+	{
+		.name = LPASS_BE_AFE_PCM_RX1,
+		.stream_name = "AFE Playback1",
+		.no_pcm = 1,
+		.dpcm_playback = 1,
+		.id = MSM_BACKEND_DAI_AFE_PCM_RX1,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(afe_pcm_rx1),
+	},
 };
 
+#if 0
 static struct snd_soc_dai_link msm_wcn_be_dai_links[] = {
 	{
 		.name = LPASS_BE_SLIMBUS_7_RX,
@@ -6704,6 +6721,7 @@ static struct snd_soc_dai_link msm_wcn_be_dai_links[] = {
 		SND_SOC_DAILINK_REG(slimbus_7_tx),
 	},
 };
+#endif
 
 static struct snd_soc_dai_link msm_wcn_btfm_be_dai_links[] = {
 	{
@@ -6744,7 +6762,6 @@ static struct snd_soc_dai_link msm_wcn_btfm_be_dai_links[] = {
 	},
 };
 
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 static struct snd_soc_dai_link ext_disp_be_dai_link[] = {
 	/* DISP PORT BACK END DAI Link */
 	{
@@ -6771,7 +6788,6 @@ static struct snd_soc_dai_link ext_disp_be_dai_link[] = {
 		SND_SOC_DAILINK_REG(display_port1),
 	},
 };
-#endif
 
 static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 	{
@@ -6789,8 +6805,7 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 	{
 		.name = LPASS_BE_PRI_MI2S_TX,
 		.stream_name = "Primary MI2S Capture",
-		.no_pcm = 1,
-		.dpcm_capture = 1,
+		.capture_only = 1,
 		.id = MSM_BACKEND_DAI_PRI_MI2S_TX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ops = &msm_mi2s_be_ops,
@@ -7255,10 +7270,8 @@ static struct snd_soc_dai_link msm_lahaina_dai_links[
 			ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
 			ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links) +
 			ARRAY_SIZE(msm_va_cdc_dma_be_dai_links) +
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 			ARRAY_SIZE(ext_disp_be_dai_link) +
-#endif
-			ARRAY_SIZE(msm_wcn_be_dai_links) +
+			//ARRAY_SIZE(msm_wcn_be_dai_links) +
 			ARRAY_SIZE(msm_afe_rxtx_lb_be_dai_link) +
 			ARRAY_SIZE(msm_wcn_btfm_be_dai_links)];
 
@@ -7645,9 +7658,10 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 		rc = of_property_read_u32(dev->of_node, "qcom,mi2s-audio-intf",
 					  &mi2s_audio_intf);
 		if (rc) {
-			dev_dbg(dev, "%s: No DT match MI2S audio interface\n",
+			dev_err(dev, "%s: No DT match MI2S audio interface\n",
 				__func__);
 		} else {
+			mi2s_audio_intf = 0;
 			if (mi2s_audio_intf) {
 				memcpy(msm_lahaina_dai_links + total_links,
 					msm_mi2s_be_dai_links,
@@ -7661,7 +7675,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 					  "qcom,auxpcm-audio-intf",
 					  &val);
 		if (rc) {
-			dev_dbg(dev, "%s: No DT match Aux PCM interface\n",
+			dev_err(dev, "%s: No DT match Aux PCM interface\n",
 				__func__);
 		} else {
 			if (val) {
@@ -7674,7 +7688,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 		}
 #endif
 
-#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 		rc = of_property_read_u32(dev->of_node,
 					   "qcom,ext-disp-audio-rx", &val);
 		if (!rc && val) {
@@ -7685,9 +7698,8 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 			       sizeof(ext_disp_be_dai_link));
 			total_links += ARRAY_SIZE(ext_disp_be_dai_link);
 		}
-#endif
 
-		rc = of_property_read_u32(dev->of_node, "qcom,wcn-bt", &val);
+		/*rc = of_property_read_u32(dev->of_node, "qcom,wcn-bt", &val);
 		if (!rc && val) {
 			dev_dbg(dev, "%s(): WCN BT support present\n",
 				__func__);
@@ -7695,7 +7707,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 			       msm_wcn_be_dai_links,
 			       sizeof(msm_wcn_be_dai_links));
 			total_links += ARRAY_SIZE(msm_wcn_be_dai_links);
-		}
+		}*/
 
 		rc = of_property_read_u32(dev->of_node, "qcom,afe-rxtx-lb",
 				&val);
@@ -7710,7 +7722,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 		rc = of_property_read_u32(dev->of_node, "qcom,wcn-btfm",
 					  &wcn_btfm_intf);
 		if (rc) {
-			dev_dbg(dev, "%s: No DT match wcn btfm interface\n",
+			dev_err(dev, "%s: No DT match wcn btfm interface\n",
 				__func__);
 		} else {
 			if (wcn_btfm_intf) {
@@ -7898,6 +7910,8 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 			pr_err("%s component is NULL\n", __func__);
 			return -EINVAL;
 		}
+		pr_err("%s is_wcd937x  is true \n",__func__);
+                is_wcd937x = true;
 	}
 	dapm = snd_soc_component_get_dapm(component);
 	card = component->card->snd_card;
@@ -7916,16 +7930,20 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 	    strlen(WCD937X_DRV_NAME))) {
 		wcd937x_info_create_codec_entry(pdata->codec_root, component);
 		codec_variant = wcd937x_get_codec_variant(component);
-		dev_dbg(component->dev, "%s: variant %d\n",
+		dev_err(component->dev, "%s: variant %d\n",
 			 __func__, codec_variant);
-		if (codec_variant == WCD9370_VARIANT)
+		if (codec_variant == WCD9370_VARIANT) {
+			dev_err(component->dev, "%s: WCD9370_VARIANT \n",  __func__);
 			ret = snd_soc_add_component_controls(component,
 				msm_int_wcd9370_snd_controls,
 				ARRAY_SIZE(msm_int_wcd9370_snd_controls));
-		else if (codec_variant == WCD9375_VARIANT)
+		}
+		else if (codec_variant == WCD9375_VARIANT) {
+			dev_err(component->dev, "%s: WCD9375_VARIANT \n",  __func__);
 			ret = snd_soc_add_component_controls(component,
 				msm_int_wcd9375_snd_controls,
 				ARRAY_SIZE(msm_int_wcd9375_snd_controls));
+		}
 		bolero_set_port_map(bolero_component,
 			ARRAY_SIZE(sm_port_map_wcd937x), sm_port_map_wcd937x);
 	} else if (!strncmp(component->driver->name, WCD938X_DRV_NAME,
@@ -7933,17 +7951,20 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 		wcd938x_info_create_codec_entry(pdata->codec_root, component);
 
 		codec_variant = wcd938x_get_codec_variant(component);
-		dev_dbg(component->dev, "%s: variant %d\n",
+		dev_err(component->dev, "%s: variant %d\n",
 			 __func__, codec_variant);
-		if (codec_variant == WCD9380)
+		if (codec_variant == WCD9380) {
+			dev_err(component->dev, "%s: WCD9380_VARIANT \n",  __func__);
 			ret = snd_soc_add_component_controls(component,
 				msm_int_wcd9380_snd_controls,
 				ARRAY_SIZE(msm_int_wcd9380_snd_controls));
-		else if (codec_variant == WCD9385)
+		}
+		else if (codec_variant == WCD9385) {
+			dev_err(component->dev, "%s: WCD9385_VARIANT \n",  __func__);
 			ret = snd_soc_add_component_controls(component,
 				msm_int_wcd9385_snd_controls,
 				ARRAY_SIZE(msm_int_wcd9385_snd_controls));
-
+		}
 		if ((strnstr(rtd->card->name, "shima", strlen(rtd->card->name))
 		    != NULL) || (strnstr(rtd->card->name, "yupik",
 		    strlen(rtd->card->name)) != NULL))
@@ -8047,7 +8068,7 @@ static int lahaina_ssr_enable(struct device *dev, void *data)
 	}
 
 	snd_card_notify_user(SND_CARD_STATUS_ONLINE);
-        dev_dbg(dev, "%s: setting snd_card to ONLINE\n", __func__);
+        dev_err(dev, "%s: setting snd_card to ONLINE\n", __func__);
 
 err:
 	return ret;

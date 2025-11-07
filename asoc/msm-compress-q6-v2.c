@@ -13,6 +13,7 @@
 #include <linux/wait.h>
 #include <linux/mutex.h>
 #include <linux/platform_device.h>
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <sound/core.h>
 #include <sound/soc.h>
@@ -776,7 +777,7 @@ static void compr_event_handler(uint32_t opcode,
 				prtd->last_buffer = 0;
 			if (atomic_read(&prtd->drain)) {
 				if (bytes_available > 0) {
-					pr_debug("%s: send %d partial bytes at the end",
+					pr_debug("%s: send %llu partial bytes at the end",
 						   __func__, bytes_available);
 					atomic_set(&prtd->xrun, 0);
 					prtd->last_buffer = 1;
@@ -5778,7 +5779,11 @@ static int msm_compr_dev_probe(struct platform_device *pdev)
 					&msm_soc_component, NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_compr_remove(struct platform_device *pdev)
+#else
 static int msm_compr_remove(struct platform_device *pdev)
+#endif
 {
 	int i = 0;
 	struct msm_compr_pdata *pdata = NULL;
@@ -5792,7 +5797,10 @@ static int msm_compr_remove(struct platform_device *pdev)
 	kfree(pdata);
 
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_compr_dt_match[] = {
@@ -5812,17 +5820,15 @@ static struct platform_driver msm_compr_driver = {
 	.remove = msm_compr_remove,
 };
 
-static int __init msm_compress_dsp_init(void)
+int __init msm_compress_dsp_init(void)
 {
 	return platform_driver_register(&msm_compr_driver);
 }
-module_init(msm_compress_dsp_init);
 
-static void msm_compress_dsp_exit(void)
+void msm_compress_dsp_exit(void)
 {
 	platform_driver_unregister(&msm_compr_driver);
 }
-module_exit(msm_compress_dsp_exit);
 
 MODULE_DESCRIPTION("Compress Offload platform driver");
 MODULE_LICENSE("GPL v2");

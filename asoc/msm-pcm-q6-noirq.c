@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -15,6 +15,7 @@
 #include <linux/of_device.h>
 #include <linux/dma-mapping.h>
 #include <linux/dma-buf.h>
+#include <linux/version.h>
 
 #include <sound/core.h>
 #include <sound/soc.h>
@@ -591,7 +592,7 @@ static snd_pcm_uframes_t msm_pcm_pointer(struct snd_soc_component *component,
 
 static int msm_pcm_copy(struct snd_soc_component *component,
 	struct snd_pcm_substream *substream, int a,
-	 unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	 unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	return -EINVAL;
 }
@@ -1374,10 +1375,10 @@ static int msm_asoc_pcm_new(struct snd_soc_component *component, struct snd_soc_
 
 static struct snd_soc_component_driver msm_soc_component = {
 	.name			= DRV_NAME,
-	.pcm_construct	= msm_asoc_pcm_new,
+	.pcm_construct		= msm_asoc_pcm_new,
 	.open           	= msm_pcm_open,
 	.prepare        	= msm_pcm_prepare,
-	.copy_user      	= msm_pcm_copy,
+	.copy      		= msm_pcm_copy,
 	.hw_params		= msm_pcm_hw_params,
 	.ioctl          	= msm_pcm_ioctl,
 	.trigger        	= msm_pcm_trigger,
@@ -1432,7 +1433,11 @@ static int msm_pcm_probe(struct platform_device *pdev)
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	struct msm_plat_data *pdata;
 
@@ -1441,7 +1446,10 @@ static int msm_pcm_remove(struct platform_device *pdev)
 	mutex_destroy(&pdata->lock);
 	devm_kfree(&pdev->dev, pdata);
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 static const struct of_device_id msm_pcm_noirq_dt_match[] = {
 	{.compatible = "qcom,msm-pcm-dsp-noirq"},

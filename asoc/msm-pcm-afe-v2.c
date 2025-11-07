@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 
@@ -14,6 +14,7 @@
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
 #include <linux/sockptr.h>
+#include <linux/version.h>
 
 #include <sound/core.h>
 #include <sound/soc.h>
@@ -128,7 +129,7 @@ static enum hrtimer_restart afe_hrtimer_rec_callback(struct hrtimer *hrt)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	u32 mem_map_handle = 0;
-	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
 	int port_id = cpu_dai->id;
 	int ret;
 
@@ -274,7 +275,7 @@ static void pcm_afe_process_rx_pkt(uint32_t opcode,
 	substream =  prtd->substream;
 	runtime = substream->runtime;
 	rtd = substream->private_data;
-	cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
 	port_id = cpu_dai->id;
 	pr_debug("%s\n", __func__);
 	spin_lock_irqsave(&prtd->dsp_lock, dsp_flags);
@@ -376,7 +377,7 @@ static int msm_afe_playback_prepare(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct pcm_afe_info *prtd = runtime->private_data;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *dai = snd_soc_rtd_to_cpu(rtd, 0);
 	int ret = 0;
 
 	pr_debug("%s: sample_rate=%d\n", __func__, runtime->rate);
@@ -398,7 +399,7 @@ static int msm_afe_capture_prepare(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct pcm_afe_info *prtd = runtime->private_data;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *dai = snd_soc_rtd_to_cpu(rtd, 0);
 	int ret = 0;
 
 	pr_debug("%s\n", __func__);
@@ -497,26 +498,26 @@ static int msm_afe_open(struct snd_soc_component *component, struct snd_pcm_subs
 
 static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct pcm_afe_info *prtd = runtime->private_data;
 	char *hwbuf = runtime->dma_area + hwoff;
 	u32 mem_map_handle = 0;
-	sockptr_t sockbuf = KERNEL_SOCKPTR(buf);
+	sockptr_t sockbuf = KERNEL_SOCKPTR((void *)iter);
 
 	pr_debug("%s : appl_ptr 0x%lx hw_ptr 0x%lx dest_to_copy 0x%pK\n",
 		__func__,
 		runtime->control->appl_ptr, runtime->status->hw_ptr, hwbuf);
 
 	if (sockptr_is_kernel(sockbuf)) {
-		pr_debug("%s kernel pointer %p\n", __func__, buf);
-		memcpy(hwbuf, buf, fbytes);
+		pr_debug("%s kernel pointer %p\n", __func__, iter);
+		memcpy(hwbuf, iter, fbytes);
 	} else {
-		pr_debug("%s user pointer %p\n", __func__, buf);
-		if (copy_from_user(hwbuf, buf, fbytes)) {
-			pr_err("%s :Failed to copy audio from user buffer\n",
+		pr_debug("%s user pointer %p\n", __func__, iter);
+		if (copy_from_iter(hwbuf, fbytes, iter)) {
+			pr_err("%s :Failed to copy audio from iter buffer\n",
 				__func__);
 			ret = -EFAULT;
 			goto fail;
@@ -556,17 +557,17 @@ fail:
 
 static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct pcm_afe_info *prtd = runtime->private_data;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
 	int port_id = cpu_dai->id;
 	char *hwbuf = runtime->dma_area + hwoff;
 	u32 mem_map_handle = 0;
-	sockptr_t sockbuf = KERNEL_SOCKPTR(buf);
+	sockptr_t sockbuf = KERNEL_SOCKPTR((void *)iter);
 
 	if (!prtd->mmap_flag) {
 		mem_map_handle = afe_req_mmap_handle(prtd->audio_client);
@@ -610,12 +611,12 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 			runtime->status->hw_ptr, hwbuf);
 
 	if (sockptr_is_kernel(sockbuf)) {
-		pr_debug("%s kernel pointer %p\n", __func__, buf);
-		memcpy(buf, hwbuf, fbytes);
+		pr_debug("%s kernel pointer %p\n", __func__, iter);
+		memcpy(iter, hwbuf, fbytes);
 	} else {
-		pr_debug("%s user pointer %p\n", __func__, buf);
-		if (copy_to_user(buf, hwbuf, fbytes)) {
-			pr_err("%s: copy to user failed\n", __func__);
+		pr_debug("%s user pointer %p\n", __func__, iter);
+		if (copy_to_iter(hwbuf, fbytes, iter)) {
+			pr_err("%s: copy to iter failed\n", __func__);
 			goto fail;
 			ret = -EFAULT;
 		}
@@ -627,7 +628,7 @@ fail:
 
 static int msm_afe_copy(struct snd_soc_component *component,
 			struct snd_pcm_substream *substream, int channel,
-			unsigned long hwoff, void __user *buf,
+			unsigned long hwoff, struct iov_iter *iter,
 			unsigned long fbytes)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -643,10 +644,10 @@ static int msm_afe_copy(struct snd_soc_component *component,
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		ret = msm_afe_playback_copy(substream, channel, hwoff,
-					buf, fbytes);
+					iter, fbytes);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 		ret = msm_afe_capture_copy(substream, channel, hwoff,
-					buf, fbytes);
+					iter, fbytes);
 	return ret;
 }
 
@@ -667,7 +668,7 @@ static int msm_afe_close(struct snd_soc_component *component, struct snd_pcm_sub
 		return -EINVAL;
 	}
 	rtd = substream->private_data;
-	dai = asoc_rtd_to_cpu(rtd, 0);
+	dai = snd_soc_rtd_to_cpu(rtd, 0);
 	runtime = substream->runtime;
 	prtd = runtime->private_data;
 
@@ -891,7 +892,7 @@ static struct snd_soc_component_driver msm_soc_component = {
 	.pcm_construct	= msm_asoc_pcm_new,
 	.probe		= msm_afe_afe_probe,
 	.open           = msm_afe_open,
-	.copy_user      = msm_afe_copy,
+	.copy      	= msm_afe_copy,
 	.hw_params	= msm_afe_hw_params,
 	.trigger	= msm_afe_trigger,
 	.close          = msm_afe_close,
@@ -908,11 +909,18 @@ static int msm_afe_probe(struct platform_device *pdev)
 				   &msm_soc_component, NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_afe_remove(struct platform_device *pdev)
+#else
 static int msm_afe_remove(struct platform_device *pdev)
+#endif
 {
 	pr_debug("%s\n", __func__);
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 static const struct of_device_id msm_pcm_afe_dt_match[] = {
 	{.compatible = "qcom,msm-pcm-afe"},
