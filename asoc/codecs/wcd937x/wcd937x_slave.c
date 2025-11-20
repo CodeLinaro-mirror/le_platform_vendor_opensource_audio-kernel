@@ -25,6 +25,8 @@
 #define SWR_SLV_MAX_DEVICES     2
 #endif /* CONFIG_DEBUG_FS */
 
+#define SWR_MAX_RETRY 5
+
 struct wcd937x_slave_priv {
 	struct swr_device *swr_slave;
 #ifdef CONFIG_DEBUG_FS
@@ -280,6 +282,7 @@ static int wcd937x_slave_bind(struct device *dev,
 	struct wcd937x_slave_priv *wcd937x_slave = NULL;
 	uint8_t devnum = 0;
 	struct swr_device *pdev = to_swr_device(dev);
+	int retry = SWR_MAX_RETRY;
 
 	if (pdev == NULL) {
 		dev_err(dev, "%s: pdev is NULL\n", __func__);
@@ -325,7 +328,12 @@ static int wcd937x_slave_bind(struct device *dev,
         }
 #endif
 
-	ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
+	do {
+		/* Add delay for soundwire enumeration */
+		usleep_range(100, 110);
+		ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
+	} while (ret && --retry);
+
 	if (ret) {
 		dev_dbg(&pdev->dev,
 				"%s get devnum %d for dev addr %llx failed\n",
