@@ -3436,9 +3436,9 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 					ec_ref_port_cfg->sampling_rate :
 					this_adm.ec_ref_rx_sampling_rate;
 
-	pr_debug("%s:port %#x path:%d rate:%d mode:%d perf_mode:%d,topo_id %d\n",
+	pr_debug("%s:port %#x path:%d rate:%d mode:%d perf_mode:%d,topo_id %d, bit_width %d\n",
 		 __func__, port_id, path, rate, channel_mode, perf_mode,
-		 topology);
+		 topology, bit_width);
 
 	port_id = q6audio_convert_virtual_to_portid(port_id);
 	port_idx = adm_validate_and_get_port_index(port_id);
@@ -3596,6 +3596,7 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 		if ((q6core_get_avcs_api_version_per_service(
 				APRV2_IDS_SERVICE_ID_ADSP_ADM_V) >=
 					ADSP_ADM_API_VERSION_V3)) {
+			pr_debug("%s ADM_CMD_DEVICE_OPEN_V8 \n", __func__);
 			memset(&open_v8, 0, sizeof(open_v8));
 			memset(&ep1_payload, 0, sizeof(ep1_payload));
 			memset(&ep2_payload, 0, sizeof(ep2_payload));
@@ -3646,6 +3647,12 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			/* variable endpoint payload */
 			ep1_payload.dev_num_channel = channel_mode & 0x00FF;
 			ep1_payload.bit_width = bit_width;
+			/* Check for invalid bit-width */
+			if (ep1_payload.bit_width == 0) {
+				pr_debug("%s @@@@ Detected invalid ep1_payload.bit_width,defaulting to '16' \n",__func__);
+				ep1_payload.bit_width = 16;
+			}
+			pr_debug("%s  ep1_payload.bit_width: %d ", __func__, ep1_payload.bit_width);
 			ep1_payload.sample_rate  = rate;
 			ret = adm_arrange_mch_map_v8(&ep1_payload, path,
 					channel_mode, port_idx);
@@ -3676,6 +3683,11 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 					ep2_payload.bit_width = ec_ref_bit;
 				else
 					ep2_payload.bit_width = bit_width;
+				if (ep2_payload.bit_width == 0) {
+					pr_debug("%s @@@@ Detected invalid ep2_payload.bit_width,defaulting to '16' \n",__func__);
+					ep2_payload.bit_width = 16;
+				}
+				pr_debug("%s ep2_payload.bit_width: %d ", __func__, ep2_payload.bit_width);
 
 				if (ec_ref_sampling_rate != 0)
 					ep2_payload.sample_rate =
@@ -3765,9 +3777,15 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 
 			open.dev_num_channel = channel_mode & 0x00FF;
 			open.bit_width = bit_width;
+			if (open.bit_width == 0) {
+				pr_err("%s Detected invalid bit_width, setting to default '16'\n",__func__);
+				open.bit_width = 16;
+			}
+			pr_debug("%s open.bit_width : %d ", __func__, open.bit_width);
 			WARN_ON((perf_mode == ULTRA_LOW_LATENCY_PCM_MODE) &&
 				(rate != ULL_SUPPORTED_SAMPLE_RATE));
 			open.sample_rate  = rate;
+			pr_debug("%s open.sample_rate : %d ", __func__, open.sample_rate);
 
 			ret = adm_arrange_mch_map(&open, path, channel_mode,
 						  port_idx);
