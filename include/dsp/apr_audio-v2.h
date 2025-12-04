@@ -12023,7 +12023,15 @@ struct afe_param_id_clip_bank_sel {
 /* Item does not exist. */
 #define ADSP_ENOTEXIST    0x00000015
 /* Max count for adsp error code sent to HLOS*/
-#define ADSP_ERR_MAX      (ADSP_ENOTEXIST + 1)
+#define VPM_EFAILED       0x00000016
+#define VPM_EALREADY      0x00000017
+#define VPM_ENORESOURCE   0x00000018
+#define VPM_EBADPARAM     0x00000019
+#define VSM_EFAILED       0x0000001A
+#define VSM_EALREADY      0x0000001B
+#define VSM_ENORESOURCE   0x0000001C
+#define VSM_EBADPARAM     0x0000001D
+#define ADSP_ERR_MAX      VSM_EBADPARAM + 1
 /* Operation is finished. */
 #define ADSP_ETERMINATED    0x00011174
 

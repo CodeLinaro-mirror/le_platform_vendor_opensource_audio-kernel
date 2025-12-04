@@ -1970,6 +1970,61 @@ fail:
 	return ret;
 }
 
+static int voice_send_ready_notify_cmd(struct voice_data *v, uint32_t enable)
+{
+	int ret = 0;
+	void *apr_cvs = NULL;
+	u16 cvs_handle = 0;
+	struct cvs_set_ready_notify_to_client cvs_notify_to_client;
+
+
+	if (v == NULL) {
+		pr_err("%s: voice_data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	apr_cvs = common.apr_q6_cvs;
+
+	if (!apr_cvs) {
+		pr_err("%s: APR handle for CVS is not initialized", __func__);
+		return -EINVAL;
+	}
+
+	cvs_handle = voice_get_cvs_handle(v);
+
+	cvs_notify_to_client.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
+							APR_HDR_LEN(APR_HDR_SIZE),
+							APR_PKT_VER);
+	cvs_notify_to_client.hdr.pkt_size =
+				APR_PKT_SIZE(APR_HDR_SIZE,
+				sizeof(cvs_notify_to_client) - APR_HDR_SIZE);
+	cvs_notify_to_client.hdr.src_port =
+				voice_get_idx_for_session(v->session_id);
+	cvs_notify_to_client.hdr.dest_port = cvs_handle;
+	cvs_notify_to_client.hdr.token = 0;
+	cvs_notify_to_client.hdr.opcode = VSS_ISTREAM_READY_NOTIFY_TO_CLIENT;
+	cvs_notify_to_client.cvs_client_det.enable = enable;
+
+	v->cvs_state = CMD_STATUS_FAIL;
+	v->async_err = 0;
+	ret = apr_send_pkt(apr_cvs, (uint32_t *) &cvs_notify_to_client);
+	if (ret < 0) {
+		pr_err("%s: Error %d sending VSS_ISTREAM_READY_NOTIFY_TO_CLIENT\n",
+		__func__,ret);
+		return -EINVAL;
+	}
+
+	ret = wait_event_timeout(v->cvs_wait,(v->cvs_state == CMD_STATUS_SUCCESS),
+					msecs_to_jiffies(TIMEOUT_MS));
+	if (!ret) {
+		pr_err("%s: wait_event timeout\n", __func__);
+		return -EINVAL;
+	}
+	if (v->async_err > 0) {
+		ret = adsp_err_get_lnx_err_code(v->async_err);
+		return ret;
+	}
+	return ret;
+}
 static int voice_send_dtmf_rx_detection_cmd(struct voice_data *v,
 					    uint32_t enable)
 {
@@ -4638,6 +4693,9 @@ static int voice_setup_vocproc(struct voice_data *v)
 	voice_send_cvp_register_dev_cfg_cmd(v);
 	voice_send_cvp_register_cal_cmd(v);
 	voice_send_cvp_register_vol_cal_cmd(v);
+
+        /* enable READY_NOTIFY to client */
+	ret = voice_send_ready_notify_cmd(v, 1);
 
 	/* enable vocproc */
 	ret = voice_send_enable_vocproc_cmd(v);
@@ -7720,6 +7778,18 @@ void voc_register_dtmf_rx_detection_cb(dtmf_rx_det_cb_fn dtmf_rx_ul_cb,
 EXPORT_SYMBOL(voc_register_dtmf_rx_detection_cb);
 
 /**
+ * voc_register_ready_evt_cb - Update callback info of ready state
+ * @cb:              ready state callback function
+ * @private_data:    private data passed back in callback
+ **/
+void voc_register_ready_evt_cb(voice_ready_state_cb_t cb, void *private_data)
+{
+	common.ready_info.cb           = cb;
+	common.ready_info.private_data = private_data;
+}
+EXPORT_SYMBOL(voc_register_ready_evt_cb);
+
+/**
  * voc_config_vocoder -
  *       Update config for mvs params.
  */
@@ -8092,6 +8162,7 @@ static int32_t qdsp_cvs_callback(struct apr_client_data *data, void *priv)
 			case VSS_ISTREAM_CMD_SET_PACKET_EXCHANGE_MODE:
 			case VSS_ISTREAM_CMD_SET_OOB_PACKET_EXCHANGE_CONFIG:
 			case VSS_ISTREAM_CMD_SET_RX_DTMF_DETECTION:
+			case VSS_ISTREAM_READY_NOTIFY_TO_CLIENT:
 				pr_debug("%s: cmd = 0x%x\n", __func__, ptr[0]);
 				v->cvs_state = CMD_STATUS_SUCCESS;
 				v->async_err = ptr[1];
@@ -8246,9 +8317,35 @@ static int32_t qdsp_cvs_callback(struct apr_client_data *data, void *priv)
 			pr_debug("%s: APR_RSP_ACCEPTED for 0x%x:\n",
 				 __func__, ptr[0]);
 	} else if (data->opcode == VSS_ISTREAM_EVT_NOT_READY) {
-		pr_debug("Recd VSS_ISTREAM_EVT_NOT_READY\n");
+
+		if (data->payload_size != 0) {
+		    pr_err("VSS_ISTREAM_EVT_NOT_READY: invalid payload size %u\n",
+				data->payload_size);
+		    return 0;
+		}
+
+		pr_debug("Recieved VSS_ISTREAM_EVT_NOT_READY for %s\n",
+		          voc_get_session_name(v->session_id));
+
+		c->ready_info.is_ready = false;
+		if (c->ready_info.cb)
+			c->ready_info.cb(false,	voc_get_session_name(v->session_id),
+					c->ready_info.private_data);
 	} else if (data->opcode == VSS_ISTREAM_EVT_READY) {
-		pr_debug("Recd VSS_ISTREAM_EVT_READY\n");
+		if (data->payload_size != 0) {
+			pr_err("VSS_ISTREAM_EVT_READY: invalid payload size %u\n",
+				data->payload_size);
+			return 0;
+		}
+
+		pr_debug("Recd VSS_ISTREAM_EVT_READY for %s\n",
+		voc_get_session_name(v->session_id));
+
+		c->ready_info.is_ready = true;
+
+		if (c->ready_info.cb)
+			c->ready_info.cb(true,voc_get_session_name(v->session_id),
+					c->ready_info.private_data);
 	} else if (data->opcode == VSS_ICOMMON_RSP_GET_PARAM ||
 		   data->opcode == VSS_ICOMMON_RSP_GET_PARAM_V3) {
 		pr_debug("%s: VSS_ICOMMON_RSP_GET_PARAM\n", __func__);

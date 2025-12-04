@@ -1185,6 +1185,25 @@ struct vss_istream_evt_rx_dtmf_detected {
 	 */
 };
 
+#define VSS_ISTREAM_READY_NOTIFY_TO_CLIENT 0x00011074
+
+struct vss_istream_ready_notify_to_client {
+	/*
+	 * Enables/disables ready notify to client
+	 *
+	 * Possible values are
+	 * 0 - disable
+	 * 1 - enable
+	 *
+	 */
+	uint32_t enable;
+};
+
+struct cvs_set_ready_notify_to_client {
+	struct apr_hdr hdr;
+	struct vss_istream_ready_notify_to_client cvs_client_det;
+} __packed;
+
 struct cvs_set_rx_dtmf_detection_cmd {
 	struct apr_hdr hdr;
 	struct vss_istream_cmd_set_rx_dtmf_detection cvs_dtmf_det;
@@ -1785,6 +1804,11 @@ typedef void (*dtmf_rx_det_cb_fn)(uint8_t *pkt,
 				  char *session,
 				  void *private_data);
 
+/* CB for Voice ready State */
+typedef void (*voice_ready_state_cb_t)(bool is_ready,
+				const char *session_name,
+				void *private_data);
+
 typedef void (*voip_ssr_cb) (uint32_t opcode,
 				void *private_data);
 
@@ -1807,6 +1831,12 @@ struct mvs_driver_info {
 
 struct dtmf_driver_info {
 	dtmf_rx_det_cb_fn dtmf_rx_ul_cb;
+	void *private_data;
+};
+
+struct voice_ready_info {
+	bool is_ready;
+	voice_ready_state_cb_t cb;
 	void *private_data;
 };
 
@@ -1984,6 +2014,8 @@ struct common_data {
 
 	struct dtmf_driver_info dtmf_info;
 
+	struct voice_ready_info ready_info;
+
 	struct hostpcm_driver_info hostpcm_info;
 
 	struct voice_data voice[MAX_VOC_SESSIONS];
@@ -2017,6 +2049,9 @@ void voc_register_mvs_cb(ul_cb_fn ul_cb,
 
 void voc_register_dtmf_rx_detection_cb(dtmf_rx_det_cb_fn dtmf_rx_ul_cb,
 				       void *private_data);
+
+void voc_register_ready_evt_cb(voice_ready_state_cb_t cb,
+				void *private_data);
 
 void voc_config_vocoder(uint32_t media_type,
 			uint32_t rate,

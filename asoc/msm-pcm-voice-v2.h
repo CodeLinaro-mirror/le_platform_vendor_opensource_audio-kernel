@@ -29,6 +29,8 @@ struct msm_voice {
 
 	int playback_start;
 	int capture_start;
+
+	bool ready_cb_registered;
 };
 
 #endif /*_MSM_PCM_VOICE_H*/

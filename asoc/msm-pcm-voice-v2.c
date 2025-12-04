@@ -73,6 +73,13 @@ struct msm_dtmf_detected_event_data {
 	struct vss_istream_evt_rx_dtmf_detected dtmf_payload;
 };
 
+struct msm_ready_detected_event_data {
+	uint32_t event_type;
+	uint32_t payload_len;
+	/*ADSP_STREAM_STATE_READY/ ADSP_STREAM_STATE_NOT_READY*/
+	uint32_t state;
+};
+
 static struct snd_pcm_hardware msm_pcm_hardware = {
 
 	.info =                 (SNDRV_PCM_INFO_INTERLEAVED |
@@ -257,6 +264,33 @@ static void dtmf_rx_detected_evt_hdlr(uint8_t *pkt,
 	}
 }
 
+static void voice_stream_ready_state_handler(bool is_ready,
+					     const char *session_name,
+					     void *private_data)
+{
+	int ret = 0;
+	struct snd_soc_pcm_runtime *soc_prtd = private_data;
+	struct msm_ready_detected_event_data event_data = {
+		.event_type = ADSP_STREAM_READY_EVENT,
+		.payload_len = sizeof(event_data.state),
+	};
+
+	if (!soc_prtd) {
+		pr_err("%s: pcm_runtime is NULL\n", __func__);
+		return;
+	}
+
+	event_data.state = is_ready ?
+		ADSP_STREAM_STATE_READY : ADSP_STREAM_STATE_NOT_READY;
+
+	pr_debug("%s: sending READY evt: is_ready=%d, state=%u\n",
+		 __func__, is_ready, event_data.state);
+
+	ret = msm_adsp_inform_mixer_ctl(soc_prtd, (uint32_t *)&event_data);
+	if (ret)
+		pr_err("%s: failed to inform mixer ctl. err = %d\n", __func__, ret);
+}
+
 static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -384,7 +418,7 @@ static int msm_pcm_close(struct snd_pcm_substream *substream)
 
 		session_id = get_session_id(prtd);
 		if (session_id)
-			voc_end_voice_call(session_id);
+			ret = voc_end_voice_call(session_id);
 	}
 	mutex_unlock(&prtd->lock);
 	msm_adsp_clean_mixer_ctl_pp_event_queue(soc_prtd);
@@ -394,11 +428,37 @@ static int msm_pcm_close(struct snd_pcm_substream *substream)
 static int msm_pcm_prepare(struct snd_pcm_substream *substream)
 {
 	int ret = 0;
-	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct msm_voice *prtd = runtime->private_data;
+	struct snd_pcm_runtime *runtime;
+	struct msm_voice *prtd;
 	uint32_t session_id = 0;
 
+	if (!substream) {
+		pr_err("%s: Substream is not initialized\n", __func__);
+		return -EINVAL;
+	}
+
+	runtime = substream->runtime;
+	if (!runtime) {
+		pr_err("%s: PCM runtime is not initialized\n", __func__);
+		return -EINVAL;
+	}
+
+	prtd = runtime->private_data;
+	if (!prtd) {
+		pr_err("%s: Private data (prtd) is invalid\n", __func__);
+		return -EINVAL;
+	}
+
 	mutex_lock(&prtd->lock);
+
+	if (!prtd->ready_cb_registered) {
+		struct snd_soc_pcm_runtime *rtd = substream->private_data;
+		/* or appropriate rtd handle */
+		voc_register_ready_evt_cb(voice_stream_ready_state_handler, (void *)rtd);
+		prtd->ready_cb_registered = true;
+		pr_debug("%s: registered READY evt cb for pcm %s\n",
+				__func__, substream->pcm->id);
+	}
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		ret = msm_pcm_playback_prepare(substream);
@@ -407,8 +467,9 @@ static int msm_pcm_prepare(struct snd_pcm_substream *substream)
 
 	if (prtd->playback_start && prtd->capture_start) {
 		session_id = get_session_id(prtd);
-		if (session_id)
-			voc_start_voice_call(session_id);
+		if (session_id) {
+			ret = voc_start_voice_call(session_id);
+		}
 	}
 	mutex_unlock(&prtd->lock);
 
