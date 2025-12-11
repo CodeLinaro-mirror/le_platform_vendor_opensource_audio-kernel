@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -2792,6 +2792,23 @@ int adm_arrange_mch_map(struct adm_cmd_device_open_v5 *open, int path,
 			open->dev_channel_mapping[5] = PCM_CHANNEL_RS;
 			open->dev_channel_mapping[6] = PCM_CHANNEL_LB;
 			open->dev_channel_mapping[7] = PCM_CHANNEL_RB;
+		} else if (channel_mode == 16) {
+			open->dev_channel_mapping[0] = PCM_CHANNEL_FL;
+			open->dev_channel_mapping[1] = PCM_CHANNEL_FR;
+			open->dev_channel_mapping[2] = PCM_CHANNEL_FC;
+			open->dev_channel_mapping[3] = PCM_CHANNEL_LFE;
+			open->dev_channel_mapping[4] = PCM_CHANNEL_LB;
+			open->dev_channel_mapping[5] = PCM_CHANNEL_RB;
+			open->dev_channel_mapping[6] = PCM_CHANNEL_LS;
+			open->dev_channel_mapping[7] = PCM_CHANNEL_RS;
+			open->dev_channel_mapping[8] = PCM_CHANNEL_TFL;
+			open->dev_channel_mapping[9] = PCM_CHANNEL_TFR;
+			open->dev_channel_mapping[10] = PCM_CHANNEL_TSL;
+			open->dev_channel_mapping[11] = PCM_CHANNEL_TSR;
+			open->dev_channel_mapping[12] = PCM_CHANNEL_FLC;
+			open->dev_channel_mapping[13] = PCM_CHANNEL_FRC;
+			open->dev_channel_mapping[14] = PCM_CHANNEL_RLC;
+			open->dev_channel_mapping[15] = PCM_CHANNEL_RRC;
 		} else {
 			pr_err("%s: invalid num_chan %d\n", __func__,
 				channel_mode);
