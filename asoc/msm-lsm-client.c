@@ -4079,16 +4079,16 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	if (copy_from_user(p_data, bytes, size))
 		pr_err("%s: Error copying from user", __func__);
 
-	mutex_lock(&lsm_dev->lock);
+	//mutex_lock(&lsm_dev->lock);
 	if (!runtime) {
 		pr_err("%s: Invalid runtime\n", __func__);
-		mutex_unlock(&lsm_dev->lock);
+		//mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 	prtd = runtime->private_data;
 	if (!prtd || !prtd->lsm_client) {
 		pr_err("%s: No LSM session active\n", __func__);
-		mutex_unlock(&lsm_dev->lock);
+		//mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 	mutex_lock(&prtd->lsm_api_lock);
@@ -4186,13 +4186,13 @@ static int msm_lsm_module_params_put(struct snd_kcontrol *kcontrol,
 	kfree(params_temp);
 	kfree(p_data);
 	mutex_unlock(&prtd->lsm_api_lock);
-	mutex_unlock(&lsm_dev->lock);
+	//mutex_unlock(&lsm_dev->lock);
 	return 0;
 
 err_free_pdata:
 	kfree(p_data);
 	mutex_unlock(&prtd->lsm_api_lock);
-	mutex_unlock(&lsm_dev->lock);
+	//mutex_unlock(&lsm_dev->lock);
 	return err;
 }
 
