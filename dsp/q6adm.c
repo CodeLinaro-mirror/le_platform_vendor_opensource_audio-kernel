@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -118,6 +118,8 @@ struct adm_ctl {
 	int tx_port_id;
 	bool hyp_assigned;
 	int fnn_app_type;
+	int fnn_port_id;
+	int fnn_copp_idx;
 	bool is_channel_swapped;
 };
 
@@ -2574,6 +2576,8 @@ static void send_adm_cal_type(int fedai_id, int cal_index, int path, int port_id
 		this_adm.tx_port_id = port_id;
 		this_adm.hyp_assigned = true;
 		this_adm.fnn_app_type = app_type;
+		this_adm.fnn_port_id = port_id;
+		this_adm.fnn_copp_idx = copp_idx;
 		pr_debug("%s: hyp_assign_phys success in tx_port_id 0x%x\n",
 			 __func__, this_adm.tx_port_id);
 	}
@@ -4372,7 +4376,9 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 					app_type = audproc_cal_info->app_type;
 				}
 
-				if (result && this_adm.fnn_app_type == app_type) {
+				if (result && ((this_adm.fnn_app_type == app_type) &&
+						(this_adm.fnn_port_id == port_id) &&
+						(this_adm.fnn_copp_idx == copp_idx))){
 					pr_debug("%s: use hyp assigned %d, use buffer %d\n",
 						 __func__, this_adm.hyp_assigned,
 						cal_block->buffer_number);
@@ -4443,7 +4449,9 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 			app_type = audproc_cal_info->app_type;
 		}
 
-		if (result && this_adm.fnn_app_type == app_type) {
+		if (result && ((this_adm.fnn_app_type == app_type) &&
+				(this_adm.fnn_port_id == port_id) &&
+			        (this_adm.fnn_copp_idx == copp_idx))) {
 			pr_debug("%s: use hyp assigned %d, use buffer %d\n",
 				  __func__, this_adm.hyp_assigned,
 				  cal_block->buffer_number);
