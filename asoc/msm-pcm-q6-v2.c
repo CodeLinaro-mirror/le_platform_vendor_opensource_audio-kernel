@@ -2269,7 +2269,6 @@ static int msm_pcm_add_chmap_controls(struct snd_soc_pcm_runtime *rtd)
 	struct snd_pcm *pcm = rtd->pcm;
 	struct snd_pcm_chmap *chmap_info;
 	struct snd_kcontrol *kctl;
-	char device_num[12];
 	int i, ret = 0;
 
 	pr_debug("%s, Channel map cntrl add\n", __func__);
@@ -2297,11 +2296,6 @@ static int msm_pcm_add_chmap_controls(struct snd_soc_pcm_runtime *rtd)
 		for (i = 0; i < kctl->count; i++)
 			kctl->vd[i].access |= SNDRV_CTL_ELEM_ACCESS_WRITE;
 
-		snprintf(device_num, sizeof(device_num), "%d", pcm->device);
-		strlcat(kctl->id.name, device_num, sizeof(kctl->id.name));
-		pr_debug("%s, Overwriting channel map control name to: %s\n",
-			__func__, kctl->id.name);
-
 		kctl->put = msm_pcm_chmap_ctl_put;
 		kctl->get = msm_pcm_chmap_ctl_get;
 	}
@@ -2328,11 +2322,6 @@ static int msm_pcm_add_chmap_controls(struct snd_soc_pcm_runtime *rtd)
 		kctl = chmap_info->kctl;
 		for (i = 0; i < kctl->count; i++)
 			kctl->vd[i].access |= SNDRV_CTL_ELEM_ACCESS_WRITE;
-
-		snprintf(device_num, sizeof(device_num), "%d", pcm->device);
-		strlcat(kctl->id.name, device_num, sizeof(kctl->id.name));
-		pr_debug("%s, Overwriting channel map control name to: %s\n",
-			__func__, kctl->id.name);
 
 		kctl->put = msm_pcm_chmap_ctl_put;
 		kctl->get = msm_pcm_chmap_ctl_get;
