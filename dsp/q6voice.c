@@ -4696,6 +4696,11 @@ static int voice_setup_vocproc(struct voice_data *v)
 
         /* enable READY_NOTIFY to client */
 	ret = voice_send_ready_notify_cmd(v, 1);
+	if (ret < 0) {
+		pr_err("%s: READY_NOTIFY enable failed err:%d\n",
+		       __func__, ret);
+		goto fail;
+	}
 
 	/* enable vocproc */
 	ret = voice_send_enable_vocproc_cmd(v);
