@@ -4577,8 +4577,11 @@ static int voice_get_avcs_version_per_service(uint32_t service_id)
 		return -ENOMEM;
 
 	ret = q6core_get_service_version(service_id, ver_info, ver_size);
-	if (ret < 0)
+	if (ret < 0) {
+		pr_err("%s q6core_get_service_version ret = %d ",
+							__func__, ret);
 		goto done;
+	}
 
 	ret = ver_info->services[0].api_version;
 	common.is_avcs_version_queried = true;
