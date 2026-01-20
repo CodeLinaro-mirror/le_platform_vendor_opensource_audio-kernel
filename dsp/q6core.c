@@ -226,6 +226,7 @@ static int parse_fwk_version_info(uint32_t *payload, uint16_t payload_size)
 		       __func__, num_services, VSS_MAX_AVCS_NUM_SERVICES);
 		return -EINVAL;
 	}
+	pr_debug("%s num_services = %d \n", __func__, num_services);
 
 	/*
 	 * Dynamically allocate memory for all
@@ -631,12 +632,14 @@ int q6core_get_service_version(uint32_t service_id,
 	cached_ver_info = q6core_lcl.q6core_avcs_ver_info.ver_info;
 	num_services = cached_ver_info->avcs_fwk_version.num_services;
 
+	pr_err("%s num_services = %d ",__func__, num_services);
 	if (service_id == AVCS_SERVICE_ID_ALL) {
 		memcpy(ver_info, cached_ver_info, ver_size);
 		return 0;
 	}
 
 	ver_info->avcs_fwk_version = cached_ver_info->avcs_fwk_version;
+	pr_err("%s fetch service matching service %d  ",__func__, service_id);
 	for (i = 0; i < num_services; i++) {
 		if (cached_ver_info->services[i].service_id == service_id) {
 			ver_info->services[0] = cached_ver_info->services[i];
