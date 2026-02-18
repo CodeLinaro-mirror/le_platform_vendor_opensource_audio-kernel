@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #ifndef __Q6LSM_H__
 #define __Q6LSM_H__
@@ -163,7 +163,7 @@ struct lsm_session_cmd_set_params_v3 {
 	struct apr_hdr apr_hdr;
 	struct mem_mapping_hdr mem_hdr;
 	uint32_t payload_size;
-	u32 param_data[0];
+	uint8_t *param_data;
 } __packed;
 
 struct lsm_session_cmd_get_params_v2 {
@@ -226,7 +226,7 @@ struct lsm_param_multi_snd_model_conf_levels {
 
 struct lsm_param_confidence_levels {
 	uint8_t num_confidence_levels;
-	uint8_t confidence_levels[0];
+	uint8_t confidence_levels[];
 } __packed;
 
 struct lsm_param_epd_thres {
@@ -262,7 +262,7 @@ struct lsm_param_lab_config {
 struct lsm_param_lab_out_ch_cfg {
 	uint32_t minor_version;
 	uint32_t num_channels;
-	uint8_t	 channel_indices[0];
+	uint8_t	 channel_indices[];
 } __packed;
 
 struct lsm_cmd_read {
