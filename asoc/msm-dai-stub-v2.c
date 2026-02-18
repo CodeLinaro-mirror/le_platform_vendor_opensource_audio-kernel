@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2014, 2017, 2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/of_device.h>
+#include <linux/of_platform.h>
 #include <linux/platform_device.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
+
+static int msm_dai_stub_dai_probe(struct snd_soc_dai *dai);
+static int msm_dai_stub_dai_remove(struct snd_soc_dai *dai);
 
 enum {
 	STUB_RX,
@@ -52,9 +57,15 @@ static const char *  msm_dai_stub_get_aifname(const char *stream_name)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
 static int msm_dai_stub_set_channel_map(struct snd_soc_dai *dai,
-		unsigned int tx_num, unsigned int *tx_slot,
-		unsigned int rx_num, unsigned int *rx_slot)
+				unsigned int tx_num, const unsigned int *tx_slot,
+				unsigned int rx_num, const unsigned int *rx_slot)
+#else
+static int msm_dai_stub_set_channel_map(struct snd_soc_dai *dai,
+				unsigned int tx_num, unsigned int *tx_slot,
+				unsigned int rx_num, unsigned int *rx_slot)
+#endif
 {
 	pr_debug("%s:\n", __func__);
 
@@ -63,6 +74,8 @@ static int msm_dai_stub_set_channel_map(struct snd_soc_dai *dai,
 
 static struct snd_soc_dai_ops msm_dai_stub_ops = {
 	.set_channel_map = msm_dai_stub_set_channel_map,
+	.probe		=  msm_dai_stub_dai_probe,
+	.remove		=  msm_dai_stub_dai_remove,
 };
 
 static int msm_dai_stub_add_route(struct snd_soc_dai *dai)
@@ -125,8 +138,6 @@ static struct snd_soc_dai_driver msm_dai_stub_dai_rx = {
 		.rate_max = 48000,
 	},
 	.ops = &msm_dai_stub_ops,
-	.probe = &msm_dai_stub_dai_probe,
-	.remove = &msm_dai_stub_dai_remove,
 };
 
 static struct snd_soc_dai_driver msm_dai_stub_dai_tx[] = {
@@ -142,8 +153,6 @@ static struct snd_soc_dai_driver msm_dai_stub_dai_tx[] = {
 			.rate_max = 48000,
 		},
 		.ops = &msm_dai_stub_ops,
-		.probe = &msm_dai_stub_dai_probe,
-		.remove = &msm_dai_stub_dai_remove,
 	},
 	{
 		.capture = {
@@ -157,8 +166,6 @@ static struct snd_soc_dai_driver msm_dai_stub_dai_tx[] = {
 			.rate_max = 48000,
 		},
 		.ops = &msm_dai_stub_ops,
-		.probe = &msm_dai_stub_dai_probe,
-		.remove = &msm_dai_stub_dai_remove,
 	}
 };
 
@@ -174,8 +181,6 @@ static struct snd_soc_dai_driver msm_dai_stub_dtmf_tx_dai = {
 		.rate_max = 48000,
 	},
 	.ops = &msm_dai_stub_ops,
-	.probe = &msm_dai_stub_dai_probe,
-	.remove = &msm_dai_stub_dai_remove,
 	.name = "dtmf_tx",
 };
 
@@ -192,8 +197,6 @@ static struct snd_soc_dai_driver msm_dai_stub_host_capture_tx_dai[] = {
 			.rate_max = 48000,
 		},
 		.ops = &msm_dai_stub_ops,
-		.probe = &msm_dai_stub_dai_probe,
-		.remove = &msm_dai_stub_dai_remove,
 		.name = "rx_capture_tx",
 	},
 	{
@@ -208,8 +211,6 @@ static struct snd_soc_dai_driver msm_dai_stub_host_capture_tx_dai[] = {
 			.rate_max = 48000,
 		},
 		.ops = &msm_dai_stub_ops,
-		.probe = &msm_dai_stub_dai_probe,
-		.remove = &msm_dai_stub_dai_remove,
 		.name = "tx_capture_tx",
 	},
 };
@@ -227,8 +228,6 @@ static struct snd_soc_dai_driver msm_dai_stub_host_playback_rx_dai[] = {
 			.rate_max = 48000,
 		},
 		.ops = &msm_dai_stub_ops,
-		.probe = &msm_dai_stub_dai_probe,
-		.remove = &msm_dai_stub_dai_remove,
 		.name = "rx_playback_rx",
 	},
 	{
@@ -243,8 +242,6 @@ static struct snd_soc_dai_driver msm_dai_stub_host_playback_rx_dai[] = {
 			.rate_max = 48000,
 		},
 		.ops = &msm_dai_stub_ops,
-		.probe = &msm_dai_stub_dai_probe,
-		.remove = &msm_dai_stub_dai_remove,
 		.name = "tx_playback_rx",
 	},
 };
@@ -313,10 +310,17 @@ static int msm_dai_stub_dev_probe(struct platform_device *pdev)
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_dai_stub_dev_remove(struct platform_device *pdev)
+#else
 static int msm_dai_stub_dev_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
+        return 0;
+#endif
 }
 
 static const struct of_device_id msm_dai_stub_dev_dt_match[] = {
@@ -352,11 +356,17 @@ static int msm_dai_stub_probe(struct platform_device *pdev)
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_dai_stub_remove(struct platform_device *pdev)
+#else
 static int msm_dai_stub_remove(struct platform_device *pdev)
+#endif
 {
 	pr_debug("%s:\n", __func__);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_dai_stub_dt_match[] = {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -9,6 +9,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/pcm.h>
@@ -278,7 +279,7 @@ static int msm_pcm_loopback_get_session(struct snd_soc_pcm_runtime *rtd,
 		goto exit;
 	}
 
-	strlcpy(session_map[index].stream_name,
+	strscpy(session_map[index].stream_name,
 		rtd->dai_link->stream_name,
 		sizeof(session_map[index].stream_name));
 	dev_dbg(component->dev, "%s: stream %s index %d\n",
@@ -2410,7 +2411,11 @@ static int msm_pcm_probe(struct platform_device *pdev)
 				NULL, 0);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	struct msm_pcm_pdata *pdata;
 	int i = 0;
@@ -2425,7 +2430,10 @@ static int msm_pcm_remove(struct platform_device *pdev)
 	}
 	kfree(pdata);
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_pcm_loopback_dt_match[] = {

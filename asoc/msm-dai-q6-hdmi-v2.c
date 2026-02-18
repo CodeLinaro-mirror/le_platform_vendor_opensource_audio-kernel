@@ -1,7 +1,7 @@
 
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -11,6 +11,7 @@
 #include <linux/bitops.h>
 #include <linux/slab.h>
 #include <linux/of_device.h>
+#include <linux/version.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
@@ -20,6 +21,15 @@
 #include "msm-dai-q6-v2.h"
 
 #define HDMI_RX_CA_MAX 0x32
+
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount,\
+ 	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_volsw, \
+ 	.get = xhandler_get, .put = xhandler_put, \
+ 	.private_value = (unsigned long)&(struct soc_mixer_control) \
+ 		{.reg = xreg, .shift = xshift, .rshift = xshift, .max = xcount, \
+ 		/*.count = xcount,*/ .platform_max = xmax, .invert = xinvert} }
 
 enum {
 	DP_CONTROLLER0 = 0,
@@ -575,6 +585,8 @@ static struct snd_soc_dai_ops msm_dai_q6_hdmi_ops = {
 	.prepare	= msm_dai_q6_hdmi_prepare,
 	.hw_params	= msm_dai_q6_hdmi_hw_params,
 	.shutdown	= msm_dai_q6_hdmi_shutdown,
+	.probe		= msm_dai_q6_hdmi_dai_probe,
+	.remove		= msm_dai_q6_hdmi_dai_remove,
 };
 
 static struct snd_soc_dai_driver msm_dai_q6_hdmi_hdmi_rx_dai = {
@@ -594,8 +606,6 @@ static struct snd_soc_dai_driver msm_dai_q6_hdmi_hdmi_rx_dai = {
 	},
 	.ops = &msm_dai_q6_hdmi_ops,
 	.id = HDMI_RX,
-	.probe = msm_dai_q6_hdmi_dai_probe,
-	.remove = msm_dai_q6_hdmi_dai_remove,
 };
 
 static struct snd_soc_dai_driver msm_dai_q6_hdmi_hdmi_ms_rx_dai = {
@@ -615,8 +625,6 @@ static struct snd_soc_dai_driver msm_dai_q6_hdmi_hdmi_ms_rx_dai = {
 	},
 	.ops = &msm_dai_q6_hdmi_ops,
 	.id = HDMI_RX_MS,
-	.probe = msm_dai_q6_hdmi_dai_probe,
-	.remove = msm_dai_q6_hdmi_dai_remove,
 };
 
 static struct snd_soc_dai_driver msm_dai_q6_display_port_rx_dai[] = {
@@ -637,8 +645,6 @@ static struct snd_soc_dai_driver msm_dai_q6_display_port_rx_dai[] = {
 		},
 		.ops = &msm_dai_q6_hdmi_ops,
 		.id = MSM_DISPLAY_PORT,
-		.probe = msm_dai_q6_hdmi_dai_probe,
-		.remove = msm_dai_q6_hdmi_dai_remove,
 	},
 	{
 		.playback = {
@@ -657,8 +663,6 @@ static struct snd_soc_dai_driver msm_dai_q6_display_port_rx_dai[] = {
 		},
 		.ops = &msm_dai_q6_hdmi_ops,
 		.id = MSM_DISPLAY_PORT1,
-		.probe = msm_dai_q6_hdmi_dai_probe,
-		.remove = msm_dai_q6_hdmi_dai_remove,
 	},
 };
 
@@ -715,10 +719,17 @@ static int msm_dai_q6_hdmi_dev_probe(struct platform_device *pdev)
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_dai_q6_hdmi_dev_remove(struct platform_device *pdev)
+#else
 static int msm_dai_q6_hdmi_dev_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id msm_dai_q6_hdmi_dt_match[] = {

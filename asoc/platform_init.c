@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 */
 
 #include <linux/kernel.h>
@@ -27,7 +27,7 @@ static int __init audio_platform_init(void)
 	msm_soc_routing_platform_init();
 	msm_pcm_voice_init();
 	msm_pcm_voip_init();
-	msm_common_init();
+	//msm_common_init();
 	msm_voice_host_init();
 
 	return 0;
@@ -35,7 +35,7 @@ static int __init audio_platform_init(void)
 
 static void audio_platform_exit(void)
 {
-	msm_common_exit();
+	//msm_common_exit();
 	msm_pcm_voip_exit();
 	msm_pcm_voice_exit();
 	msm_soc_routing_platform_exit();

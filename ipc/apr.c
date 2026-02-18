@@ -24,8 +24,8 @@
 #include <linux/ipc_logging.h>
 #include <linux/of_platform.h>
 #include <linux/ratelimit.h>
-#include <linux/qcom_scm.h>
-#include <linux/bootmarker_kernel.h>
+#include <linux/firmware/qcom/qcom_scm.h>
+#include <linux/version.h>
 #include <soc/snd_event.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/audio_notifier.h>
@@ -322,11 +322,7 @@ static void apr_adsp_up(void)
 {
 	if (apr_get_q6_state() != APR_SUBSYS_LOADED) {
 		pr_info("%s: Q6 is Up\n", __func__);
-		#if (IS_ENABLED(CONFIG_BOOTMARKER_PROXY))
-			bootmarker_place_marker("M - ADSP Ready");
-		#else
-			dev_err(&pdev->dev, "M - ADSP Ready\n");
-		#endif
+		dev_info(apr_priv->dev, "M - ADSP Ready\n");
 		apr_set_q6_state(APR_SUBSYS_LOADED);
 
 		spin_lock(&apr_priv->apr_lock);
@@ -1281,13 +1277,21 @@ static int apr_probe(struct platform_device *pdev)
 	return apr_debug_init();
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void apr_remove(struct platform_device *pdev)
+#else
 static int apr_remove(struct platform_device *pdev)
+#endif
 {
 	snd_event_client_deregister(&pdev->dev);
 	apr_cleanup();
 	apr_tal_exit();
 	apr_priv = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+	return;
+#else
 	return 0;
+#endif
 }
 
 static const struct of_device_id apr_machine_of_match[]  = {

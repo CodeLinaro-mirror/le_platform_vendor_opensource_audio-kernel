@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/init.h>
@@ -10,6 +10,7 @@
 #include <linux/wait.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 #include <linux/dma-mapping.h>
 #include <sound/core.h>
 #include <sound/soc.h>
@@ -30,6 +31,17 @@
 #define DTMF_MAX_DURATION 65535
 #define NUM_CHANNELS_MONO   1
 #define NUM_CHANNELS_STEREO 2
+
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount, \
+	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_volsw, \
+	.get = xhandler_get, .put = xhandler_put, \
+	.private_value = (unsigned long)&(struct soc_mixer_control) { \
+		.reg = xreg, .shift = xshift, .rshift = xshift, .max = xcount, \
+		.platform_max = xmax, .invert = xinvert \
+	} \
+}
 
 static struct msm_voice voice_info[VOICE_SESSION_INDEX_MAX];
 
@@ -1141,10 +1153,19 @@ done:
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void msm_pcm_remove(struct platform_device *pdev)
+#else
 static int msm_pcm_remove(struct platform_device *pdev)
+#endif
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+        return;
+#else
+        return 0;
+#endif
 }
 
 static const struct of_device_id msm_voice_dt_match[] = {

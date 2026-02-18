@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _LINUX_SOUNDWIRE_H
@@ -9,8 +10,19 @@
 #include <linux/mutex.h>
 #include <linux/irqdomain.h>
 #include <linux/regmap.h>
+#include <linux/version.h>
 #include "audio_mod_devicetable.h"
 
+enum {
+	SWR_UC0 = 0,
+	SWR_UC1,
+	SWR_UC2,
+	SWR_UC3,
+	SWR_UC_MAX,
+};
+
+#define SWR_CLK_RATE_24KHZ        24000
+#define SWR_CLK_RATE_48KHZ        48000
 #define SWR_CLK_RATE_0P3MHZ       300000
 #define SWR_CLK_RATE_0P6MHZ       600000
 #define SWR_CLK_RATE_1P2MHZ      1200000
@@ -18,6 +30,7 @@
 #define SWR_CLK_RATE_4P8MHZ      4800000
 #define SWR_CLK_RATE_9P6MHZ      9600000
 #define SWR_CLK_RATE_11P2896MHZ  11289600
+#define SWR_CLK_RATE_12P288MHZ   12288000
 
 extern struct bus_type soundwire_type;
 struct swr_device;
@@ -32,6 +45,8 @@ struct swr_device;
  * configurations of all devices
  */
 #define SWR_MAX_MSTR_PORT_NUM	(SWR_MAX_DEV_NUM * SWR_MAX_DEV_PORT_NUM)
+/* SWR slave port params count */
+#define SWR_PORT_PARAMS 2
 
 /* Regmap support for soundwire interface */
 struct regmap *__devm_regmap_init_swr(struct swr_device *dev,
@@ -119,7 +134,18 @@ struct swr_port_info {
 	u8 req_ch;
 	u8 num_ch;
 	u32 ch_rate;
+	u32 req_ch_rate;
 };
+
+struct swr_port_params {
+	u32 offset1;
+	u32 lane_ctrl;
+};
+
+struct swr_dev_frame_config {
+	struct swr_port_params *pp;
+};
+
 
 /*
  * struct swr_params - represent transfer of data from soundwire slave
@@ -208,6 +234,8 @@ struct swr_master {
 			  const void *buf, size_t len);
 	int (*get_logical_dev_num)(struct swr_master *mstr, u64 dev_id,
 				u8 *dev_num);
+	int (*init_port_params)(struct swr_master *mstr, u32 dev_num,
+				u32 num_ports, struct swr_dev_frame_config *uc_arr);
 	int (*slvdev_datapath_control)(struct swr_master *mstr, bool enable);
 	bool (*remove_from_group)(struct swr_master *mstr);
 	void (*device_wakeup_vote)(struct swr_master *mstr);
@@ -245,8 +273,13 @@ struct swr_device {
 	struct device    dev;
 	u64 addr;
 	u8 group_id;
+	bool paging_support;
+	bool ignore_nested_irq;
 	struct irq_domain *slave_irq;
 	bool slave_irq_pending;
+	bool clk_scale_initialized;
+	u8 g_scp1_val; /* used for v1.2 or class devices */
+	u8 g_scp2_val; /* used for v1.2 or class devices */
 };
 
 static inline struct swr_device *to_swr_device(struct device *dev)
@@ -274,11 +307,16 @@ struct swr_driver {
 	int	(*device_up)(struct swr_device *swr);
 	int	(*device_down)(struct swr_device *swr);
 	int	(*reset_device)(struct swr_device *swr);
+	int	(*interrupt_callback)(struct swr_device *swr, u8 devnum);
 	struct device_driver		driver;
 	const struct swr_device_id	*id_table;
 };
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static inline struct swr_driver *to_swr_driver(const struct device_driver *drv)
+#else
 static inline struct swr_driver *to_swr_driver(struct device_driver *drv)
+#endif
 {
 	return drv ? container_of(drv, struct swr_driver, driver) : NULL;
 }
@@ -332,6 +370,9 @@ extern void swr_port_response(struct swr_master *mstr, u8 tid);
 extern int swr_get_logical_dev_num(struct swr_device *dev, u64 dev_id,
 			u8 *dev_num);
 
+extern int swr_init_port_params(struct swr_device *dev,
+			u32 num_ports, struct swr_dev_frame_config *pp);
+
 extern int swr_read(struct swr_device *dev, u8 dev_num, u16 reg_addr,
 			void *buf, u32 len);
 
@@ -366,6 +407,8 @@ extern void swr_unregister_master(struct swr_master *master);
 extern int swr_register_master(struct swr_master *master);
 
 extern int swr_device_up(struct swr_device *swr_dev);
+
+extern int swr_device_handle_interrupt(struct swr_device *swr_dev, u8 devnum);
 
 extern int swr_device_down(struct swr_device *swr_dev);
 

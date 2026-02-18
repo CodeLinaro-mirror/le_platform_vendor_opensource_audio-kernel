@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022,2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -2443,7 +2443,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		config_debug_fs_read_cb();
 
 		if (data->payload_size != (READDONE_IDX_SEQ_ID + 1) * sizeof(uint32_t)) {
-			pr_err("%s:  payload size of %d is less than expected %d.\n",
+			pr_err("%s:  payload size of %d is less than expected %zu.\n",
 					__func__, data->payload_size,
 					((READDONE_IDX_SEQ_ID + 1) * sizeof(uint32_t)));
 			spin_unlock_irqrestore(
@@ -8850,6 +8850,8 @@ static int q6asm_memory_map_regions(struct audio_client *ac, int dir,
 	}
 	mmap_regions = (struct avs_cmd_shared_mem_map_regions *)
 							mmap_region_cmd;
+
+	mutex_lock(&ac->cmd_lock);
 	q6asm_add_mmaphdr(ac, &mmap_regions->hdr, cmd_size, dir);
 	atomic_set(&ac->mem_state, -1);
 	pr_debug("%s: mmap_region=0x%pK token=0x%x\n", __func__,
@@ -8907,7 +8909,6 @@ static int q6asm_memory_map_regions(struct audio_client *ac, int dir,
 		buffer_node = NULL;
 		goto fail_cmd;
 	}
-	mutex_lock(&ac->cmd_lock);
 
 	for (i = 0; i < bufcnt; i++) {
 		ab = &port->buf[i];
@@ -8920,9 +8921,9 @@ static int q6asm_memory_map_regions(struct audio_client *ac, int dir,
 			buffer_node[i].mmap_hdl);
 	}
 	ac->port[dir].tmp_hdl = 0;
-	mutex_unlock(&ac->cmd_lock);
 	rc = 0;
 fail_cmd:
+	mutex_unlock(&ac->cmd_lock);
 	kfree(mmap_region_cmd);
 	mmap_region_cmd = NULL;
 	return rc;

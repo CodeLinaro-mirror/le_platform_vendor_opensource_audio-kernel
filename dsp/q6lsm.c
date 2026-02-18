@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -236,7 +236,7 @@ static int q6lsm_callback(struct apr_client_data *data, void *priv)
 		}
 
 		if (client->param_size != param_size) {
-			pr_err("%s: response payload size %d mismatched with user requested %d\n",
+			pr_err("%s: response payload size %d mismatched with user requested %lu\n",
 			    __func__, param_size, client->param_size);
 			ret = -EINVAL;
 			goto done;
@@ -1294,7 +1294,7 @@ int q6lsm_set_afe_data_format(uint64_t fe_id, uint16_t afe_data_format)
 		if (fe_id == lsm_client_afe_data[n].fe_id) {
 			lsm_client_afe_data[n].unprocessed_data =
 							afe_data_format;
-			pr_debug("%s: session ID is %d, fe_id is %d\n",
+			pr_debug("%s: session ID is %d, fe_id is %llu\n",
 				 __func__, n, fe_id);
 			return 0;
 		}
@@ -1307,7 +1307,7 @@ int q6lsm_set_afe_data_format(uint64_t fe_id, uint16_t afe_data_format)
 		lsm_client_afe_data[free_session].fe_id = fe_id;
 		lsm_client_afe_data[free_session].unprocessed_data =
 							afe_data_format;
-		pr_debug("%s: session ID is %d, fe_id is %d\n",
+		pr_debug("%s: session ID is %d, fe_id is %llu\n",
 			 __func__, free_session, fe_id);
 		return 0;
 	}
@@ -1339,7 +1339,7 @@ void q6lsm_get_afe_data_format(uint64_t fe_id, uint16_t *afe_data_format)
 		if (fe_id == lsm_client_afe_data[n].fe_id) {
 			*afe_data_format =
 				lsm_client_afe_data[n].unprocessed_data;
-			pr_debug("%s: session: %d, fe_id: %d, afe data: %s\n",
+			pr_debug("%s: session: %d, fe_id: %llu, afe data: %s\n",
 				__func__, n, fe_id,
 				*afe_data_format ? "unprocessed" : "processed");
 			return;
@@ -2130,7 +2130,16 @@ static int q6lsm_mmapcallback(struct apr_client_data *data, void *priv)
 		return 0;
 	}
 
-	if (data->payload_size < (2 * sizeof(uint32_t))) {
+/*
+	The payload_size can be either 4 or 8 bytes.
+	It has to be verified whether the payload_size is
+	atleast 4 bytes. If it is less, returns errorcode.
+
+	The opcode for 4 bytes is 0x12A80
+	The opcode for 8 bytes is 0x110E8.
+
+*/
+	if (data->payload_size < (2 * sizeof(uint16_t))) {
 		pr_err("%s: payload has invalid size[%d]\n", __func__,
 			data->payload_size);
 		return -EINVAL;

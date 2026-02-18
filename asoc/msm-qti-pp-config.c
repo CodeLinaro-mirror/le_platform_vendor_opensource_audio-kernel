@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/err.h>
@@ -22,6 +22,16 @@
 /* Equal to Frontend after last of the MULTIMEDIA SESSIONS */
 #define MAX_EQ_SESSIONS		(MSM_FRONTEND_DAI_MAX + 1)
 #define CHMIX_CFG_CONST_PARAM_SIZE 4
+
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount,\
+	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_volsw, \
+	.get = xhandler_get, .put = xhandler_put, \
+	.private_value = (unsigned long)&(struct soc_mixer_control) \
+		{.reg = xreg, .shift = xshift, .rshift = xshift, .max = xcount, \
+		/*.count = xcount,*/ .platform_max = xmax, .invert = xinvert} }
+
 
 enum {
 	EQ_BAND1 = 0,
@@ -102,7 +112,7 @@ done:
 static int msm_qti_pp_get_eq_enable_mixer(struct snd_kcontrol *kcontrol,
 					  struct snd_ctl_elem_value *ucontrol)
 {
-	int eq_idx = ((struct soc_multi_mixer_control *)
+	int eq_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->reg;
 
 	if ((eq_idx < 0) || (eq_idx >= MAX_EQ_SESSIONS))
@@ -118,7 +128,7 @@ static int msm_qti_pp_get_eq_enable_mixer(struct snd_kcontrol *kcontrol,
 static int msm_qti_pp_put_eq_enable_mixer(struct snd_kcontrol *kcontrol,
 					  struct snd_ctl_elem_value *ucontrol)
 {
-	int eq_idx = ((struct soc_multi_mixer_control *)
+	int eq_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->reg;
 	int value = ucontrol->value.integer.value[0];
 
@@ -137,7 +147,7 @@ static int msm_qti_pp_get_eq_band_count_audio_mixer(
 					struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
-	int eq_idx = ((struct soc_multi_mixer_control *)
+	int eq_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->reg;
 
 	if ((eq_idx < 0) || (eq_idx >= MAX_EQ_SESSIONS))
@@ -153,7 +163,7 @@ static int msm_qti_pp_put_eq_band_count_audio_mixer(
 					struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
-	int eq_idx = ((struct soc_multi_mixer_control *)
+	int eq_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->reg;
 	int value = ucontrol->value.integer.value[0];
 
@@ -177,7 +187,7 @@ static int msm_qti_pp_put_dtmf_module_enable
 	int ret = 0;
 	u32 flag = (bool)ucontrol->value.integer.value[0];
 
-	fe_id = ((struct soc_multi_mixer_control *)
+	fe_id = ((struct soc_mixer_control *)
 			kcontrol->private_value)->shift;
 	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s: invalid FE %d\n", __func__, fe_id);
@@ -208,9 +218,9 @@ done:
 static int msm_qti_pp_get_eq_band_audio_mixer(struct snd_kcontrol *kcontrol,
 					    struct snd_ctl_elem_value *ucontrol)
 {
-	int eq_idx = ((struct soc_multi_mixer_control *)
+	int eq_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->reg;
-	int band_idx = ((struct soc_multi_mixer_control *)
+	int band_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->shift;
 
 	if ((eq_idx < 0) || (eq_idx >= MAX_EQ_SESSIONS) ||
@@ -244,9 +254,9 @@ static int msm_qti_pp_get_eq_band_audio_mixer(struct snd_kcontrol *kcontrol,
 static int msm_qti_pp_put_eq_band_audio_mixer(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
-	int eq_idx = ((struct soc_multi_mixer_control *)
+	int eq_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->reg;
-	int band_idx = ((struct soc_multi_mixer_control *)
+	int band_idx = ((struct soc_mixer_control *)
 					kcontrol->private_value)->shift;
 
 	if ((eq_idx < 0) || (eq_idx >= MAX_EQ_SESSIONS) ||

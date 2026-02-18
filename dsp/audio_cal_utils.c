@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/slab.h>
 #include <linux/fs.h>
@@ -617,7 +617,7 @@ static int cal_block_ion_alloc(struct cal_block_data *cal_block)
 	}
 
 	if (cal_block->cma_mem) {
-		ret = msm_audio_ion_import_cma(&cal_block->map_data.mem_handle,
+		ret = msm_audio_ion_import_cma((void **)&cal_block->map_data.mem_handle,
 			cal_block->map_data.ion_map_handle,
 			NULL, 0,
 			&cal_block->cal_data.paddr,

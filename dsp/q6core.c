@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
+#include <linux/of_platform.h>
 #include <linux/string.h>
 #include <linux/types.h>
 #include <linux/spinlock.h>
@@ -18,6 +19,7 @@
 #include <linux/kobject.h>
 #include <linux/delay.h>
 #include <dsp/q6core.h>
+#include <linux/version.h>
 #include <dsp/audio_cal_utils.h>
 #include <dsp/apr_audio-v2.h>
 #include <soc/snd_event.h>
@@ -1225,7 +1227,7 @@ int q6core_create_lpass_npa_client(uint32_t node_id, char *client_name,
 	cmd_ptr->hdr.token = 0;
 	cmd_ptr->hdr.opcode = AVCS_CMD_CREATE_LPASS_NPA_CLIENT;
 	cmd_ptr->node_id = AVCS_SLEEP_ISLAND_CORE_DRIVER_NODE_ID;
-	strlcpy(cmd_ptr->client_name, client_name,
+	strscpy(cmd_ptr->client_name, client_name,
 			sizeof(cmd_ptr->client_name));
 
 	pr_debug("%s: create lpass npa client opcode[0x%x] node id[0x%x]\n",
@@ -1506,9 +1508,10 @@ int q6core_map_mdf_memory_regions(uint64_t *buf_add, uint32_t mempool_id,
 			* bufcnt;
 
 	mmap_region_cmd = kzalloc(cmd_size, GFP_KERNEL);
-	if (mmap_region_cmd == NULL)
+	if (mmap_region_cmd == NULL) {
+		mutex_unlock(&q6core_lcl.cmd_lock);
 		return -ENOMEM;
-
+	}
 	mmap_regions = (struct avs_cmd_shared_mem_map_regions *)mmap_region_cmd;
 	mmap_regions->hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
 						APR_HDR_LEN(APR_HDR_SIZE),
@@ -2128,11 +2131,17 @@ err:
 	return rc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0)
+static void q6core_remove(struct platform_device *pdev)
+#else
 static int q6core_remove(struct platform_device *pdev)
+#endif
 {
 	snd_event_client_deregister(&pdev->dev);
 	of_platform_depopulate(&pdev->dev);
-	return 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
+        return 0;
+#endif
 }
 
 static const struct of_device_id q6core_of_match[]  = {
