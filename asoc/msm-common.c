@@ -1231,7 +1231,8 @@ int msm_common_dai_link_init(struct snd_soc_pcm_runtime *rtd)
 	}
 
 	if ((!strncmp(backend_name, "SLIM", strlen("SLIM"))) ||
-		(!strncmp(backend_name, "CODEC_DMA", strlen("CODEC_DMA")))) {
+		(!strncmp(backend_name, "CDC_DMA", strlen("CDC_DMA")))) {
+                pr_debug("%s SLIM/CODEC_DMA : backend_name: %s",__func__, backend_name); 
 		ctl_len = strlen(dai_link->stream_name) + 1 +
 				strlen(mixer_ctl_name) + 1;
 		mixer_str = kzalloc(ctl_len, GFP_KERNEL);

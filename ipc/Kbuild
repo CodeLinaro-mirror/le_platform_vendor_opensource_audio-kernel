@@ -85,6 +85,11 @@ else
 			export
 			INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
 		endif
+		ifeq ($(CONFIG_ARCH_LAHAINA), y)
+			include $(AUDIO_ROOT)/config/lahainaauto.conf
+			export
+			INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
+		endif
 		ifeq ($(CONFIG_ARCH_SM8150), y)
 			ifdef CONFIG_SND_SOC_SA8155
 				include $(AUDIO_ROOT)/config/sa8155auto.conf

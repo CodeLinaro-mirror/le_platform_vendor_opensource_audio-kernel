@@ -3002,6 +3002,7 @@ static void afe_send_cal_spkr_prot_tx(int port_id)
 	}
 }
 
+#if 0
 static void afe_send_cal_spv4_rx(int port_id)
 {
 
@@ -3091,6 +3092,7 @@ static void afe_send_cal_spkr_prot_rx(int port_id)
 done:
 	return;
 }
+#endif
 
 /**
  * afe_send_cdc_dma_data_align -
@@ -3822,7 +3824,8 @@ void afe_send_cal(u16 port_id)
 			send_afe_cal_type(AFE_LSM_TX_CAL, port_id);
 	} else if (afe_get_port_type(port_id) == MSM_AFE_PORT_TYPE_RX) {
 		send_afe_cal_type(AFE_COMMON_RX_CAL, port_id);
-		afe_send_cal_spkr_prot_rx(port_id);
+		pr_err("%s Skip  @@afe_send_cal_spkr_prot_rx()  @@ \n",__func__);
+		//afe_send_cal_spkr_prot_rx(port_id); //TODO, crash in q6core, check later
 	}
 }
 
