@@ -3437,7 +3437,8 @@ int afe_send_port_power_mode(u16 port_id)
 		APRV2_IDS_SERVICE_ID_ADSP_AFE_V) >= AFE_API_VERSION_V4)) {
 		pr_debug("%s: AFE port[%d] API version is invalid!\n",
 			__func__, port_id);
-		return 0;
+		pr_err("%s Ignore and continue ",__func__);
+		//return 0;
 	}
 
 	memset(&power_mode_cfg, 0, sizeof(power_mode_cfg));
@@ -3513,7 +3514,8 @@ int afe_send_port_island_mode(u16 port_id)
 		APRV2_IDS_SERVICE_ID_ADSP_AFE_V) >= AFE_API_VERSION_V4)) {
 		pr_debug("%s: AFE port[%d] API version is invalid!\n",
 				__func__, port_id);
-		return 0;
+		pr_err("%s Ignore and continue to set island mode",__func__);
+		//return 0;
 	}
 
 	memset(&island_cfg, 0, sizeof(island_cfg));
