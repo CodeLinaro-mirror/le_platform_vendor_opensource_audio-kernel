@@ -28,7 +28,6 @@
 #include <sound/tlv.h>
 #include <asoc/msm-cdc-pinctrl.h>
 #include <asoc/msm-cdc-supply.h>
-#include "wsa883x-registers.h"
 #include "wsa883x.h"
 #include "internal.h"
 #include "asoc/bolero-slave-internal.h"
@@ -744,12 +743,12 @@ static ssize_t wsa883x_variant_read(struct snd_info_entry *entry,
 	case WSA8830:
 		len = snprintf(buffer, sizeof(buffer), "WSA8830\n");
 		break;
+	case WSA8832:
+		len = snprintf(buffer, sizeof(buffer), "WSA8832\n");
+		break;
 	case WSA8835:
 	case WSA8835_V2:
 		len = snprintf(buffer, sizeof(buffer), "WSA8835\n");
-		break;
-	case WSA8832:
-		len = snprintf(buffer, sizeof(buffer), "WSA8832\n");
 		break;
 	default:
 		len = snprintf(buffer, sizeof(buffer), "UNDEFINED\n");
@@ -1168,6 +1167,9 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 			snd_soc_component_update_bits(component,
 						WSA883X_DRE_CTL_0,
 						0xF0, 0x00);
+			snd_soc_component_update_bits(component,
+						WSA883X_DRE_CTL_0,
+						0x07, 0x04);
 		} else if (wsa883x->dev_mode == SPEAKER) {
 			snd_soc_component_update_bits(component,
 						WSA883X_CDC_PATH_MODE,
@@ -1178,6 +1180,15 @@ static int wsa883x_spkr_event(struct snd_soc_dapm_widget *w,
 			snd_soc_component_update_bits(component,
 						WSA883X_DRE_CTL_0,
 						0xF0, 0x90);
+			if (wsa883x->variant == WSA8830 ||
+				wsa883x->variant == WSA8832)
+				snd_soc_component_update_bits(component,
+						WSA883X_DRE_CTL_0,
+						0x07, 0x03);
+			else
+				snd_soc_component_update_bits(component,
+						WSA883X_DRE_CTL_0,
+						0x07, 0x02);
 		}
 		swr_slvdev_datapath_control(wsa883x->swr_slave,
 					    wsa883x->swr_slave->dev_num,
@@ -1464,20 +1475,25 @@ static int wsa883x_codec_probe(struct snd_soc_component *component)
 	wsa883x->global_pa_cnt = 0;
 
 	memset(w_name, 0, sizeof(w_name));
-	strscpy(w_name, wsa883x->dai_driver->playback.stream_name,
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
+	strlcat(w_name, " ", sizeof(w_name));
+	strlcat(w_name, wsa883x->dai_driver->playback.stream_name,
 				sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strscpy(w_name, "IN", sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
+	strlcat(w_name, " IN", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strscpy(w_name, "SWR DAC_Port", sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
+	strlcat(w_name, " SWR DAC_PORT", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
-	strscpy(w_name, "SPKR", sizeof(w_name));
+	strscpy(w_name, component->name_prefix, sizeof(w_name));
+	strlcat(w_name, " SPKR", sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	snd_soc_dapm_sync(dapm);
@@ -1780,6 +1796,7 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 	bool pin_state_current = false;
 	struct wsa_ctrl_platform_data *plat_data = NULL;
 	struct snd_soc_component *component;
+	const char *wsa883x_name_prefix_of = NULL;
 	char buffer[MAX_NAME_LEN];
 	int dev_index = 0;
 	char *proc_entry_name;
@@ -1931,6 +1948,17 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 
 	wcd_disable_irq(&wsa883x->irq_info, WSA883X_IRQ_INT_PA_ON_ERR);
 
+	ret = of_property_read_string(pdev->dev.of_node, "sound-name-prefix",
+				&wsa883x_name_prefix_of);
+	if (ret) {
+		dev_err(&pdev->dev,
+			"%s: Looking up %s property in node %s failed\n",
+			__func__, "qcom,wsa-prefix",
+		pdev->dev.of_node->full_name);
+		goto err_irq;
+	}
+
+
 	wsa883x->driver = devm_kzalloc(&pdev->dev,
 			sizeof(struct snd_soc_component_driver), GFP_KERNEL);
         if (!wsa883x->driver) {
@@ -1971,12 +1999,18 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 	ret = snd_soc_register_component(&pdev->dev,
 				wsa883x->driver, wsa883x->dai_driver, 1);
 
+	wsa883x->wsa883x_name_prefix = kstrndup(wsa883x_name_prefix_of,
+			strlen(wsa883x_name_prefix_of), GFP_KERNEL);
+
+    	pr_debug ("%s wsa883x->wsa883x_name_prefix = %s", __func__,
+				wsa883x->wsa883x_name_prefix);			
 	component = snd_soc_lookup_component(&pdev->dev, wsa883x->driver->name);
 	if (!component) {
 		dev_err(&pdev->dev, "%s: component is NULL \n", __func__);
 		ret = -EINVAL;
 		goto err_mem;
 	}
+	component->name_prefix = wsa883x->wsa883x_name_prefix;
 
 	wsa883x->parent_np = of_parse_phandle(pdev->dev.of_node,
 					      "qcom,bolero-handle", 0);
@@ -2046,6 +2080,7 @@ static int wsa883x_swr_probe(struct swr_device *pdev)
 	return 0;
 
 err_mem:
+	kfree(wsa883x->wsa883x_name_prefix);
 	if (wsa883x->dai_driver) {
 		kfree(wsa883x->dai_driver->name);
 		kfree(wsa883x->dai_driver->playback.stream_name);
@@ -2113,6 +2148,7 @@ static int wsa883x_swr_remove(struct swr_device *pdev)
 #endif
 	mutex_destroy(&wsa883x->res_lock);
 	snd_soc_unregister_component(&pdev->dev);
+	kfree(wsa883x->wsa883x_name_prefix);
 	if (wsa883x->dai_driver) {
 		kfree(wsa883x->dai_driver->name);
 		kfree(wsa883x->dai_driver->playback.stream_name);

@@ -242,13 +242,34 @@ static int parse_fwk_version_info(uint32_t *payload, uint16_t payload_size)
 		return -EINVAL;
 	}
 
-	q6core_lcl.q6core_avcs_ver_info.ver_info =
-		kzalloc(ver_size, GFP_ATOMIC);
-	if (q6core_lcl.q6core_avcs_ver_info.ver_info == NULL)
+	q6core_lcl.q6core_avcs_ver_info.ver_info = kzalloc(ver_size, GFP_ATOMIC);
+
+	//Allocate for avcs_get_fwk_version
+	//q6core_lcl.q6core_avcs_ver_info.ver_info =
+	//	kzalloc(sizeof(struct avcs_get_fwk_version), GFP_ATOMIC);
+	if (q6core_lcl.q6core_avcs_ver_info.ver_info == NULL) {
+		pr_err("%s q6core_lcl.q6core_avcs_ver_info.ver_info is NULL",__func__);
 		return -ENOMEM;
+	}
+#if 0
+	// Allocate num_services * avs_svc_api_info
+	q6core_lcl.q6core_avcs_ver_info.ver_info->services =
+		kzalloc((num_services * sizeof(struct avs_svc_api_info)), GFP_ATOMIC);
+
+	if (q6core_lcl.q6core_avcs_ver_info.ver_info->services == NULL) {
+		pr_err("%s q6core_lcl.q6core_avcs_ver_info.ver_info->services is NULL",__func__);
+		if (q6core_lcl.q6core_avcs_ver_info.ver_info != NULL) {
+			pr_err("%s Freeing q6core_lcl.q6core_avcs_ver_info.ver_info \n",__func__);
+			kfree(q6core_lcl.q6core_avcs_ver_info.ver_info);
+			q6core_lcl.q6core_avcs_ver_info.ver_info = NULL;
+		}
+		return -ENOMEM;
+	}
+#endif
 
 	memcpy(q6core_lcl.q6core_avcs_ver_info.ver_info, (uint8_t *) payload,
 	       ver_size);
+	pr_err("%s Done ",__func__);
 	return 0;
 }
 
@@ -729,6 +750,7 @@ int q6core_get_avcs_api_version_per_service(uint32_t service_id)
 	uint32_t num_services;
 	int ret = 0;
 
+	pr_err("%s Entered for service_id = %u\n",__func__, service_id );
 	if (service_id == AVCS_SERVICE_ID_ALL)
 		return -EINVAL;
 
@@ -739,11 +761,23 @@ int q6core_get_avcs_api_version_per_service(uint32_t service_id)
 	}
 
 	cached_ver_info = q6core_lcl.q6core_avcs_ver_info.ver_info;
+	if (cached_ver_info == NULL) {
+		pr_err("%s cached_ver_info is NULL\n",__func__);
+		return -EINVAL;
+	}
 	num_services = cached_ver_info->avcs_fwk_version.num_services;
+	pr_err("%s num_services = 0x%x  ",__func__, num_services);
+	if (num_services > VSS_MAX_AVCS_NUM_SERVICES) {
+                pr_err("%s: num_services: %d greater than max services: %d\n",
+                       __func__, num_services, VSS_MAX_AVCS_NUM_SERVICES);
+    	}
 
 	for (i = 0; i < num_services; i++) {
-		if (cached_ver_info->services[i].service_id == service_id)
+		if (cached_ver_info->services[i].service_id == service_id) {
+			pr_err("%s cached_ver_info->services[i].api_version = 0x%x \n",__func__,
+				cached_ver_info->services[i].api_version);
 			return cached_ver_info->services[i].api_version;
+		}
 	}
 	pr_err("%s: No service matching service ID %d\n", __func__, service_id);
 	return -EINVAL;

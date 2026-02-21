@@ -9,6 +9,7 @@
 #include <linux/regmap.h>
 #include <sound/soc.h>
 #include <sound/info.h>
+#include "wsa883x-registers.h"
 
 #define WSA883X_MAX_SWR_PORTS   4
 

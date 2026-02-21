@@ -1115,7 +1115,8 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 {
 	int ret = 0;
 	int xfer = 0;
-	char *bufptr = NULL;
+	size_t rc = 0;
+	void *bufptr = NULL;
 	void *data = NULL;
 	uint32_t idx = 0;
 	uint32_t size = 0;
@@ -1171,19 +1172,19 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 
 		bufptr = data;
 		if (bufptr) {
-			pr_debug("%s:fbytes =%lu: xfer=%d size=%d\n",
-				 __func__, fbytes, xfer, size);
-			if (copy_from_iter(bufptr, xfer, iter)) {
+			/*pr_debug("%s:fbytes =%lu: xfer=%d size=%d\n",
+				 __func__, fbytes, xfer, size);*/
+			rc = copy_from_iter((void __force *)bufptr, xfer, iter);
+			if (rc == 0) {
 				ret = -EFAULT;
 				pr_err("%s: copy_from_user failed\n",
 					__func__);
 				q6asm_cpu_buf_release(IN, prtd->audio_client);
 				goto fail;
 			}
-			iter += xfer;
 			fbytes -= xfer;
-			pr_debug("%s:fbytes = %lu: xfer=%d\n", __func__,
-				 fbytes, xfer);
+			pr_debug("%s:fbytes = %lu: xfer=%d, iov_offset=%zu \n", __func__,
+				 fbytes, xfer, iter->iov_offset);
 			if (atomic_read(&prtd->start)) {
 				pr_debug("%s:writing %d bytes of buffer to dsp\n",
 						__func__, xfer);
@@ -1303,6 +1304,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	void *data = NULL;
 	uint32_t idx = 0;
 	uint32_t size = 0;
+	size_t rc = 0;
 	uint32_t offset = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct msm_audio *prtd = substream->runtime->private_data;
@@ -1361,7 +1363,8 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 				size = xfer = fbytes;
 		}
 
-		if (copy_to_iter(bufptr+offset, xfer, iter)) {
+		rc = copy_to_iter((void __force *)bufptr+offset, xfer, iter);
+		if (rc == 0) {
 			pr_err("Failed to copy buf to user\n");
 			ret = -EFAULT;
 			q6asm_cpu_buf_release(OUT, prtd->audio_client);
@@ -1370,8 +1373,8 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 		fbytes -= xfer;
 		size -= xfer;
 		prtd->in_frame_info[idx].offset += xfer;
-		pr_debug("%s:fbytes = %lu: size=%d: xfer=%d\n",
-					__func__, fbytes, size, xfer);
+		pr_debug("%s:fbytes = %lu: size=%d: xfer=%d, iov_offset=%zu\n",
+					__func__, fbytes, size, xfer, iter->iov_offset);
 		pr_debug(" Sending next buffer to dsp\n");
 		memset(&prtd->in_frame_info[idx], 0,
 		       sizeof(struct msm_audio_in_frame_info));
