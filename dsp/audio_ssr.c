@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/module.h>
 #include <linux/remoteproc.h>
 #include <linux/remoteproc/qcom_rproc.h>
 #include "audio_ssr.h"
+
 
 /**
  * audio_ssr_register -
@@ -18,17 +19,16 @@
  *
  * Returns handle pointer on success or error PTR on failure
  */
-#ifdef CONFIG_MSM_QDSP6_SSR
-void *audio_ssr_legacy_register(const char *domain_name, struct notifier_block *nb)
+void *audio_ssr_register(const char *domain_name, struct notifier_block *nb)
 {
-	if (domain_name == NULL) {
-		pr_err("%s: Invalid domain name \n", __func__);
+	if (domain_name  == NULL) {
+		pr_err("%s: Invalid domain name\n", __func__);
 		return ERR_PTR(-EINVAL);
 	}
 
 	return qcom_register_ssr_notifier(domain_name, nb);
 }
-EXPORT_SYMBOL(audio_ssr_legacy_register);
+EXPORT_SYMBOL(audio_ssr_register);
 
 /**
  * audio_ssr_deregister -
@@ -39,9 +39,9 @@ EXPORT_SYMBOL(audio_ssr_legacy_register);
  *
  * Returns 0 on success or error on failure
  */
-int audio_ssr_legacy_deregister(void *handle, struct notifier_block *nb)
+int audio_ssr_deregister(void *handle, struct notifier_block *nb)
 {
 	return qcom_unregister_ssr_notifier(handle, nb);
 }
-EXPORT_SYMBOL(audio_ssr_legacy_deregister);
-#endif
+EXPORT_SYMBOL(audio_ssr_deregister);
+

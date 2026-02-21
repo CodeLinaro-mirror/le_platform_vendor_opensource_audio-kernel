@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
+#define __NO_FORTIFY
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/wait.h>
@@ -10,7 +11,7 @@
 #include <linux/jiffies.h>
 #include <linux/uaccess.h>
 #include <linux/atomic.h>
-#include <linux/qcom_scm.h>
+#include <linux/firmware/qcom/qcom_scm.h>
 #include <dsp/msm-dts-srs-tm-config.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/q6adm-v2.h>
@@ -2568,7 +2569,7 @@ static void send_adm_cal_type(int fedai_id, int cal_index, int path, int port_id
 				      cal_block->map_data.map_size,
 				      &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (ret < 0) {
-			pr_err("%s: qcom assign unmap failed result = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom assign unmap failed result = %d addr = 0x%lluK size = %zu\n",
 				__func__, ret, cal_block->cal_data.paddr,
 				cal_block->map_data.map_size);
 			ret = -EINVAL;
@@ -4412,7 +4413,7 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 							cal_block->map_data.map_size,
 							&src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 						if (ret < 0) {
-							pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
+							pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%lluK size = %zu\n",
 								__func__, ret,
 								cal_block->cal_data.paddr,
 								cal_block->map_data.map_size);
@@ -4477,7 +4478,7 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
                                                 cal_block->map_data.map_size,
                                                 &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 				if (ret < 0) {
-					pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
+					pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%lluK size = %zu\n",
 						__func__, ret, cal_block->cal_data.paddr,
 						cal_block->map_data.map_size);
 					ret = -EINVAL;

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 
@@ -11996,7 +11996,7 @@ struct avs_svc_api_info {
 
 struct avcs_fwk_ver_info {
 	struct avcs_get_fwk_version avcs_fwk_version;
-	struct avs_svc_api_info services[0];
+	struct avs_svc_api_info services[];
 } __packed;
 
 /* LSM Specific */

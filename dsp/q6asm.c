@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Copyright (c) 2022,2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/fs.h>
 #include <linux/mutex.h>
@@ -2443,7 +2443,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		config_debug_fs_read_cb();
 
 		if (data->payload_size != (READDONE_IDX_SEQ_ID + 1) * sizeof(uint32_t)) {
-			pr_err("%s:  payload size of %d is less than expected %d.\n",
+			pr_err("%s:  payload size of %d is less than expected %zu.\n",
 					__func__, data->payload_size,
 					((READDONE_IDX_SEQ_ID + 1) * sizeof(uint32_t)));
 			spin_unlock_irqrestore(

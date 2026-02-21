@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2014-2017, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/msm_audio.h>
@@ -330,8 +331,9 @@ static long audio_effects_set_pp_param(struct q6audio_effects *effects,
 				long *values)
 {
 	int rc = 0;
-	int effects_module = values[0];
-
+	
+#if 0
+	//int effects_module = values[0];
 	switch (effects_module) {
 	case VIRTUALIZER_MODULE:
 		pr_debug("%s: VIRTUALIZER_MODULE\n", __func__);
@@ -396,6 +398,7 @@ static long audio_effects_set_pp_param(struct q6audio_effects *effects,
 		pr_err("%s: Invalid effects config module\n", __func__);
 		rc = -EINVAL;
 	}
+#endif
 	return rc;
 }
 

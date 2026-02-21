@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/slab.h>
 #include <linux/kthread.h>
@@ -10,7 +10,7 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/mutex.h>
-#include <linux/qcom_scm.h>
+#include <linux/firmware/qcom/qcom_scm.h>
 
 #include <soc/qcom/socinfo.h>
 
@@ -768,7 +768,7 @@ static int voice_send_mvm_cvd_version_cmd(struct voice_data *v)
 
 done:
 	if (ret) {
-		strlcpy(common.cvd_version, CVD_VERSION_0_0,
+		strscpy(common.cvd_version, CVD_VERSION_0_0,
 				sizeof(common.cvd_version));
 	}
 	pr_debug("%s: CVD Version retrieved=%s\n",
@@ -961,31 +961,31 @@ static int voice_create_mvm_cvs_session(struct voice_data *v)
 			mvm_session_cmd.hdr.opcode =
 				VSS_IMVM_CMD_CREATE_PASSIVE_CONTROL_SESSION;
 			if (is_volte_session(v->session_id)) {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				"default volte voice",
 				strlen("default volte voice")+1);
 			} else if (is_voice2_session(v->session_id)) {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				VOICE2_SESSION_VSID_STR,
 				strlen(VOICE2_SESSION_VSID_STR)+1);
 			} else if (is_qchat_session(v->session_id)) {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				QCHAT_SESSION_VSID_STR,
 				strlen(QCHAT_SESSION_VSID_STR)+1);
 			} else if (is_vowlan_session(v->session_id)) {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				VOWLAN_SESSION_VSID_STR,
 				strlen(VOWLAN_SESSION_VSID_STR)+1);
 			} else if (is_voicemmode1(v->session_id)) {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				VOICEMMODE1_VSID_STR,
 				strlen(VOICEMMODE1_VSID_STR) + 1);
 			} else if (is_voicemmode2(v->session_id)) {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				VOICEMMODE2_VSID_STR,
 				strlen(VOICEMMODE2_VSID_STR) + 1);
 			} else {
-				strlcpy(mvm_session_cmd.mvm_session.name,
+				strscpy(mvm_session_cmd.mvm_session.name,
 				"default modem voice",
 				strlen("default modem voice")+1);
 			}
@@ -1030,7 +1030,7 @@ static int voice_create_mvm_cvs_session(struct voice_data *v)
 			mvm_session_cmd.hdr.token = 0;
 			mvm_session_cmd.hdr.opcode =
 				VSS_IMVM_CMD_CREATE_FULL_CONTROL_SESSION;
-			strlcpy(mvm_session_cmd.mvm_session.name,
+			strscpy(mvm_session_cmd.mvm_session.name,
 				"default voip",
 				strlen("default voip")+1);
 
@@ -1085,31 +1085,31 @@ static int voice_create_mvm_cvs_session(struct voice_data *v)
 			cvs_session_cmd.hdr.opcode =
 				VSS_ISTREAM_CMD_CREATE_PASSIVE_CONTROL_SESSION;
 			if (is_volte_session(v->session_id)) {
-				strlcpy(cvs_session_cmd.cvs_session.name,
+				strscpy(cvs_session_cmd.cvs_session.name,
 				"default volte voice",
 				strlen("default volte voice")+1);
 			} else if (is_voice2_session(v->session_id)) {
-				strlcpy(cvs_session_cmd.cvs_session.name,
+				strscpy(cvs_session_cmd.cvs_session.name,
 				VOICE2_SESSION_VSID_STR,
 				strlen(VOICE2_SESSION_VSID_STR)+1);
 			} else if (is_qchat_session(v->session_id)) {
-				strlcpy(cvs_session_cmd.cvs_session.name,
+				strscpy(cvs_session_cmd.cvs_session.name,
 				QCHAT_SESSION_VSID_STR,
 				strlen(QCHAT_SESSION_VSID_STR)+1);
 			} else if (is_vowlan_session(v->session_id)) {
-				strlcpy(cvs_session_cmd.cvs_session.name,
+				strscpy(cvs_session_cmd.cvs_session.name,
 				VOWLAN_SESSION_VSID_STR,
 				strlen(VOWLAN_SESSION_VSID_STR)+1);
 			} else if (is_voicemmode1(v->session_id)) {
-				strlcpy(cvs_session_cmd.cvs_session.name,
+				strscpy(cvs_session_cmd.cvs_session.name,
 				VOICEMMODE1_VSID_STR,
 				strlen(VOICEMMODE1_VSID_STR) + 1);
 			} else if (is_voicemmode2(v->session_id)) {
-				strlcpy(cvs_session_cmd.cvs_session.name,
+				strscpy(cvs_session_cmd.cvs_session.name,
 				VOICEMMODE2_VSID_STR,
 				strlen(VOICEMMODE2_VSID_STR) + 1);
 			} else {
-			strlcpy(cvs_session_cmd.cvs_session.name,
+			strscpy(cvs_session_cmd.cvs_session.name,
 				"default modem voice",
 				strlen("default modem voice")+1);
 			}
@@ -1166,7 +1166,7 @@ static int voice_create_mvm_cvs_session(struct voice_data *v)
 						common.mvs_info.media_type;
 			cvs_full_ctl_cmd.cvs_session.network_id =
 					       common.mvs_info.network_type;
-			strlcpy(cvs_full_ctl_cmd.cvs_session.name,
+			strscpy(cvs_full_ctl_cmd.cvs_session.name,
 				"default q6 voice",
 				strlen("default q6 voice")+1);
 
@@ -1302,7 +1302,7 @@ static int voice_unmap_cal_block(struct voice_data *v, int cal_index)
                                          cal_block->map_data.map_size,
                                          &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (result < 0) {
-			pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%lluK size = %zu\n",
 				__func__, result, cal_block->cal_data.paddr,
 				cal_block->map_data.map_size);
 			cal_block->map_data.q6map_handle = 0;
@@ -1538,7 +1538,7 @@ fail:
                                          cal_block->map_data.map_size,
                                          &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 			if (result < 0) {
-				pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
+				pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%lluK size = %zu\n",
 					__func__, result,
 					cal_block->cal_data.paddr,
 					cal_block->map_data.map_size);
@@ -2784,7 +2784,7 @@ static int voice_get_cal(struct cal_block_data **cal_block,
                                       (*cal_block)->map_data.map_size,
                                       &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (ret < 0) {
-			pr_err("%s: qcom_scm_assign_mem failed ret = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom_scm_assign_mem failed ret = %d addr = 0x%lluK size = %zu\n",
 				__func__, ret, (*cal_block)->cal_data.paddr,
 				(*cal_block)->map_data.map_size);
 			ret = -EINVAL;
@@ -2854,7 +2854,7 @@ static int voice_send_cvs_register_cal_cmd(struct voice_data *v)
 	}
 
 	if (col_data->cal_data.size >= MAX_COL_INFO_SIZE) {
-		pr_err("%s: Invalid cal data size %d!\n",
+		pr_err("%s: Invalid cal data size %zu!\n",
 			__func__, col_data->cal_data.size);
 		ret = -EINVAL;
 		goto unlock;
@@ -3315,7 +3315,7 @@ static int voice_send_cvp_register_cal_cmd(struct voice_data *v)
 		 v->dev_rx.dev_id);
 
 	if (col_data->cal_data.size >= MAX_COL_INFO_SIZE) {
-		pr_err("%s: Invalid cal data size %d!\n",
+		pr_err("%s: Invalid cal data size %zu!\n",
 			__func__, col_data->cal_data.size);
 		ret = -EINVAL;
 		goto unlock;
@@ -3459,7 +3459,7 @@ static int voice_send_cvp_deregister_cal_cmd(struct voice_data *v)
                                       cal_block->map_data.map_size,
                                       &src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 		if (ret < 0) {
-			pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
+			pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%lluK size = %zu\n",
 				__func__, ret, cal_block->cal_data.paddr,
 				cal_block->map_data.map_size);
 			ret = -EINVAL;
@@ -3519,7 +3519,7 @@ static int voice_send_cvp_register_vol_cal_cmd(struct voice_data *v)
 	}
 
 	if (col_data->cal_data.size >= MAX_COL_INFO_SIZE) {
-		pr_err("%s: Invalid cal data size %d!\n",
+		pr_err("%s: Invalid cal data size %zu!\n",
 			__func__, col_data->cal_data.size);
 		ret = -EINVAL;
 		goto unlock;
@@ -7292,7 +7292,7 @@ fail:
 					cal_block->map_data.map_size,
 					&src_vmid_list, dst_vmids, ARRAY_SIZE(dst_vmids));
 			if (result < 0) {
-				pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%pK size = %d\n",
+				pr_err("%s: qcom_scm_assign_mem failed result = %d addr = 0x%lluK size = %zu\n",
 					__func__,
 					result,
 					cal_block->cal_data.paddr,
@@ -7840,7 +7840,7 @@ static int32_t qdsp_mvm_callback(struct apr_client_data *data, void *priv)
 				pr_debug("%s: Error retrieving CVD Version, error:%d\n",
 					 __func__, ptr[1]);
 
-				strlcpy(common.cvd_version, CVD_VERSION_0_0,
+				strscpy(common.cvd_version, CVD_VERSION_0_0,
 					sizeof(common.cvd_version));
 				pr_debug("%s: Fall back to default value, CVD Version = %s\n",
 					 __func__, common.cvd_version);
@@ -8028,7 +8028,7 @@ static int32_t qdsp_cvs_callback(struct apr_client_data *data, void *priv)
 	if (data->opcode == APR_BASIC_RSP_RESULT) {
 		if (data->payload_size) {
 			if (data->payload_size < (2*sizeof(uint32_t))) {
-				pr_err("%s: invalid payload_size, required: %d, actual: %d\n",
+				pr_err("%s: invalid payload_size, required: %lu, actual: %hu\n",
 						__func__, (2*sizeof(uint32_t)), data->payload_size);
 				return -EINVAL;
 			}
@@ -10300,7 +10300,7 @@ int __init voice_init(void)
 	common.is_destroy_cvd = false;
 
 	/* Initialize CVD version */
-	strlcpy(common.cvd_version, CVD_VERSION_DEFAULT,
+	strscpy(common.cvd_version, CVD_VERSION_DEFAULT,
 		sizeof(common.cvd_version));
 	/* Initialize Per-Vocoder Calibration flag */
 	common.is_per_vocoder_cal_enabled = false;
