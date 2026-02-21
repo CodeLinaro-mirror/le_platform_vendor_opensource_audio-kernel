@@ -21,7 +21,6 @@
 #include <linux/remoteproc/qcom_rproc.h>
 #include <linux/remoteproc.h>
 #include <linux/version.h>
-#include <linux/bootmarker_kernel.h>
 
 #define Q6_PIL_GET_DELAY_MS 100
 #define BOOT_CMD 1

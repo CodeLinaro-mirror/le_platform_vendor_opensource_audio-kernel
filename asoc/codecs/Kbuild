@@ -84,6 +84,11 @@ else
 			export
 			INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
 		endif
+		ifeq ($(CONFIG_ARCH_YUPIK), y)
+			include $(AUDIO_ROOT)/config/lahainaauto.conf
+			export
+		INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
+		endif
 		ifeq ($(CONFIG_ARCH_SDMSHRIKE), y)
 			include $(AUDIO_ROOT)/config/sm8150auto.conf
 			INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h

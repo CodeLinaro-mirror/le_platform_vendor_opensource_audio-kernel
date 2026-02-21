@@ -84,6 +84,11 @@ else
 			export
 			INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
 		endif
+		ifeq ($(CONFIG_ARCH_YUPIK), y)
+			include $(AUDIO_ROOT)/config/lahainaauto.conf
+			export
+			INCS    +=  -include $(AUDIO_ROOT)/config/lahainaautoconf.h
+		endif
 		ifeq ($(CONFIG_ARCH_SDMSHRIKE), y)
 			ifdef CONFIG_SND_SOC_SA8155
 				include $(AUDIO_ROOT)/config/sa8155auto.conf
@@ -135,6 +140,8 @@ COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
 ############ ASoC Drivers ############
+
+MACHINE_OBJS += msm-common.o
 
 # for SM8150 sound card driver
 ifdef CONFIG_SND_SOC_SM8150
@@ -215,7 +222,7 @@ endif
 ifdef CONFIG_SND_SOC_QDSP6V2
 	PLATFORM_OBJS += msm-audio-effects-q6-v2.o
 	PLATFORM_OBJS += msm-compress-q6-v2.o
-	PLATFORM_OBJS += msm-common.o
+#	PLATFORM_OBJS += msm-common.o
 	PLATFORM_OBJS += msm-dai-fe.o
 	PLATFORM_OBJS += msm-dai-q6-hdmi-v2.o
 	PLATFORM_OBJS += msm-dai-q6-v2.o
