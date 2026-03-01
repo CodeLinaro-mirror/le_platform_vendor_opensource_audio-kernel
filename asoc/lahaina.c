@@ -46,6 +46,7 @@
 #include "lahaina-port-config.h"
 #include "msm_dailink.h"
 #include "msm_common.h"
+#include <trace/hooks/sound.h>
 
 #define DRV_NAME "lahaina-asoc-snd"
 #define __CHIPSET__ "LAHAINA "
@@ -8288,6 +8289,19 @@ void msm_common_set_pdata(struct snd_soc_card *card,
 	pdata->common_pdata = common_pdata;
 }
 
+static void qcom_check_hostless(void *data, struct snd_pcm_substream *substream, bool *no_buffer)
+{
+	if (!substream || !substream->pcm) return;
+
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+
+	if (!rtd) return;
+
+	if (rtd->dai_link->id == MSM_FRONTEND_DAI_VOICEMMODE1 ||rtd->dai_link->id == MSM_FRONTEND_DAI_VOICEMMODE2) {
+			*no_buffer = true;
+	}
+}
+
 static int msm_asoc_machine_probe(struct platform_device *pdev)
 {
 	struct snd_soc_card *card = NULL;
@@ -8510,6 +8524,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	dev_err(&pdev->dev, "%s: setting snd_card to ONLINE\n", __func__);
 	snd_card_set_card_status(SND_CARD_STATUS_ONLINE);
 
+	register_trace_android_vh_snd_pcm_check_no_buffer(qcom_check_hostless, NULL);
+
 	return 0;
 err:
 	devm_kfree(&pdev->dev, pdata);
@@ -8536,6 +8552,7 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 	msm_audio_remove_qos_request();
 	snd_event_master_deregister(&pdev->dev);
 	snd_soc_unregister_card(card);
+	unregister_trace_android_vh_snd_pcm_check_no_buffer(qcom_check_hostless, NULL);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
