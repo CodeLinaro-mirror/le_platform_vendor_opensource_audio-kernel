@@ -8673,7 +8673,7 @@ struct asm_stream_cmd_set_pp_params {
 	 * must be pre-packed with parameter header and then copied here. Use
 	 * q6core_pack_pp_params to pack the header and param data correctly.
 	 */
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 #define ASM_STREAM_CMD_GET_PP_PARAMS_V2		0x00010DA2
