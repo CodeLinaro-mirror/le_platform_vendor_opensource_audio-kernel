@@ -15351,6 +15351,14 @@ static int msm_dai_q6_cdc_dma_set_channel_map(struct snd_soc_dai *dai,
 		}
 		ch_mask = *rx_ch_mask;
 		ch_num = rx_num_ch;
+		if (( ch_num > 0 ) && (ch_mask == 0x0)) {
+			pr_err ("%s Mismatch in ch_mask ,ch_mask = 0x%x, ch_num = 0x%x\n",
+			__func__, ch_mask, ch_num);
+			if (ch_num == 1)
+				ch_mask = 0x01;
+			if (ch_num == 2)
+				ch_mask = 0x3;
+		}
 		break;
 	case AFE_PORT_ID_WSA_CODEC_DMA_TX_0:
 	case AFE_PORT_ID_WSA_CODEC_DMA_TX_1:
@@ -15419,6 +15427,26 @@ static int msm_dai_q6_cdc_dma_hw_params(
 				AFE_API_VERSION_CODEC_DMA_CONFIG;
 	dai_data->port_config.cdc_dma.sample_rate = dai_data->rate;
 	dai_data->port_config.cdc_dma.num_channels = dai_data->channels;
+
+	dev_dbg(dai->dev, "%s: num_channels [%hu] active_channels_mask [%hu] \n",
+			__func__, dai_data->port_config.cdc_dma.num_channels,
+                        dai_data->port_config.cdc_dma.active_channels_mask);
+
+	/* Check if any of left or right spkr mask bit set and if num_chann > 1
+	detect and correct the channel count of afe port config to avoid
+	afe port start failure */
+	if ((dai_data->port_config.cdc_dma.active_channels_mask == 0x2 ||
+		dai_data->port_config.cdc_dma.active_channels_mask == 0x1) &&
+		(dai_data->port_config.cdc_dma.num_channels > 1)) {
+		dev_warn(dai->dev, "%s: Detected mismatch, num_channels [%hu] active_channels_mask [%hu] \n",
+			__func__, dai_data->port_config.cdc_dma.num_channels,
+			dai_data->port_config.cdc_dma.active_channels_mask);
+		dai_data->port_config.cdc_dma.num_channels = 1; //set to mono channel count
+	}
+	/* Detect incorrect bit_width if format is 6*/
+	if (dai_data->port_config.cdc_dma.data_format == AFE_LINEAR_PCM_DATA_PACKED_16BIT) {
+		dai_data->port_config.cdc_dma.bit_width = 32;
+	}
 	dev_dbg(dai->dev, "%s: bit_wd[%hu] format[%hu]\n"
 		"num_channel %hu sample_rate %d\n", __func__,
 		dai_data->port_config.cdc_dma.bit_width,
@@ -15438,9 +15466,11 @@ static int msm_dai_q6_cdc_dma_prepare(struct snd_pcm_substream *substream,
 
 	if (!test_bit(STATUS_PORT_STARTED, dai_data->status_mask)) {
 		if ((dai->id == AFE_PORT_ID_WSA_CODEC_DMA_TX_0) &&
-			(dai_data->port_config.cdc_dma.data_format == 1))
+			(dai_data->port_config.cdc_dma.data_format == 1)) {
 			dai_data->port_config.cdc_dma.data_format =
 				AFE_LINEAR_PCM_DATA_PACKED_16BIT;
+			dai_data->port_config.cdc_dma.bit_width = 32;
+		}
 
 		if (dai_data->cdc_dma_data_align) {
 			rc = afe_send_cdc_dma_data_align(dai->id,
