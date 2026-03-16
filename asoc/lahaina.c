@@ -5922,7 +5922,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 			    SND_SOC_DPCM_TRIGGER_POST},
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
-		.no_host_mode=1,  /* Fix for hostless Voiccall*/
 		.id = MSM_FRONTEND_DAI_VOICEMMODE1,
 		SND_SOC_DAILINK_REG(voicemmode1),
 	},
@@ -6084,7 +6083,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.dynamic = 1,
 		.dpcm_playback = 1,
 		.dpcm_capture = 1,
-		.no_host_mode=1,  /* Fix for hostless Voiccall*/
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			    SND_SOC_DPCM_TRIGGER_POST},
 		.ignore_suspend = 1,
