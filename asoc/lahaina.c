@@ -7966,6 +7966,8 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 		}
 		pr_err("%s is_wcd937x  is true \n",__func__);
 		is_wcd937x = true;
+	} else {
+		pr_debug("%s wcd938x is true \n",__func__);
 	}
 	dapm = snd_soc_component_get_dapm(component);
 	card = component->card->snd_card;
