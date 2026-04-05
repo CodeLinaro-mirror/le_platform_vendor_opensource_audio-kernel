@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -3401,7 +3401,7 @@ EXPORT_SYMBOL(adm_open);
  * @ec_ref_port_cfg: ec_ref port configuration
  * @ec_ref_chmix_cfg: ec_ref channel mixer configuration
  *
- * Returns 0 on success or error on failure
+ * Returns COPP idx on success or error on failure
  */
 int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 	     int perf_mode, uint16_t bit_width, int app_type, int acdb_id,
@@ -3423,6 +3423,11 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 	void *adm_params = NULL;
 	int param_size;
 	int i;
+	bool copp_metadata_set = false;
+	bool srs_mapped = false;
+	int saved_native_mode = 0;
+	bool native_mode_consumed = false;
+	bool is_v8_api = false;
 
 	int ec_ref_port_id = ec_ref_port_cfg ?
 					ec_ref_port_cfg->port_id :
@@ -3562,6 +3567,7 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			   copp_token);
 		set_bit(ADM_STATUS_CALIBRATION_REQUIRED,
 		(void *)&this_adm.copp.adm_status[port_idx][copp_idx]);
+		copp_metadata_set = true;
 		if ((path != ADM_PATH_COMPRESSED_RX) &&
 		    (path != ADM_PATH_COMPRESSED_TX))
 			send_adm_custom_topology();
@@ -3594,12 +3600,17 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 					(void *)this_adm.outband_memmap.paddr,
 					(uint32_t)this_adm.outband_memmap.size);
 			}
+			else
+			{
+				srs_mapped = true;
+			}
 		}
 
 
 		if ((q6core_get_avcs_api_version_per_service(
 				APRV2_IDS_SERVICE_ID_ADSP_ADM_V) >=
 					ADSP_ADM_API_VERSION_V3)) {
+			is_v8_api = true;
 			memset(&open_v8, 0, sizeof(open_v8));
 			memset(&ep1_payload, 0, sizeof(ep1_payload));
 			memset(&ep2_payload, 0, sizeof(ep2_payload));
@@ -3618,9 +3629,11 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			open_v8.hdr.opcode = ADM_CMD_DEVICE_OPEN_V8;
 
 			if (this_adm.native_mode != 0) {
+				saved_native_mode = this_adm.native_mode;
 				open_v8.flags = flags |
 					(this_adm.native_mode << 11);
 				this_adm.native_mode = 0;
+				native_mode_consumed = true;
 			} else {
 				open_v8.flags = flags;
 			}
@@ -3654,7 +3667,7 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			ret = adm_arrange_mch_map_v8(&ep1_payload, path,
 					channel_mode, port_idx);
 			if (ret)
-				return ret;
+				goto err_cleanup;
 
 			pr_debug("%s: port_id=0x%x %x %x topology_id=0x%X flags %x ref_ch %x\n",
 				__func__, open_v8.endpoint_id_1,
@@ -3707,7 +3720,7 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 						&ep2_payload,
 						ep2_payload.dev_num_channel);
 					if (ret)
-						return ret;
+						goto err_cleanup;
 				}
 				ep2_payload_size = 8 +
 					roundup(ep2_payload.dev_num_channel, 4);
@@ -3716,9 +3729,11 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 
 			open_v8.hdr.pkt_size = param_size;
 			adm_params = kzalloc(param_size, GFP_KERNEL);
-			if (!adm_params) {
+			if (!adm_params)
+			{
+				ret = -ENOMEM;
 				pr_err("%s: memory allocation failure for adm_params\n", __func__);
-				return -ENOMEM;
+				goto err_cleanup;
 			}
 			memcpy(adm_params, &open_v8, sizeof(open_v8));
 			memcpy(adm_params + sizeof(open_v8),
@@ -3740,9 +3755,11 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			if (ret < 0) {
 				pr_err("%s: port_id: 0x%x for[0x%x] failed %d for open_v8\n",
 					__func__, tmp_port, port_id, ret);
-				return -EINVAL;
+				ret = -EINVAL;
+				goto err_cleanup;
 			}
 			kfree(adm_params);
+			adm_params = NULL;
 		} else {
 
 			open.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -3778,7 +3795,7 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			ret = adm_arrange_mch_map(&open, path, channel_mode,
 						  port_idx);
 			if (ret)
-				return ret;
+				goto err_cleanup;
 
 			pr_debug("%s: port_id=0x%x rate=%d topology_id=0x%X\n",
 				__func__, open.endpoint_id_1, open.sample_rate,
@@ -3817,7 +3834,7 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 					open_v6.dev_num_channel_eid2);
 
 				if (ret)
-					return ret;
+					goto err_cleanup;
 
 				ret = adm_apr_send_pkt((uint32_t *) &open_v6,
 					&this_adm.copp.wait[port_idx][copp_idx],
@@ -3830,7 +3847,8 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			if (ret < 0) {
 				pr_err("%s: port_id: 0x%x for[0x%x] failed %d\n",
 					__func__, tmp_port, port_id, ret);
-				return -EINVAL;
+				ret = -EINVAL;
+				goto err_cleanup;
 			}
 		}
 	}
@@ -3869,6 +3887,43 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 	}
 
 	return copp_idx;
+
+err_cleanup:
+	/* Free adm_params if allocated (V8 API only) */
+	if (adm_params) {
+		kfree(adm_params);
+		adm_params = NULL;
+	}
+
+	/* Restore native_mode if consumed (V8 API only) */
+	if (is_v8_api && native_mode_consumed) {
+		this_adm.native_mode = saved_native_mode;
+	}
+
+	/* Unmap SRS memory if mapped (LEGACY_PCM_MODE only) */
+	if (srs_mapped && perf_mode == LEGACY_PCM_MODE) {
+		atomic_set(&this_adm.mem_map_index, ADM_SRS_TRUMEDIA);
+		adm_memory_unmap_regions();
+		atomic_set(&this_adm.mem_map_handles[ADM_SRS_TRUMEDIA], 0);
+	}
+
+	/* Cleanup COPP metadata if set */
+	if (copp_metadata_set) {
+		atomic_set(&this_adm.copp.topology[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.mode[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.rate[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.channels[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.bit_width[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.app_type[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.acdb_id[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.session_type[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.token[port_idx][copp_idx], 0);
+		atomic_set(&this_adm.copp.cnt[port_idx][copp_idx], 0);
+		clear_bit(ADM_STATUS_CALIBRATION_REQUIRED,
+			(void *)&this_adm.copp.adm_status[port_idx][copp_idx]);
+	}
+
+	return ret;
 }
 EXPORT_SYMBOL(adm_open_v2);
 
