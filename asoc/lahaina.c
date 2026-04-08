@@ -4759,6 +4759,8 @@ static int msm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 				SNDRV_PCM_FORMAT_S32_LE);
 		rate->min = rate->max = cdc_dma_tx_cfg[idx].sample_rate;
 		channels->min = channels->max = msm_vi_feed_tx_ch;
+		pr_debug("%s channels->min = %d, channels->max = %d, msm_vi_feed_tx_ch= %d\n",
+			__func__, channels->min, channels->max, msm_vi_feed_tx_ch);
 		break;
 
 	case MSM_BACKEND_DAI_SLIMBUS_7_RX:
@@ -5162,7 +5164,6 @@ static int msm_snd_cdc_dma_startup(struct snd_pcm_substream *substream)
 	return ret;
 }
 
-#if 0
 static void set_cps_config(struct snd_soc_pcm_runtime *rtd,
 				u32 num_ch, u32 ch_mask)
 {
@@ -5275,7 +5276,7 @@ static void set_cps_config(struct snd_soc_pcm_runtime *rtd,
 	afe_set_cps_config(msm_get_port_id(dai_link->id),
 					&pdata->cps_config, ch_mask);
 }
-#endif
+
 
 static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
@@ -5300,6 +5301,8 @@ static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 			__func__, ret);
 		goto err;
 	}
+	pr_debug("%s tx_ch_cnt =%d, tx_ch_cdc_dma = %d, rx_ch_cnt: %d, rx_ch_cdc_dma = %d",
+			__func__, tx_ch_cnt, tx_ch_cdc_dma, rx_ch_cnt, rx_ch_cdc_dma);
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		switch (dai_link->id) {
@@ -5317,6 +5320,16 @@ static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 			pr_debug("%s: id %d rx_ch=%d\n", __func__,
 				ch_id, cdc_dma_rx_cfg[ch_id].channels);
 			user_set_rx_ch = cdc_dma_rx_cfg[ch_id].channels;
+			if (( user_set_rx_ch > 0 ) && (rx_ch_cdc_dma == 0x0)) {
+				/* Detect mismatch in rx ch mask, channel count to avoid
+				port start/prepare  errors */
+				pr_warn("%s Mismatch, rx_ch_cdc_dma = 0x%x, user_set_rx_ch = 0x%x\n",
+					__func__, rx_ch_cdc_dma, user_set_rx_ch);
+				if (user_set_rx_ch == 1)
+					rx_ch_cdc_dma = 0x01;
+				if (user_set_rx_ch == 2)
+					rx_ch_cdc_dma = 0x3;
+			}
 			ret = snd_soc_dai_set_channel_map(cpu_dai, 0, 0,
 					  user_set_rx_ch, &rx_ch_cdc_dma);
 			if (ret < 0) {
@@ -5324,15 +5337,11 @@ static int msm_snd_cdc_dma_hw_params(struct snd_pcm_substream *substream,
 				__func__, ret);
 				goto err;
 			}
-
-			//TODO: check crash later, commenting temporarily
-#if 0
 			if (dai_link->id == MSM_BACKEND_DAI_WSA_CDC_DMA_RX_0 ||
 			    dai_link->id == MSM_BACKEND_DAI_WSA_CDC_DMA_RX_1) {
 				set_cps_config(rtd, user_set_rx_ch,
 						rx_ch_cdc_dma);
 			}
-#endif
 		}
 		break;
 		}
