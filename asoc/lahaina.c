@@ -5706,11 +5706,11 @@ static struct snd_soc_ops msm_wcn_ops_lito = {
 	.hw_params = msm_wcn_hw_params_lito,
 };
 
-static struct snd_soc_ops msm_common_be_ops = {
+/*static struct snd_soc_ops msm_common_be_ops = {
 	.hw_params = msm_common_snd_hw_params,
 	.startup = msm_common_snd_startup,
 	.shutdown = msm_common_snd_shutdown,
-};
+};*/
 
 static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 			  struct snd_kcontrol *kcontrol, int event)
@@ -7133,29 +7133,33 @@ static struct snd_soc_dai_link msm_wsa_cdc_dma_be_dai_links[] = {
 		.name = LPASS_BE_WSA_CDC_DMA_RX_1,
 		.stream_name = LPASS_BE_WSA_CDC_DMA_RX_1,
 		.playback_only = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-                        SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_WSA_CDC_DMA_RX_1,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(wsa_dma_rx1),
 	},
 	{
 		.name = LPASS_BE_WSA_CDC_DMA_TX_1,
 		.stream_name = LPASS_BE_WSA_CDC_DMA_TX_1,
 		.capture_only = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-                        SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_WSA_CDC_DMA_TX_1,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(wsa_dma_tx1),
 	},
 	{
 		.name = LPASS_BE_WSA_CDC_DMA_TX_0_VI,
 		.stream_name = LPASS_BE_WSA_CDC_DMA_TX_0_VI,
+		.no_pcm = 1,
+		.dpcm_capture = 1,
 		.capture_only = 1,
+		.id = MSM_BACKEND_DAI_WSA_CDC_DMA_TX_0,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(wsa_dma_tx0_vi),
 	},
 };
@@ -7180,22 +7184,22 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 		.name = LPASS_BE_RX_CDC_DMA_RX_1,
 		.stream_name = LPASS_BE_RX_CDC_DMA_RX_1,
 		.playback_only = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_RX_CDC_DMA_RX_1,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(rx_dma_rx1),
 	},
 	{
 		.name = LPASS_BE_RX_CDC_DMA_RX_2,
 		.stream_name = LPASS_BE_RX_CDC_DMA_RX_2,
 		.playback_only = 1,
-		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_RX_CDC_DMA_RX_2,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(rx_dma_rx2),
 	},
 	{
@@ -7204,9 +7208,12 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 		.playback_only = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_RX_CDC_DMA_RX_3,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
+
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(rx_dma_rx3),
 	},
 	{
@@ -7215,9 +7222,11 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 		.playback_only = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_RX_CDC_DMA_RX_5,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(rx_dma_rx5),
 	},
 	{
@@ -7226,9 +7235,11 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 		.playback_only = 1,
                 .trigger = {SND_SOC_DPCM_TRIGGER_POST,
 			SND_SOC_DPCM_TRIGGER_POST},
+		.id = MSM_BACKEND_DAI_RX_CDC_DMA_RX_6,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_pmdown_time = 1,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(rx_dma_rx6),
 	},
 	/* TX CDC DMA Backend DAI Links */
@@ -7236,7 +7247,7 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 		.name = LPASS_BE_TX_CDC_DMA_TX_3,
 		.stream_name = LPASS_BE_TX_CDC_DMA_TX_3,
 		.no_pcm = 1,
-                .dpcm_capture = 1,
+		.dpcm_capture = 1,
 		.capture_only = 1,
 		.id = MSM_BACKEND_DAI_TX_CDC_DMA_TX_3,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
@@ -7246,12 +7257,14 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 	},
 	{
 		.name = LPASS_BE_TX_CDC_DMA_TX_4,
-		.stream_name = LPASS_BE_TX_CDC_DMA_TX_4,
+		.stream_name = "TX CDC DMA4 Capture",
+		.no_pcm = 1,
 		.capture_only = 1,
-                .trigger = {SND_SOC_DPCM_TRIGGER_POST,
-			SND_SOC_DPCM_TRIGGER_POST},
+		.dpcm_capture = 1,
+		.id = MSM_BACKEND_DAI_TX_CDC_DMA_TX_4,
+		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
-		.ops = &msm_common_be_ops,
+		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(tx_dma_tx4),
 	},
 };
@@ -7570,63 +7583,6 @@ static int msm_snd_card_late_probe(struct snd_soc_card *card)
 {
 	return 0;
 }
-#if 0
-static int msm_snd_card_late_probe(struct snd_soc_card *card)
-{
-	struct snd_soc_component *component = NULL;
-	const char *be_dl_name = LPASS_BE_RX_CDC_DMA_RX_0;
-	struct snd_soc_pcm_runtime *rtd;
-	struct msm_asoc_mach_data *pdata;
-	int ret = 0;
-	void *mbhc_calibration;
-	bool is_wcd937x = false;
-
-	pdata = snd_soc_card_get_drvdata(card);
-	if (!pdata)
-		return -EINVAL;
-
-	if (pdata->wcd_disabled)
-		return 0;
-
-	rtd = snd_soc_get_pcm_runtime(card, be_dl_name);
-	if (!rtd) {
-		dev_err(card->dev,
-			"%s: snd_soc_get_pcm_runtime for %s failed!\n",
-			__func__, be_dl_name);
-		return -EINVAL;
-	}
-
-	component = snd_soc_rtdcom_lookup(rtd, WCD938X_DRV_NAME);
-	if (!component) {
-		component = snd_soc_rtdcom_lookup(rtd, WCD937X_DRV_NAME);
-		if (!component) {
-			pr_err("%s component is NULL\n", __func__);
-			return -EINVAL;
-		} else {
-			is_wcd937x = true;
-		}
-	}
-
-	mbhc_calibration = def_wcd_mbhc_cal();
-	if (!mbhc_calibration)
-		return -ENOMEM;
-	wcd_mbhc_cfg.calibration = mbhc_calibration;
-	if (!is_wcd937x)
-		ret = wcd938x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
-	else
-		ret = wcd937x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
-	if (ret) {
-		dev_err(component->dev, "%s: mbhc hs detect failed, err:%d\n",
-			__func__, ret);
-		goto err_hs_detect;
-	}
-	return 0;
-
-err_hs_detect:
-	kfree(mbhc_calibration);
-	return ret;
-}
-#endif
 
 static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int wsa_max_devs)
 {
