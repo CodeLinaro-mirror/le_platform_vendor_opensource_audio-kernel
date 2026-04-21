@@ -950,7 +950,7 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 		/* pending CMD_EOS isn't expected */
 		WARN_ON_ONCE(test_bit(CMD_EOS, &prtd->cmd_pending));
 		set_bit(CMD_EOS, &prtd->cmd_pending);
-		ret = q6asm_cmd(prtd->audio_client, CMD_EOS);
+		ret = q6asm_cmd_nowait(prtd->audio_client, CMD_EOS);
 		if (ret)
 			clear_bit(CMD_EOS, &prtd->cmd_pending);
 		break;
@@ -1254,32 +1254,22 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 		}
 		pr_debug("%s: CMD_EOS timeout is %d\n", __func__, timeout);
 
-		found = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
-				SESSION_TYPE_RX, &port_id, &copp_idx);
-
-		if (found) {
-			ret = wait_event_timeout(the_locks.eos_wait,
-					!test_bit(CMD_EOS, &prtd->cmd_pending),
-					timeout);
-			if (!ret) {
-				pr_err("%s: CMD_EOS failed, cmd_pending 0x%lx\n",
-						__func__, prtd->cmd_pending);
-				ret = -ETIMEDOUT;
-			}
-		} else {
-			/* BE already closed (media idle case). Skip wait. */
-			pr_warn("%s: BE closed, skipping EOS wait. cmd_pending 0x%lx\n",
-						__func__, prtd->cmd_pending);
-			clear_bit(CMD_EOS, &prtd->cmd_pending);
-			ret = 0;
+		ret = wait_event_timeout(the_locks.eos_wait,
+					 !test_bit(CMD_EOS, &prtd->cmd_pending),
+					 timeout);
+		if (!ret) {
+			pr_err("%s: CMD_EOS failed, cmd_pending 0x%lx\n",
+			       __func__, prtd->cmd_pending);
+			ret = -ETIMEDOUT;
 		}
-
 		q6asm_cmd(prtd->audio_client, CMD_CLOSE);
 		q6asm_audio_client_buf_free_contiguous(dir,
 					prtd->audio_client);
 		q6asm_audio_client_free(prtd->audio_client);
 	}
 
+	found = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
+				SESSION_TYPE_RX, &port_id, &copp_idx);
 	if (found) {
 		q6adm_update_rtd_info(soc_prtd, port_id, copp_idx,
 					soc_prtd->dai_link->id, 0);
