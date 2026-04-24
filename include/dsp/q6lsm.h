@@ -44,7 +44,7 @@ struct lsm_sound_model {
 struct snd_lsm_event_status_v2 {
 	uint16_t status;
 	uint16_t payload_size;
-	uint8_t  confidence_value[0];
+	uint8_t  confidence_value[];
 };
 
 struct lsm_lab_buffer {
@@ -156,14 +156,14 @@ struct lsm_session_cmd_set_params_v2 {
 	struct apr_hdr apr_hdr;
 	uint32_t payload_size;
 	struct mem_mapping_hdr mem_hdr;
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 struct lsm_session_cmd_set_params_v3 {
 	struct apr_hdr apr_hdr;
 	struct mem_mapping_hdr mem_hdr;
 	uint32_t payload_size;
-	uint8_t *param_data;
+	u32 param_data[];
 } __packed;
 
 struct lsm_session_cmd_get_params_v2 {
@@ -215,13 +215,13 @@ struct lsm_param_media_fmt_v2 {
 	uint32_t	sample_rate;
 	uint16_t	bit_width;
 	uint16_t	num_channels;
-	uint8_t		channel_mapping[0];
+	uint8_t		channel_mapping[];
 } __packed;
 
 struct lsm_param_multi_snd_model_conf_levels {
 	uint32_t model_id;
 	uint32_t num_keywords;
-	uint32_t confidence_levels[0];
+	uint32_t confidence_levels[];
 } __packed;
 
 struct lsm_param_confidence_levels {
