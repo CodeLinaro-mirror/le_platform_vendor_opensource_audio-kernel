@@ -13,7 +13,7 @@
 
 #ifndef __AUDIO_NOTIFIER_H_
 #define __AUDIO_NOTIFIER_H_
-
+#include <linux/notifier.h>
 /* State of the notifier domain */
 enum {
 	AUDIO_NOTIFIER_SERVICE_DOWN,
