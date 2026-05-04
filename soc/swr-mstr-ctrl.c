@@ -24,6 +24,7 @@
 #include <dsp/msm-audio-event-notify.h>
 #include "swr-mstr-registers.h"
 #include "swr-slave-registers.h"
+#include "swr-slave-port-config.h"
 #include <dsp/digital-cdc-rsc-mgr.h>
 #include "swr-mstr-ctrl.h"
 #include <linux/proc_fs.h>
@@ -43,6 +44,7 @@
 #define SWRM_DSD_PARAMS_PORT 4
 
 #define SWRM_SPK_DAC_PORT_RECEIVER 0
+#define SWRM_PHY_ADDR_MAP_COUNT    2
 
 #define SWR_BROADCAST_CMD_ID            0x0F
 #define SWR_DEV_ID_MASK			0xFFFFFFFFFFFF
@@ -155,6 +157,23 @@ static u32 swr_master_read(struct swr_mstr_ctrl *swrm, unsigned int reg_addr);
 static void swr_master_write(struct swr_mstr_ctrl *swrm, u16 reg_addr, u32 val);
 static int swrm_runtime_resume(struct device *dev);
 static void swrm_wait_for_fifo_avail(struct swr_mstr_ctrl *swrm, int swrm_rd_wr);
+
+static u8 swrm_get_device_id(struct swr_mstr_ctrl *swrm, u8 devnum)
+{
+	int i;
+
+	for (i = 1; i < (swrm->num_dev + 1); i++) {
+	if (swrm->logical_dev[devnum] == swrm->phy_dev[i])
+		break;
+	}
+
+	if (i == (swrm->num_dev + 1)) {
+		pr_info("%s: could not find the slave\n", __func__);
+		i = devnum;
+	}
+
+	return i;
+}
 
 static u8 swrm_get_clk_div(int mclk_freq, int bus_clk_freq)
 {
@@ -1504,24 +1523,56 @@ static void swrm_get_device_frame_shape(struct swr_mstr_ctrl *swrm,
 {
 	u32 uc = SWR_UC0;
 	u32 port_id_offset = 0;
+	u32 port_id = 0;
+	u8 dev_num = 0;
+	struct port_params *pp_dev;
+	struct port_params *pp_port;
 
 	if (swrm->master_id == MASTER_ID_TX) {
-		uc = swrm_get_uc(swrm->bus_clk);
-		port_id_offset = (port_req->dev_num - 1) *
+		if (swrm->use_custom_phy_addr &&
+			((swrm->bus_clk == SWR_CLK_RATE_12P288MHZ) ||
+			(swrm->bus_clk == SWR_CLK_RATE_9P6MHZ) ||
+			(swrm->bus_clk == SWR_CLK_RATE_0P6MHZ) ||
+			(swrm->bus_clk == SWR_CLK_RATE_4P8MHZ))) {
+
+			dev_num = swrm_get_device_id(swrm, port_req->dev_num);
+			port_id = port_req->slave_port_id;
+			if ((swrm->bus_clk == SWR_CLK_RATE_12P288MHZ) ||
+				(swrm->bus_clk == SWR_CLK_RATE_9P6MHZ))
+				pp_dev = swrdev_frame_params_9p6MHz[dev_num].pp;
+			else if (swrm->bus_clk == SWR_CLK_RATE_0P6MHZ)
+				pp_dev = swrdev_frame_params_0p6MHz[dev_num].pp;
+			else
+				pp_dev = swrdev_frame_params_4p8MHz[dev_num].pp;
+			pp_port = &pp_dev[port_id];
+			port_req->sinterval = pp_port->si;
+			port_req->offset1 = pp_port->off1;
+			port_req->offset2 = pp_port->off2;
+			port_req->hstart = pp_port->hstart;
+			port_req->hstop = pp_port->hstop;
+			port_req->word_length = pp_port->wd_len;
+			port_req->blk_pack_mode = pp_port->bp_mode;
+			port_req->blk_grp_count = pp_port->bgp_ctrl;
+			port_req->lane_ctrl = pp_port->lane_ctrl;
+		}
+		else {
+			uc = swrm_get_uc(swrm->bus_clk);
+			port_id_offset = (port_req->dev_num - 1) *
 					SWR_MAX_DEV_PORT_NUM +
 					port_req->slave_port_id;
-		if (port_id_offset >= SWR_MAX_MSTR_PORT_NUM)
-			return;
-		port_req->sinterval =
+			if (port_id_offset >= SWR_MAX_MSTR_PORT_NUM)
+				return;
+			port_req->sinterval =
 				((swrm->bus_clk * 2) / port_req->ch_rate) - 1;
-		port_req->offset1 = swrm->pp[uc][port_id_offset].offset1;
-		port_req->offset2 = 0x00;
-		port_req->hstart = 0xFF;
-		port_req->hstop = 0xFF;
-		port_req->word_length = 0xFF;
-		port_req->blk_pack_mode = 0xFF;
-		port_req->blk_grp_count = 0xFF;
-		port_req->lane_ctrl = swrm->pp[uc][port_id_offset].lane_ctrl;
+			port_req->offset1 = swrm->pp[uc][port_id_offset].offset1;
+			port_req->offset2 = 0x00;
+			port_req->hstart = 0xFF;
+			port_req->hstop = 0xFF;
+			port_req->word_length = 0xFF;
+			port_req->blk_pack_mode = 0xFF;
+			port_req->blk_grp_count = 0xFF;
+			port_req->lane_ctrl = swrm->pp[uc][port_id_offset].lane_ctrl;
+		}
 	} else if (swrm->master_id == MASTER_ID_BT) {
 		port_req->sinterval =
 				((swrm->bus_clk * 2) / port_req->ch_rate) - 1;
@@ -2870,6 +2921,7 @@ static int swrm_get_logical_dev_num(struct swr_master *mstr, u64 dev_id,
 							"%s: devnum %d assigned for dev %llx\n",
 							__func__, i,
 							swr_dev->addr);
+						swrm->logical_dev[i] = swr_dev->addr;
 					}
 				}
 			}
@@ -3287,6 +3339,46 @@ static int swrm_probe(struct platform_device *pdev)
 			&swrm->clk_stop_mode0_supp)) {
 		swrm->clk_stop_mode0_supp = FALSE;
 	}
+
+	/* Parse soundwire slave physical address(es) */
+	swrm->phy_dev[0] = 0;
+	swrm->use_custom_phy_addr = false;
+	if (of_find_property(pdev->dev.of_node, "qcom,swr-phy-dev-addr",
+			&map_size)) {
+		map_length = map_size / (SWRM_PHY_ADDR_MAP_COUNT * sizeof(u32));
+		if (map_length > SWRM_NUM_AUTO_ENUM_SLAVES) {
+			map_length = SWRM_NUM_AUTO_ENUM_SLAVES;
+			map_size = map_length *
+					(SWRM_PHY_ADDR_MAP_COUNT * sizeof(u32));
+		}
+
+		temp = devm_kzalloc(&pdev->dev, map_size, GFP_KERNEL);
+		if (!temp) {
+			ret = -ENOMEM;
+			goto err_pdata_fail;
+		}
+		ret = of_property_read_u32_array(pdev->dev.of_node,
+					"qcom,swr-phy-dev-addr", temp,
+					SWRM_PHY_ADDR_MAP_COUNT * map_length);
+		if (ret) {
+			dev_dbg(swrm->dev,
+				"%s: Failed to read swr-phy-dev-addr\n",
+				__func__);
+		} else {
+			for (i = 0; i < map_length; i++) {
+				swrm->phy_dev[i + 1] =
+					temp[SWRM_PHY_ADDR_MAP_COUNT * i];
+				swrm->phy_dev[i + 1] <<= 32;
+				swrm->phy_dev[i + 1] |=
+					temp[SWRM_PHY_ADDR_MAP_COUNT * i + 1];
+			}
+			swrm->use_custom_phy_addr = true;
+		}
+		devm_kfree(&pdev->dev, temp);
+	} else
+		dev_dbg(swrm->dev, "%s: Failed to find swr-phy-dev-addr\n",
+					__func__);
+
 
 	/* Parse soundwire port mapping */
 	ret = of_property_read_u32(pdev->dev.of_node, "qcom,swr-num-ports",
