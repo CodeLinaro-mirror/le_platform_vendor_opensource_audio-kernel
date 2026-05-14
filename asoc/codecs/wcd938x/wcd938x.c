@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
@@ -2912,10 +2913,11 @@ static int wcd938x_ldoh_put(struct snd_kcontrol *kcontrol,
 }
 
 const char * const tx_master_ch_text[] = {
-	"ZERO", "SWRM_PCM_OUT", "SWRM_TX1_CH1", "SWRM_TX1_CH2", "SWRM_TX1_CH3",
+	"ZERO", "SWRM_TX1_CH1", "SWRM_TX1_CH2", "SWRM_TX1_CH3",
 	"SWRM_TX1_CH4", "SWRM_TX2_CH1", "SWRM_TX2_CH2", "SWRM_TX2_CH3",
 	"SWRM_TX2_CH4", "SWRM_TX3_CH1", "SWRM_TX3_CH2", "SWRM_TX3_CH3",
-	"SWRM_TX3_CH4", "SWRM_PCM_IN",
+	"SWRM_TX3_CH4", "SWRM_TX_PCM_IN", "ADC1", "ADC2", "ADC3", "ADC4",
+	"DMIC0", "DMIC1", "DMIC2", "DMIC3", "DMIC4", "DMIC5", "DMIC6", "DMIC7",
 };
 
 const struct soc_enum tx_master_ch_enum =

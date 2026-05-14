@@ -9,7 +9,7 @@
 
 #include <bindings/audio-codec-port-types.h>
 
-#define WCD938X_MAX_SLAVE_CH_TYPES 13
+#define WCD938X_MAX_SLAVE_CH_TYPES 26
 #define ZERO 0
 #define WCD938X_DRV_NAME "wcd938x_codec"
 
@@ -47,7 +47,6 @@ static const struct swr_slave_ch_map swr_slv_tx_ch_idx[] = {
 
 static int swr_master_ch_map[] = {
 	ZERO,
-	SWRM_TX_PCM_OUT,
 	SWRM_TX1_CH1,
 	SWRM_TX1_CH2,
 	SWRM_TX1_CH3,
@@ -61,6 +60,18 @@ static int swr_master_ch_map[] = {
 	SWRM_TX3_CH3,
 	SWRM_TX3_CH4,
 	SWRM_TX_PCM_IN,
+	ADC1,
+	ADC2,
+	ADC3,
+	ADC4,
+	DMIC0,
+	DMIC1,
+	DMIC2,
+	DMIC3,
+	DMIC4,
+	DMIC5,
+	DMIC6,
+	DMIC7,
 };
 
 #if IS_ENABLED(CONFIG_SND_SOC_WCD938X)
