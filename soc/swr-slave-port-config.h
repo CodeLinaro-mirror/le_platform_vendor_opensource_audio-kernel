@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _SWR_SLAVE_PORT_CONFIG
@@ -135,11 +136,11 @@ static struct port_params tx_top_mic_0p6MHz[SWR_MSTR_PORT_LEN] = {
 	{1,  1,  0,  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0x00, 0x00}, /* TX2 */
 };
 
-struct swr_dev_frame_config {
+struct swr_dev_frame_config_slave {
 	struct port_params *pp;
 };
 
-static struct swr_dev_frame_config swrdev_frame_params_9p6MHz[] = {
+static struct swr_dev_frame_config_slave swrdev_frame_params_9p6MHz[] = {
 	{tx_dummy},
 	{tx_wcd_9p6MHz},
 	{tx_top_mic_9p6MHz},
@@ -148,7 +149,7 @@ static struct swr_dev_frame_config swrdev_frame_params_9p6MHz[] = {
 	{tx_bottom_mic_9p6MHz},
 };
 
-static struct swr_dev_frame_config swrdev_frame_params_4p8MHz[] = {
+static struct swr_dev_frame_config_slave swrdev_frame_params_4p8MHz[] = {
 	{tx_dummy},
 	{tx_wcd_4p8MHz},
 	{tx_top_mic_4p8MHz},
@@ -157,7 +158,7 @@ static struct swr_dev_frame_config swrdev_frame_params_4p8MHz[] = {
 	{tx_bottom_mic_4p8MHz},
 };
 
-static struct swr_dev_frame_config swrdev_frame_params_0p6MHz[] = {
+static struct swr_dev_frame_config_slave swrdev_frame_params_0p6MHz[] = {
 	{tx_dummy},
 	{tx_wcd_0p6MHz},
 	{tx_top_mic_0p6MHz},
