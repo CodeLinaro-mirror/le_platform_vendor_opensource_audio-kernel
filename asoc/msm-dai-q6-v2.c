@@ -6715,9 +6715,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     384000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Primary MI2S_RX",
 		.id = MSM_PRIM_MI2S_RX,
 	},
 	{
@@ -6735,7 +6736,6 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Primary MI2S_TX",
 		.id = MSM_PRIM_MI2S_TX,
 	},
 	{
@@ -6749,9 +6749,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Secondary MI2S_RX",
 		.id = MSM_SEC_MI2S_RX,
 	},
 	{
@@ -6765,9 +6766,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Secondary MI2S_TX",
 		.id = MSM_SEC_MI2S_TX,
 	},
 	{
@@ -6781,9 +6783,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Tertiary MI2S_RX",
 		.id = MSM_TERT_MI2S_RX,
 	},
 	{
@@ -6797,9 +6800,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Tertiary MI2S_TX",
 		.id = MSM_TERT_MI2S_TX,
 	},
 	{
@@ -6813,9 +6817,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Quaternary MI2S_RX",
 		.id = MSM_QUAT_MI2S_RX,
 	},
 	{
@@ -6829,9 +6834,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Quaternary MI2S_TX",
 		.id = MSM_QUAT_MI2S_TX,
 	},
 	{
@@ -6843,9 +6849,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Quinary MI2S_RX",
 		.id = MSM_QUIN_MI2S_RX,
 	},
 	{
@@ -6856,9 +6863,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Quinary MI2S_TX",
 		.id = MSM_QUIN_MI2S_TX,
 	},
 	{
@@ -6869,9 +6877,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Senary MI2S_RX",
 		.id = MSM_SENARY_MI2S_RX,
 	},
 	{
@@ -6882,9 +6891,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "Senary MI2S_TX",
 		.id = MSM_SENARY_MI2S_TX,
 	},
 	{
@@ -6895,7 +6905,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
+		.ops = &msm_dai_q6_mi2s_ops,
 		.id = MSM_SEC_MI2S_SD1,
 	},
 	{
@@ -6909,9 +6922,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT0 MI2S_RX",
 		.id = MSM_INT0_MI2S_RX,
 	},
 	{
@@ -6922,9 +6936,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT0 MI2S_TX",
 		.id = MSM_INT0_MI2S_TX,
 	},
 	{
@@ -6937,9 +6952,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT1 MI2S_RX",
 		.id = MSM_INT1_MI2S_RX,
 	},
 	{
@@ -6950,9 +6966,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT1 MI2S_TX",
 		.id = MSM_INT1_MI2S_TX,
 	},
 	{
@@ -6965,9 +6982,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT2 MI2S_RX",
 		.id = MSM_INT2_MI2S_RX,
 	},
 	{
@@ -6978,9 +6996,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT2 MI2S_TX",
 		.id = MSM_INT2_MI2S_TX,
 	},
 	{
@@ -6993,9 +7012,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT3 MI2S_RX",
 		.id = MSM_INT3_MI2S_RX,
 	},
 	{
@@ -7006,9 +7026,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT3 MI2S_TX",
 		.id = MSM_INT3_MI2S_TX,
 	},
 	{
@@ -7022,9 +7043,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     192000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT4 MI2S_RX",
 		.id = MSM_INT4_MI2S_RX,
 	},
 	{
@@ -7035,9 +7057,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT4 MI2S_TX",
 		.id = MSM_INT4_MI2S_TX,
 	},
 	{
@@ -7050,9 +7073,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT5 MI2S_RX",
 		.id = MSM_INT5_MI2S_RX,
 	},
 	{
@@ -7063,9 +7087,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT5 MI2S_TX",
 		.id = MSM_INT5_MI2S_TX,
 	},
 	{
@@ -7078,9 +7103,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 				SNDRV_PCM_FMTBIT_S24_3LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT6 MI2S_RX",
 		.id = MSM_INT6_MI2S_RX,
 	},
 	{
@@ -7091,9 +7117,10 @@ static struct snd_soc_dai_driver msm_dai_q6_mi2s_dai[] = {
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,
 			.rate_min =     8000,
 			.rate_max =     48000,
+			.channels_min = 1,
+			.channels_max = 2,
 		},
 		.ops = &msm_dai_q6_mi2s_ops,
-		.name = "INT6 MI2S_TX",
 		.id = MSM_INT6_MI2S_TX,
 	},
 };
@@ -7313,8 +7340,11 @@ static int msm_dai_q6_mi2s_platform_data_validation(
 			dai_driver->playback.channels_min = 1;
 			dai_driver->playback.channels_max = ch_cnt << 1;
 		} else {
-			dai_driver->playback.channels_min = 0;
-			dai_driver->playback.channels_max = 0;
+			dai_driver->playback.channels_min = 1;
+			dai_driver->playback.channels_max = 1;
+			pr_debug("%s  %s ch_cnt = %d, playback.channels_min = %d, playback.channels_max = %d\n",
+				__func__, dev_name(&pdev->dev), ch_cnt, dai_driver->playback.channels_min ,
+				dai_driver->playback.channels_max);
 		}
 	} else {
 		if (ch_cnt) {
@@ -7324,8 +7354,11 @@ static int msm_dai_q6_mi2s_platform_data_validation(
 			dai_driver->capture.channels_min = 1;
 			dai_driver->capture.channels_max = ch_cnt << 1;
 		} else {
-			dai_driver->capture.channels_min = 0;
-			dai_driver->capture.channels_max = 0;
+			dai_driver->capture.channels_min = 1;
+			dai_driver->capture.channels_max = 1;
+			pr_debug("%s  %s ch_cnt = %d, capture.channels_min = %d, capture.channels_max = %d\n",
+				__func__, dev_name(&pdev->dev), ch_cnt, dai_driver->capture.channels_min ,
+				dai_driver->capture.channels_max);
 		}
 	}
 	dev_dbg(&pdev->dev, "%s: sdlines 0x%x\n",
@@ -7347,6 +7380,7 @@ static int msm_dai_q6_mi2s_dev_probe(struct platform_device *pdev)
 	const char *q6_mi2s_dev_id = "qcom,msm-dai-q6-mi2s-dev-id";
 	u32 mi2s_intf_line = 0;
 	u32 mi2s_intf = 0;
+	int i = 0;
 	struct msm_mi2s_pdata *mi2s_pdata;
 	int rc;
 
@@ -7411,11 +7445,16 @@ static int msm_dai_q6_mi2s_dev_probe(struct platform_device *pdev)
 	if (rc < 0)
 		goto free_dai_data;
 
-	rc = snd_soc_register_component(&pdev->dev, &msm_q6_mi2s_dai_component,
-	&msm_dai_q6_mi2s_dai[mi2s_intf], 1);
-	if (rc < 0)
-		goto err_register;
-	return 0;
+	for (i = 0; i < ARRAY_SIZE(msm_dai_q6_mi2s_dai); i++) {
+		if (msm_dai_q6_mi2s_dai[i].id == mi2s_intf) {
+			rc = snd_soc_register_component(&pdev->dev,
+				&msm_q6_mi2s_dai_component,
+				&msm_dai_q6_mi2s_dai[mi2s_intf], 1);
+			if (rc < 0)
+				goto err_register;
+			return 0;
+		}
+	}
 
 err_register:
 	dev_err(&pdev->dev, "fail to msm_dai_q6_mi2s_dev_probe\n");
