@@ -687,17 +687,7 @@ static int q6lsm_set_params_v3(struct lsm_client *client,
 		lsm_set_param->mem_hdr = *mem_hdr;
 	} else if (param_data != NULL) {
 		pr_err("%s param_size  = %d",__func__, param_size);
-		if (lsm_set_param->param_data == NULL && param_size > 0) {
-			lsm_set_param->param_data = kzalloc(sizeof(uint8_t)*param_size, GFP_KERNEL);
-			if (lsm_set_param->param_data) {
-				memcpy(lsm_set_param->param_data, param_data, (size_t)param_size);
-			}
-			else {
-				pr_err("%s Faield to allocatelsm_set_param->param_data() ",__func__);
-				ret = -ENOMEM;
-				goto done;
-			}
-		}
+		memcpy(lsm_set_param->param_data, param_data, param_size);
 	} else {
 		pr_err("%s: Received NULL pointers for both memory header and data\n",
 		       __func__);
@@ -708,8 +698,6 @@ static int q6lsm_set_params_v3(struct lsm_client *client,
 	ret = q6lsm_apr_send_pkt(client, client->apr, lsm_set_param, true,
 				 NULL);
 done:
-	if (lsm_set_param->param_data != NULL)
-		kfree(lsm_set_param->param_data);
 	kfree(lsm_set_param);
 	return ret;
 }
@@ -1095,9 +1083,8 @@ EXPORT_SYMBOL(q6lsm_sm_set_param_data);
  */
 bool q6lsm_adsp_supports_multi_stage_detection(void)
 {
-	/*return q6core_get_avcs_api_version_per_service(
-			APRV2_IDS_SERVICE_ID_ADSP_LSM_V) >= LSM_API_VERSION_V3;*/
-	return true;
+	return q6core_get_avcs_api_version_per_service(
+			APRV2_IDS_SERVICE_ID_ADSP_LSM_V) >= LSM_API_VERSION_V3;
 }
 EXPORT_SYMBOL(q6lsm_adsp_supports_multi_stage_detection);
 

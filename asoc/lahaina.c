@@ -8304,7 +8304,9 @@ static void qcom_check_hostless(void *data, struct snd_pcm_substream *substream,
 		return;
 
 	if (rtd->dai_link->id == MSM_FRONTEND_DAI_VOICEMMODE1 ||
-		rtd->dai_link->id == MSM_FRONTEND_DAI_VOICEMMODE2) {
+		rtd->dai_link->id == MSM_FRONTEND_DAI_VOICEMMODE2 ||
+		rtd->dai_link->id == MSM_FRONTEND_DAI_LSM1) {
+		pr_debug("%s Enable hostless/no_buffer for stream %s\n", __func__, rtd->dai_link->stream_name);
 		*no_buffer = true;
 	}
 	else if (!strcmp(rtd->dai_link->stream_name, "Secondary MI2S_TX Hostless Capture")) {
