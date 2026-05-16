@@ -207,6 +207,11 @@ SND_SOC_DAILINK_DEFS(multimedia17,
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-compress-dsp")));
 
+SND_SOC_DAILINK_DEFS(multimedia20,
+	DAILINK_COMP_ARRAY(COMP_CPU("MultiMedia20")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
+	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-compress-dsp")));
+
 SND_SOC_DAILINK_DEFS(slimbus8_hostless,
 	DAILINK_COMP_ARRAY(COMP_CPU("SLIMBUS8_HOSTLESS")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
@@ -234,10 +239,10 @@ SND_SOC_DAILINK_DEFS(afepcm_tx1,
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-tx")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-afe")));
 
-SND_SOC_DAILINK_DEFS(multimedia20,
+/*SND_SOC_DAILINK_DEFS(multimedia20,
 	DAILINK_COMP_ARRAY(COMP_CPU("MultiMedia20")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("snd-soc-dummy", "snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback")));
+	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-loopback")));*/
 
 SND_SOC_DAILINK_DEFS(multimedia21,
 	DAILINK_COMP_ARRAY(COMP_CPU("MultiMedia21")),

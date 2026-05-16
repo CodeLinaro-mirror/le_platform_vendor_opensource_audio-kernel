@@ -2620,20 +2620,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_min =     8000,
 			.rate_max =     384000,
 		},
-		.capture = {
-			.stream_name = "MultiMedia20 Capture",
-			.rates = (SNDRV_PCM_RATE_8000_48000|
-					SNDRV_PCM_RATE_KNOT),
-			.formats = (SNDRV_PCM_FMTBIT_S16_LE |
-				    SNDRV_PCM_FMTBIT_S24_LE |
-				    SNDRV_PCM_FMTBIT_S24_3LE |
-				    SNDRV_PCM_FMTBIT_S32_LE),
-			.channels_min = 1,
-			.channels_max = 32,
-			.rate_min =     8000,
-			.rate_max =     48000,
-		},
-		.ops = &msm_fe_Multimedia_dai_ops,
+		.ops = &msm_fe_compress_dai_ops,
 		.name = "MultiMedia20",
 	},
 	{
