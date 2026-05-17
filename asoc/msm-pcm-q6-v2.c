@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/init.h>
 #include <linux/err.h>
@@ -330,7 +330,7 @@ static void event_handler(uint32_t opcode,
 		uint32_t token, uint32_t *payload, void *priv)
 {
 	struct msm_audio *prtd = priv;
-	struct snd_pcm_substream *substream = prtd->substream;
+	struct snd_pcm_substream *substream;
 	uint32_t *ptrmem = (uint32_t *)payload;
 	uint32_t idx = 0;
 	uint32_t size = 0;
@@ -338,10 +338,18 @@ static void event_handler(uint32_t opcode,
 	struct snd_soc_pcm_runtime *rtd;
 	int ret = 0;
 
+	if (!prtd) {
+		pr_err("%s: prtd is NULL in event_handler\n", __func__);
+		return;
+	}
+
 	switch (opcode) {
 	case ASM_DATA_EVENT_WRITE_DONE_V2: {
 		pr_debug("ASM_DATA_EVENT_WRITE_DONE_V2\n");
 		pr_debug("Buffer Consumed = 0x%08x\n", *ptrmem);
+		substream = READ_ONCE(prtd->substream);
+		if (!substream || READ_ONCE(prtd->closing))
+			return;
 		prtd->pcm_irq_pos += prtd->pcm_count;
 		if (atomic_read(&prtd->start))
 			snd_pcm_period_elapsed(substream);
@@ -363,12 +371,39 @@ static void event_handler(uint32_t opcode,
 	}
 	case ASM_DATA_EVENT_RENDERED_EOS:
 	case ASM_DATA_EVENT_RENDERED_EOS_V2:
+	{
 		pr_debug("ASM_DATA_EVENT_RENDERED_EOS\n");
+		int session_type = SESSION_TYPE_RX;
+		int port_id = 0, copp_idx = -1;
+		int be_id = -1;
+		int fe_id;
+
+		fe_id = READ_ONCE(prtd->fedai_id);
 		clear_bit(CMD_EOS, &prtd->cmd_pending);
 		wake_up(&the_locks.eos_wait);
+		if (fe_id < 0) {
+			pr_debug("%s: invalid cached fe_id, skip EOS clear\n", __func__);
+			break;
+		}
+		set_eos_pending(0,fe_id, READ_ONCE(prtd->stream_id));
+		if(msm_pcm_routing_get_portid_copp_idx(fe_id,
+				session_type, &port_id, &copp_idx))
+		{
+			be_id = msm_pcm_get_be_id_from_port_id(port_id);
+			if((be_id >= 0) && (be_id < MSM_BACKEND_DAI_MAX))
+				set_eos_pending_be(0,be_id);
+		}
+		else{
+			pr_debug("%s: could not get port/copp for fe_id %d, skip BE clear\n",
+						 __func__, fe_id);
+		}
 		break;
+	}
 	case ASM_DATA_EVENT_READ_DONE_V2: {
 		pr_debug("ASM_DATA_EVENT_READ_DONE_V2\n");
+		substream = READ_ONCE(prtd->substream);
+		if (!substream || READ_ONCE(prtd->closing))
+			return;
 		buf_index = q6asm_get_buf_index_from_token(token);
 		if (buf_index >= CAPTURE_MAX_NUM_PERIODS) {
 			pr_err("%s: buffer index %u is out of range.\n",
@@ -439,6 +474,7 @@ static void event_handler(uint32_t opcode,
 	case ASM_STREAM_PP_EVENT:
 	case ASM_STREAM_CMD_ENCDEC_EVENTS: {
 		pr_debug("%s: ASM_STREAM_EVENT (0x%x)\n", __func__, opcode);
+		substream = READ_ONCE(prtd->substream);
 		if (!substream) {
 			pr_err("%s: substream is NULL.\n", __func__);
 			return;
@@ -462,6 +498,11 @@ static void event_handler(uint32_t opcode,
 	case APR_BASIC_RSP_RESULT: {
 		switch (payload[0]) {
 		case ASM_SESSION_CMD_RUN_V2:
+			substream = READ_ONCE(prtd->substream);
+			if (!substream) {
+				pr_err("%s: substream is NULL.\n", __func__);
+				return;
+			}
 			if (substream->stream
 				!= SNDRV_PCM_STREAM_PLAYBACK) {
 				atomic_set(&prtd->start, 1);
@@ -508,6 +549,7 @@ static void event_handler(uint32_t opcode,
 	break;
 	case RESET_EVENTS:
 		pr_debug("%s RESET_EVENTS\n", __func__);
+		substream = READ_ONCE(prtd->substream);
 		prtd->pcm_irq_pos += prtd->pcm_count;
 		atomic_inc(&prtd->out_count);
 		atomic_inc(&prtd->in_count);
@@ -927,6 +969,7 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct msm_audio *prtd = runtime->private_data;
 	static int first_time = 1;
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
@@ -940,6 +983,11 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 		ret = q6asm_run_nowait(prtd->audio_client, 0, 0, 0);
 		break;
 	case SNDRV_PCM_TRIGGER_STOP:
+	{
+		int session_type = -1;
+		int port_id = 0, copp_idx = -1;
+		int be_id = -1;
+		bool found = false;
 		pr_debug("SNDRV_PCM_TRIGGER_STOP\n");
 		atomic_set(&prtd->start, 0);
 		if (substream->stream != SNDRV_PCM_STREAM_PLAYBACK) {
@@ -947,13 +995,39 @@ static int msm_pcm_trigger(struct snd_soc_component *component,
 			ret = q6asm_cmd_nowait(prtd->audio_client, CMD_PAUSE);
 			break;
 		}
-		/* pending CMD_EOS isn't expected */
+
+		/*
+		 * Playback STOP runs in trigger context.
+		 * Do NOT sleep here.
+		 *
+		 * Queue EOS and let close() decide whether it is still safe
+		 * and meaningful to wait for the rendered EOS ACK.
+		 */
+		session_type = SESSION_TYPE_RX;
+
+		found = msm_pcm_routing_get_portid_copp_idx(rtd->dai_link->id,
+				session_type, &port_id, &copp_idx);
+		if(found) {
+			be_id = msm_pcm_get_be_id_from_port_id(port_id);
+		}
+		else {
+			pr_debug("%s: could not get port/copp\n",__func__);
+		}
+
 		WARN_ON_ONCE(test_bit(CMD_EOS, &prtd->cmd_pending));
 		set_bit(CMD_EOS, &prtd->cmd_pending);
+		set_eos_pending(1,rtd->dai_link->id,substream->stream);
+		if(found && (be_id >= 0) && (be_id < MSM_BACKEND_DAI_MAX))
+			set_eos_pending_be(1,be_id);
 		ret = q6asm_cmd_nowait(prtd->audio_client, CMD_EOS);
-		if (ret)
+		if (ret) {
 			clear_bit(CMD_EOS, &prtd->cmd_pending);
+			set_eos_pending(0,rtd->dai_link->id,substream->stream);
+			if(found && (be_id >= 0) && (be_id < MSM_BACKEND_DAI_MAX))
+			set_eos_pending_be(0,be_id);
+		}
 		break;
+	}
 	case SNDRV_PCM_TRIGGER_SUSPEND:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		pr_debug("SNDRV_PCM_TRIGGER_PAUSE\n");
@@ -1000,6 +1074,9 @@ static int msm_pcm_open(struct snd_soc_component *component, struct snd_pcm_subs
 		return -ENOMEM;
 
 	prtd->substream = substream;
+	prtd->fedai_id = soc_prtd->dai_link->id;
+	prtd->stream_id = substream->stream;
+	prtd->closing = false;
 	prtd->audio_client = q6asm_audio_client_alloc(
 				(app_cb)event_handler, prtd);
 	if (!prtd->audio_client) {
@@ -1210,11 +1287,12 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	struct snd_soc_component *component =
 			snd_soc_rtdcom_lookup(soc_prtd, DRV_NAME);
 	struct msm_plat_data *pdata;
-	uint32_t timeout;
 	int dir = 0;
 	int ret = 0;
+	int close_ret;
 	int port_id = 0, copp_idx = -1;
 	bool found = false;
+	int be_id = -1;
 
 	pr_debug("%s: cmd_pending 0x%lx\n", __func__, prtd->cmd_pending);
 
@@ -1241,31 +1319,57 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 			if (pdata->perf_mode == LOW_LATENCY_PCM_MODE)
 				apr_end_rx_rt(prtd->audio_client->apr);
 		}
-		/* determine timeout length */
-		if (runtime->frame_bits == 0 || runtime->rate == 0) {
-			timeout = CMD_EOS_MIN_TIMEOUT_LENGTH;
-		} else {
-			timeout = (runtime->period_size *
-					CMD_EOS_TIMEOUT_MULTIPLIER) /
-					((runtime->frame_bits / 8) *
-					 runtime->rate);
-			if (timeout < CMD_EOS_MIN_TIMEOUT_LENGTH)
-				timeout = CMD_EOS_MIN_TIMEOUT_LENGTH;
-		}
-		pr_debug("%s: CMD_EOS timeout is %d\n", __func__, timeout);
 
-		ret = wait_event_timeout(the_locks.eos_wait,
-					 !test_bit(CMD_EOS, &prtd->cmd_pending),
-					 timeout);
-		if (!ret) {
-			pr_err("%s: CMD_EOS failed, cmd_pending 0x%lx\n",
-			       __func__, prtd->cmd_pending);
-			ret = -ETIMEDOUT;
+		found = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
+						SESSION_TYPE_RX, &port_id, &copp_idx);
+		if(found)
+			be_id = msm_pcm_get_be_id_from_port_id(port_id);
+
+		if (test_bit(CMD_EOS, &prtd->cmd_pending)) {
+			long wait_ret;
+			if (found) {
+
+				wait_ret = wait_event_timeout(the_locks.eos_wait,
+							!test_bit(CMD_EOS, &prtd->cmd_pending),
+							msecs_to_jiffies(CMD_EOS_MAX_TIMEOUT_LENGTH));
+				if (wait_ret == 0) {
+					pr_err("%s: CMD_EOS failed, cmd_pending 0x%lx\n",
+							__func__, prtd->cmd_pending);
+					/*
+					* Clear stale eos_pending on timeout.
+					* If ADSP never sent EOS event, eos_pending stays 1 and
+					* the next msm_pcm_routing_be_dai_close() will stall
+					* another 500ms. Clear it here to prevent cascade delays.
+					*/
+					clear_bit(CMD_EOS, &prtd->cmd_pending);
+					set_eos_pending(0, soc_prtd->dai_link->id,
+									substream->stream);
+					if (found && (be_id >= 0) && (be_id < MSM_BACKEND_DAI_MAX))
+						set_eos_pending_be(0, be_id);
+				}
+			} else {
+				/* BE already closed (media idle case). Skip wait. */
+				pr_warn("%s: BE closed, skipping EOS wait. cmd_pending 0x%lx\n",
+							__func__, prtd->cmd_pending);
+				clear_bit(CMD_EOS, &prtd->cmd_pending);
+				set_eos_pending(0,soc_prtd->dai_link->id,substream->stream);
+				if(found && (be_id >= 0) && (be_id < MSM_BACKEND_DAI_MAX))
+					set_eos_pending_be(0,be_id);
+				ret = 0;
+			}
 		}
-		q6asm_cmd(prtd->audio_client, CMD_CLOSE);
+
+		WRITE_ONCE(prtd->closing, true);
+		WRITE_ONCE(prtd->substream, NULL);
+		close_ret = q6asm_cmd(prtd->audio_client, CMD_CLOSE);
+		if (close_ret) {
+			pr_err("%s: CMD_CLOSE failed: %d\n", __func__, close_ret);
+		}
 		q6asm_audio_client_buf_free_contiguous(dir,
 					prtd->audio_client);
 		q6asm_audio_client_free(prtd->audio_client);
+		prtd->audio_client = NULL;
+
 	}
 
 	found = msm_pcm_routing_get_portid_copp_idx(soc_prtd->dai_link->id,
@@ -1411,6 +1515,8 @@ static int msm_pcm_capture_close(struct snd_pcm_substream *substream)
 
 	mutex_lock(&pdata->lock);
 	if (prtd->audio_client) {
+		WRITE_ONCE(prtd->closing, true);
+		WRITE_ONCE(prtd->substream, NULL);
 		q6asm_cmd(prtd->audio_client, CMD_CLOSE);
 		q6asm_audio_client_buf_free_contiguous(dir,
 				prtd->audio_client);
