@@ -19,6 +19,7 @@
 #include <sound/lsm_params.h>
 #include <asm/ioctls.h>
 #include <linux/memory.h>
+#include <linux/limits.h>
 #include <dsp/msm_audio_ion.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/q6core.h>
@@ -667,10 +668,16 @@ static int q6lsm_set_params_v3(struct lsm_client *client,
 			       uint8_t *param_data, uint32_t param_size)
 {
 	struct lsm_session_cmd_set_params_v3 *lsm_set_param = NULL;
-	uint16_t pkt_size = 0;
+	uint32_t pkt_size = 0;
 	int ret = 0;
 
 	pkt_size = sizeof(struct lsm_session_cmd_set_params_v3);
+	pr_debug("%s param_size = %u, pkt_size = %u \n", __func__, param_size, pkt_size);
+	if (param_size > (U32_MAX - pkt_size)) {
+		pr_err("%s: param_size %u too large\n", __func__, param_size);
+		return -EINVAL;
+	}
+
 	/* Only include param size in packet size when inband */
 	if (param_data != NULL)
 		pkt_size += param_size;
@@ -1903,7 +1910,13 @@ static int q6lsm_send_cal(struct lsm_client *client,
 
 	memset(&mem_hdr, 0, sizeof(mem_hdr));
 
-	pr_debug("%s: Session id %d\n", __func__, client->session);
+	pr_debug("%s: Session id %d, stage_idx = 0x%x \n", __func__, client->session, stage_idx);
+	/* Add bound check for stage_idx */
+	if (stage_idx < 0 || stage_idx >= LSM_MAX_STAGES_PER_SESSION) {
+		pr_err("%s: Invalid stage_idx %d\n", __func__, stage_idx);
+		return -EINVAL;
+	}
+
 	if (CHECK_SESSION(client->session)) {
 		pr_err("%s: session[%d]", __func__, client->session);
 		return -EINVAL;
@@ -1932,6 +1945,13 @@ static int q6lsm_snd_cal_free(struct lsm_client *client,
 {
 	int rc = 0, stage_idx = p_info->stage_idx;
 	struct lsm_cal_data_info *cal = NULL;
+
+	pr_debug("%s: stage_idx = 0x%x \n", __func__, stage_idx);
+	/* Add bound check for stage_idx */
+	if (stage_idx < 0 || stage_idx >= LSM_MAX_STAGES_PER_SESSION) {
+		pr_err("%s: Invalid stage_idx %d\n", __func__, stage_idx);
+		return -EINVAL;
+	}
 
 	if (!client->stage_cfg[stage_idx].cal_info.data)
 		return 0;
@@ -1966,6 +1986,13 @@ static int q6lsm_snd_cal_alloc(struct lsm_client *client,
 	int app_type, stage_idx = p_info->stage_idx;
 	bool cal_block_found = false;
 
+	pr_debug("%s: stage_idx = 0x%x \n", __func__, stage_idx);
+
+	/* Add bound check for stage_idx */
+	if (stage_idx < 0 || stage_idx >= LSM_MAX_STAGES_PER_SESSION) {
+		pr_err("%s: Invalid stage_idx %d\n", __func__, stage_idx);
+		return -EINVAL;
+	}
 	app_type = client->stage_cfg[stage_idx].app_type;
 	pr_debug("%s: app_type %d, stage_idx %d\n",
 			__func__, app_type, stage_idx);
@@ -2054,7 +2081,13 @@ int q6lsm_snd_model_buf_free(struct lsm_client *client,
 {
 	int rc = 0, stage_idx = p_info->stage_idx;
 
-	pr_debug("%s: Session id %d\n", __func__, client->session);
+	pr_debug("%s: Session id %d stage_idx = 0x%x \n", __func__, client->session, stage_idx);
+	/* Add bound check for stage_idx */
+	if (stage_idx < 0 || stage_idx >= LSM_MAX_STAGES_PER_SESSION) {
+		pr_err("%s: Invalid stage_idx %d\n", __func__, stage_idx);
+		return -EINVAL;
+	}
+
 	if (CHECK_SESSION(client->session)) {
 		pr_err("%s: session[%d]", __func__, client->session);
 		return -EINVAL;
@@ -2758,6 +2791,10 @@ int q6lsm_lab_out_ch_cfg(struct lsm_client *client,
 	struct lsm_hw_params *out_params = &client->out_hw_params;
 	int i, rc = 0, param_len = 0;
 
+	if (ch_map == NULL) {
+		pr_err("%s ch_map is NULL!\n",__func__);
+		rc = -EINVAL;
+  	}
 	param_len = sizeof(*lab_out_cfg) +
 		    sizeof(u8) * out_params->num_chs;
 
@@ -2773,8 +2810,7 @@ int q6lsm_lab_out_ch_cfg(struct lsm_client *client,
 	lab_out_cfg->num_channels = out_params->num_chs;
 
 	pr_debug("%s lab_out_cfg->num_channels = %d\n", __func__ ,lab_out_cfg->num_channels);
-	if (ch_map == NULL)
-		pr_err("%s ch_map is NULL!\n",__func__);
+
 	for (i = 0; i < out_params->num_chs; i++)
 		lab_out_cfg->channel_indices[i] = ch_map[i];
 
