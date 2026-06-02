@@ -32599,6 +32599,12 @@ static int msm_pcm_routing_close(struct snd_soc_component *component,
 								     idx);
 			msm_routing_unload_topology(topology);
 			copp_perf_mode = get_copp_perf_mode(i, session_type, be_id);
+#ifdef RX_TO_TX_LOOPBACK
+			if (session_type == SESSION_TYPE_TX &&
+					port_id == RX_TO_TX_LOOPBACK_DUMMY_TX_PORT) {
+				port_id = RX_TO_TX_LOOPBACK_RX_PORT;
+			}
+#endif
 			adm_close(port_id, copp_perf_mode, idx);
 			pr_debug("%s: copp:%ld,idx bit fe:%d, type:%d,be:%d topology=0x%x\n",
 				 __func__, copp, i, session_type, be_id,
