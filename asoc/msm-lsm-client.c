@@ -2623,6 +2623,7 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 			(!substream) ? "substream" : "private_data");
 		return -EINVAL;
 	}
+	pr_err("%s Entered for cmd : %d\n", __func__, cmd);
 	runtime = substream->runtime;
 	prtd = runtime->private_data;
 	rtd = substream->private_data;
@@ -3060,12 +3061,15 @@ static int msm_lsm_cdev_session_lut(struct snd_pcm_substream *substream, uint8_t
 	switch (operation)
 	{
 		case SET_INFO:
-			for (i = 0; i < LSM_MAX_SESSION_COUNT; i++)
-				if (sub_str_info[i].pcm == NULL)
+			ret = -ENODEV;
+			for (i = 0; i < LSM_MAX_SESSION_COUNT; i++) {
+				if (sub_str_info[i].pcm == NULL) {
 					memcpy(&sub_str_info[i], substream,
 							sizeof(struct snd_pcm_substream));
-				else
-					ret = -ENODEV;
+					ret = 0;
+					break;
+				}
+			}
 			break;
 		case GET_INFO:
 			for (i = 0; i < LSM_MAX_SESSION_COUNT; i++)
@@ -4980,12 +4984,28 @@ static int msm_lsm_add_va_controls(struct snd_soc_pcm_runtime *rtd)
 	unsigned long pvt_value = 0;
 	struct snd_pcm *pcm = rtd->pcm;
 	struct snd_pcm_va_info *va_dev_info = NULL;
-
+	struct snd_kcontrol_new ctl_copy;
+	char ctl_name[128];
 
 	for (i = 0; i < ARRAY_SIZE(va_mixer_ctl); i++)
 	{
-		if (va_mixer_ctl[i].tlv.c &&
-				(va_mixer_ctl[i].access &
+		ctl_copy = va_mixer_ctl[i];
+		/*
+		 * Prefix each control with the FE dai_link name so that controls
+		 * for different LSM FEs (e.g. "Listen 1 Audio Service" vs
+		 * "Listen 2 Audio Service") have unique names. Without this,
+		 * all FEs register controls with the same name (e.g. "LSM
+		 * SESSION_DATA SET") and a name-based HAL lookup always hits the
+		 * first registered FE, causing ADSP_EALREADY (-114) when the
+		 * second model tries to open its already-opened session.
+		 */
+		snprintf(ctl_name, sizeof(ctl_name), "%s %s",
+			 rtd->dai_link->name, va_mixer_ctl[i].name);
+		ctl_copy.name = ctl_name;
+		pr_err("%s Adding mixer control %s \n",__func__, ctl_copy.name);
+
+		if (ctl_copy.tlv.c &&
+				(ctl_copy.access &
 				 SNDRV_CTL_ELEM_ACCESS_TLV_CALLBACK))
 		{
 			sbe = kzalloc(sizeof(*sbe), GFP_KERNEL);
@@ -4995,7 +5015,7 @@ static int msm_lsm_add_va_controls(struct snd_soc_pcm_runtime *rtd)
 		}
 		pvt_value = (pvt_value == 0) ? rtd->dai_link->id : pvt_value;
 		ret = snd_pcm_add_va_ctls(pcm, SNDRV_PCM_STREAM_CAPTURE,
-				pvt_value, &va_dev_info, &va_mixer_ctl[i]);
+				pvt_value, &va_dev_info, &ctl_copy);
 		if (ret < 0) {
 			pr_err("%s adding va control failed ret %d\n", __func__, ret);
 			return ret;
