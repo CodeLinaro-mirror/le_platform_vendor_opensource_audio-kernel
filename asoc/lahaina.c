@@ -6436,8 +6436,8 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
 		/* this dainlink has playback support */
-		.id = MSM_FRONTEND_DAI_MULTIMEDIA10,
-		SND_SOC_DAILINK_REG(multimedia10),
+		.id = MSM_FRONTEND_DAI_MULTIMEDIA20,
+		SND_SOC_DAILINK_REG(multimedia20),
 	},
 	{/* hw:x,44 */
 		.name = "Secondary MI2S_TX Hostless",
