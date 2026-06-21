@@ -435,8 +435,9 @@ static void lsm_event_handler(uint32_t opcode, uint32_t token,
 		prtd->det_event = tmp;
 		prtd->det_event->status = status;
 		prtd->det_event->payload_size = payload_size;
+		pr_debug("%s payload_size: %d \n",__func__,payload_size);
 		if (client_size >= payload_size + 4) {
-			memcpy(prtd->det_event->payload,
+			memcpy((uint8_t *)prtd->det_event + sizeof(*prtd->det_event),
 				&((uint8_t *)payload)[4], payload_size);
 		} else {
 			spin_unlock_irqrestore(&prtd->event_lock, flags);
@@ -492,7 +493,7 @@ static void lsm_event_handler(uint32_t opcode, uint32_t token,
 
 		if (likely(prtd->event_status)) {
 			if (client_size >= (payload_size + index)) {
-				memcpy(prtd->event_status->payload,
+				memcpy((uint8_t *)prtd->event_status + sizeof(*prtd->event_status),
 					&((uint8_t *)payload)[index],
 					payload_size);
 				prtd->event_avail = 1;
@@ -1704,8 +1705,8 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 				} else {
 					user->status = status;
 					user->payload_size = payload_size;
-					memcpy(user->payload,
-						prtd->event_status->payload,
+					memcpy((uint8_t *)user + sizeof(*user),
+						(uint8_t *)prtd->event_status + sizeof(*prtd->event_status),
 						payload_size);
 				}
 			} else {
@@ -1722,8 +1723,8 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 					user_v3->timestamp_msw = ts_msw;
 					user_v3->status = status;
 					user_v3->payload_size = payload_size;
-					memcpy(user_v3->payload,
-						prtd->event_status->payload,
+					memcpy((uint8_t *)user_v3 + sizeof(*user_v3),
+						(uint8_t *)prtd->event_status + sizeof(*prtd->event_status),
 						payload_size);
 				}
 			}
@@ -1795,7 +1796,8 @@ static int msm_lsm_ioctl_shared(struct snd_pcm_substream *substream,
 			}
 			user->status = status;
 			user->payload_size = payload_size;
-			memcpy(user->payload, prtd->det_event->payload,
+			memcpy((uint8_t *)user + sizeof(*user),
+			       (uint8_t *)prtd->det_event + sizeof(*prtd->det_event),
 			       payload_size);
 
 			rc = msm_lsm_start_lab_buffer(prtd, status);
@@ -2188,7 +2190,8 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 		}
 		user32->status = user->status;
 		user32->payload_size = user->payload_size;
-		memcpy(user32->payload, user->payload,
+		memcpy((uint8_t *)user32 + sizeof(*user32),
+		       (uint8_t *)user + sizeof(*user),
 		       user32->payload_size);
 
 		if (copy_to_user(arg, user32, size)) {
@@ -2264,8 +2267,8 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 				user32->timestamp_msw = user->timestamp_msw;
 				user32->status = user->status;
 				user32->payload_size = user->payload_size;
-				memcpy(user32->payload,
-				user->payload, user32->payload_size);
+				memcpy((uint8_t *)user32 + sizeof(*user32),
+				(uint8_t *)user + sizeof(*user), user32->payload_size);
 			}
 		}
 		if (!err && (copy_to_user(arg, user32, size))) {
@@ -2563,7 +2566,8 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 		}
 
 		memcpy(param_info_rsp, &p_info_32, sizeof(p_info_32));
-		memcpy(param_info_rsp->payload, prtd->lsm_client->get_param_payload,
+		memcpy((uint8_t *)param_info_rsp + sizeof(*param_info_rsp),
+			prtd->lsm_client->get_param_payload,
 			p_info_32.param_size);
 
 		if (copy_to_user(arg, param_info_rsp, size)) {
@@ -2871,7 +2875,8 @@ static int msm_lsm_ioctl(struct snd_soc_component *component, struct snd_pcm_sub
 			goto free;
 		}
 
-		memcpy(p_info->payload, prtd->lsm_client->get_param_payload,
+		memcpy((uint8_t *)p_info + sizeof(*p_info),
+			prtd->lsm_client->get_param_payload,
 			temp_p_info.param_size);
 
 		if (copy_to_user(arg, p_info, sizeof(struct lsm_params_get_info) +
@@ -3453,6 +3458,18 @@ static int msm_lsm_close(struct snd_soc_component *component, struct snd_pcm_sub
 	}
 
 	q6lsm_client_free(prtd->lsm_client);
+
+	/* Signal any cdev ioctl thread blocked in wait_event_freezable to wake
+	 * and detect session closure, before prtd is freed. */
+	atomic_set(&prtd->event_wait_stop, 1);
+	wake_up(&prtd->event_wait);
+
+	/* Clear LUT *before* freeing, so ioctl re-validation returns -EINVAL. */
+	msm_lsm_cdev_session_lut(substream, CLEAR_INFO);
+
+	/* Serialize: wait for any ioctl currently holding lsm_api_lock to finish. */
+	mutex_lock(&prtd->lsm_api_lock);
+	mutex_unlock(&prtd->lsm_api_lock);
 
 	wakeup_source_unregister(prtd->ws);
 	spin_lock_irqsave(&prtd->event_lock, flags);
@@ -4713,15 +4730,8 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 
 		spin_lock_irqsave(&prtd->event_lock, flags);
 
-		if (prtd->det_event) {
-			payload_size = prtd->det_event->payload_size;
-			status = prtd->det_event->status;
-			spin_unlock_irqrestore(&prtd->event_lock,
-					flags);
-		}
-		else {
-			spin_unlock_irqrestore(&prtd->event_lock,
-					flags);
+		if (!prtd->det_event) {
+			spin_unlock_irqrestore(&prtd->event_lock, flags);
 			dev_err(rtd->dev,
 					"%s: %s: prtd->event_status is NULL\n",
 					__func__,
@@ -4730,23 +4740,25 @@ static int msm_lsm_det_event_info_get(struct snd_kcontrol *kcontrol,
 			goto err_free_user_unlock;
 		}
 
+		payload_size = prtd->det_event->payload_size;
+		status = prtd->det_event->status;
+
 		if (user->payload_size < payload_size) {
+			spin_unlock_irqrestore(&prtd->event_lock, flags);
 			dev_err(rtd->dev,
 				"%s: provided %d bytes isn't enough, needs %d bytes\n",
 					__func__, user->payload_size,
 					payload_size);
-			spin_unlock_irqrestore(&prtd->event_lock,
-					flags);
 			err = -ENOMEM;
 			goto err_free_user_unlock;
 		}
 
 		user->status = status;
 		user->payload_size = payload_size;
-		memcpy(user->payload, prtd->det_event->payload,
+		memcpy((uint8_t *)user + sizeof(*user),
+				(uint8_t *)prtd->det_event + sizeof(*prtd->det_event),
 				payload_size);
-		spin_unlock_irqrestore(&prtd->event_lock,
-					flags);
+		spin_unlock_irqrestore(&prtd->event_lock, flags);
 
 		err =  msm_lsm_start_lab_buffer(prtd, status);
 	}
@@ -5053,6 +5065,10 @@ static struct snd_soc_component_driver msm_soc_component = {
 #ifdef ENABLE_SVA_MIXER_CTL
 static int msm_lsm_cdev_open(struct inode *inode, struct file *filp)
 {
+	//Store lsm_dev for ioctl re-validation
+	struct lsm_char_dev *lsm_dev =
+		container_of(inode->i_cdev, struct lsm_char_dev, cdev);
+	filp->private_data = lsm_dev;
 	return 0;
 }
 
@@ -5064,6 +5080,7 @@ static int msm_lsm_cdev_close(struct inode *inode, struct file *filp)
 static long msm_lsm_cdev_ioctl(struct file *file,
 			unsigned int ioctl, unsigned long arg)
 {
+	struct lsm_char_dev *lsm_dev = file->private_data;
 	int rc = 0;
 	int xchg = 0;
 	unsigned long flags = 0;
@@ -5085,7 +5102,18 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 			return -EFAULT;
 		}
 		runtime = substream.runtime;
+		//Return -EINVAL if session has been closed instead of
+		//Prevents NULL dereference on both runtime and prtd pointers
+		if (!runtime) {
+			pr_err("%s: NULL runtime for dev %d\n", __func__, lsm_info.dev_num);
+			return -EINVAL;
+		}
 		prtd = runtime->private_data;
+		if (!prtd) {
+			pr_err("%s: NULL prtd for dev %d, session closed\n",
+				 __func__, lsm_info.dev_num);
+			return -EINVAL;
+		}
 		rtd = substream.private_data;
 
 		atomic_set(&prtd->event_wait_stop, 0);
@@ -5094,7 +5122,26 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 				(cmpxchg(&prtd->event_avail, 1, 0) ||
 				 (xchg = atomic_cmpxchg(&prtd->event_wait_stop,
 							1, 0))));
-		mutex_lock(&prtd->lsm_api_lock);
+		//mutex_lock(&prtd->lsm_api_lock);
+		/* Re-validate session under lsm_dev->lock after sleeping.
+		* msm_lsm_close() clears the LUT before freeing prtd, so if
+		* the session was closed while we waited, GET_INFO fails here. */
+		if (lsm_dev) {
+			mutex_lock(&lsm_dev->lock);
+			substream.number = lsm_info.dev_num;
+			if (msm_lsm_cdev_session_lut(&substream, GET_INFO) != 0 ||
+				!substream.runtime ||
+				!substream.runtime->private_data) {
+				mutex_unlock(&lsm_dev->lock);
+				pr_err("%s: session closed during wait\n", __func__);
+				return -EINVAL;
+			}
+			prtd = substream.runtime->private_data;
+			mutex_lock(&prtd->lsm_api_lock);
+			mutex_unlock(&lsm_dev->lock);   /* release outer lock */
+		} else {
+			mutex_lock(&prtd->lsm_api_lock);
+		}
 
 		dev_dbg(rtd->dev, "%s: wait_event_freezable %d event_wait_stop %d\n",
 				__func__, rc, xchg);
@@ -5128,13 +5175,14 @@ static long msm_lsm_cdev_ioctl(struct file *file,
 					__func__, "SNDRV_LSM_GENERIC_DET_EVENT");
 			rc = 0;
 		}
+		__pm_relax(prtd->ws); /* moved inside the lock scope */
 		mutex_unlock(&prtd->lsm_api_lock);
 
 		if (copy_to_user((void *)arg, &lsm_info, sizeof(lsm_info)))
 		{
 			pr_err("%s: copy to user failed", __func__);
 		}
-		__pm_relax(prtd->ws);
+		//__pm_relax(prtd->ws);
 		break;
 		case LSM_LUT_CLEAR_INFO:
 		{
