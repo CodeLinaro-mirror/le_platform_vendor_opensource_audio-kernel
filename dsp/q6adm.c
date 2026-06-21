@@ -4410,7 +4410,8 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 
 				if (result && ((this_adm.fnn_app_type == app_type) &&
 						(this_adm.fnn_port_id == port_id) &&
-						(this_adm.fnn_copp_idx == copp_idx))){
+                                               (this_adm.fnn_copp_idx == copp_idx) &&
+						(atomic_read(&this_adm.copp.cnt[port_idx][copp_idx]) == 0))) {
 					pr_debug("%s: use hyp assigned %d, use buffer %d\n",
 						 __func__, this_adm.hyp_assigned,
 						cal_block->buffer_number);
@@ -4481,7 +4482,8 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 
 		if (result && ((this_adm.fnn_app_type == app_type) &&
 				(this_adm.fnn_port_id == port_id) &&
-			        (this_adm.fnn_copp_idx == copp_idx))) {
+				(this_adm.fnn_copp_idx == copp_idx) &&
+				(atomic_read(&this_adm.copp.cnt[port_idx][copp_idx]) == 0))) {
 			pr_debug("%s: use hyp assigned %d, use buffer %d\n",
 				  __func__, this_adm.hyp_assigned,
 				  cal_block->buffer_number);
@@ -6103,6 +6105,7 @@ int __init adm_init(void)
 	this_adm.tx_port_id = -1;
 	this_adm.hyp_assigned = false;
 	this_adm.fnn_app_type = -1;
+	this_adm.fnn_copp_idx = -1;
 	this_adm.is_channel_swapped = false;
 	init_waitqueue_head(&this_adm.matrix_map_wait);
 	init_waitqueue_head(&this_adm.adm_wait);
