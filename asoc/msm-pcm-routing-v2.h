@@ -16,6 +16,7 @@
 /* Max wait time for pcm availability in sec */
 #define MSM_PCM_CAPTURE_MAX_WAIT        4
 #define MSM_PCM_PLAYBACK_MAX_WAIT       4
+#define CMD_EOS_MAX_TIMEOUT_LENGTH      500
 
 
 #define LPASS_BE_NAME_MAX_LENGTH 24
@@ -710,6 +711,7 @@ enum {
 struct msm_pcm_routing_evt {
 	void (*event_func)(enum msm_pcm_routing_event, void *);
 	void *priv_data;
+	wait_queue_head_t eos_waitq;
 };
 
 struct msm_pcm_routing_bdai_data {
@@ -732,15 +734,23 @@ struct msm_pcm_routing_bdai_data {
 	unsigned int  format;
 	unsigned int  adm_override_ch;
 	char *name;
+	bool eos_pending;
+	wait_queue_head_t eos_waitq;
+	bool eos_waitq_init_done;
 };
 
 struct msm_pcm_routing_fdai_data {
 	u16 be_srate; /* track prior backend sample rate for flushing purpose */
 	int strm_id; /* ASM stream ID */
 	int perf_mode;
+	bool eos_pending;
 	struct msm_pcm_routing_evt event_info;
 	u32 passthr_mode;
+	bool eos_waitq_init_done;
 };
+
+extern struct msm_pcm_routing_bdai_data msm_bedais[MSM_BACKEND_DAI_MAX];
+extern struct msm_pcm_routing_fdai_data fe_dai_map[MSM_FRONTEND_DAI_MAX][2];
 
 #define MAX_APP_TYPES	16
 struct msm_pcm_routing_app_type_data {
@@ -771,6 +781,10 @@ enum {
 	MSM_ASM_LOOPBACK_MODE,
 	MSM_ASM_MAX_MODE
 };
+
+int msm_pcm_get_be_id_from_port_id(int port_id);
+void set_eos_pending(bool eos, int fe_idx, int stream_type);
+void set_eos_pending_be(bool eos, int be_idx);
 
 /* dai_id: front-end ID,
  * dspst_id:  DSP audio stream ID
