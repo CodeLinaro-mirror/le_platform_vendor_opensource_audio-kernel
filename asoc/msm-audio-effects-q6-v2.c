@@ -963,6 +963,16 @@ int msm_audio_effects_pbe_handler(struct audio_client *ac,
 				GET_NEXT(values, param_max_offset, rc);
 			pbe->config.bandpass_filter_order =
 				GET_NEXT(values, param_max_offset, rc);
+			if ((pbe->config.xover_filter_order < 1) ||
+				(pbe->config.xover_filter_order > 3) ||
+				(pbe->config.bandpass_filter_order < 1) ||
+				(pbe->config.bandpass_filter_order > 3)) {
+				pr_err("%s: Invalid filter order, xover %u bandpass %u\n",
+					__func__, pbe->config.xover_filter_order,
+					pbe->config.bandpass_filter_order);
+				rc = -EINVAL;
+				goto invalid_config;
+			}
 			pbe->config.drc_delay =
 				GET_NEXT(values, param_max_offset, rc);
 			pbe->config.rms_tav =
