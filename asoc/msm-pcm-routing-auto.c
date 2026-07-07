@@ -2571,6 +2571,31 @@ bool msm_pcm_routing_get_portid_copp_idx(int fe_id,
 }
 EXPORT_SYMBOL(msm_pcm_routing_get_portid_copp_idx);
 
+static bool msm_routing_topology_needs_ec_ref(int topology)
+{
+	switch (topology) {
+	case VPM_TX_SM_ECNS_V2_COPP_TOPOLOGY:
+	case VPM_TX_VOICE_SMECNS_V2_COPP_TOPOLOGY:
+	case VPM_TX_VOICE_FLUENCE_SM_COPP_TOPOLOGY:
+	case VPM_TX_DM_FLUENCE_COPP_TOPOLOGY:
+	case VPM_TX_QMIC_FLUENCE_COPP_TOPOLOGY:
+	case VPM_TX_DM_RFECNS_COPP_TOPOLOGY:
+	case VPM_TX_DM_FLUENCE_EF_COPP_TOPOLOGY:
+	case VPM_TX_VOICE_FLUENCE_NN_COPP_TOPOLOGY:
+	case AUDIO_TX_FluenceV9_Auto_SM_HFP_ECNS:
+	case AUDIO_TX_FluenceV9_Auto_MM_HFP_ECNS:
+	case FFECNS_TOPOLOGY:
+	/* Add topologies that contain an EC module
+	 * and need an echo reference port (EP_ID2).
+	 */
+			return true;
+	default:
+			pr_err("%s: Received topology 0x%x is not an EC ref topology or not added to the guard list\n",
+				__func__, topology);
+			return false;
+	}
+}
+
 int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 					int dspst_id, int stream_type)
 {
@@ -2661,7 +2686,9 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 				bits_per_sample = msm_routing_get_bit_width(
 							SNDRV_PCM_FORMAT_S32_LE);
 			if ((session_type == SESSION_TYPE_TX) &&
-				 (ec_ref_chmix_cfg[fedai_id].output_channel)) {
+				 (ec_ref_chmix_cfg[fedai_id].output_channel ||
+				 msm_route_ec_ref_rx != 0) &&
+				 (msm_routing_topology_needs_ec_ref(topology))) {
 				/* per-session ec_ref configuration */
 				ec_ref_port_cfg.rx = msm_route_ec_ref_rx;
 				ec_ref_port_cfg.port_id = msm_ec_ref_port_id;
@@ -2682,7 +2709,8 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 						session_type, passthr_mode,
 						copp_token,
 						&ec_ref_port_cfg,
-						&ec_ref_chmix_cfg[fedai_id]);
+						ec_ref_chmix_cfg[fedai_id].output_channel ?
+							&ec_ref_chmix_cfg[fedai_id] : NULL);
 				/* reset ec_ref config */
 				ec_ref_chmix_cfg[fedai_id].output_channel = 0;
 			}
@@ -4943,6 +4971,22 @@ static int msm_routing_ec_ref_rx_put(struct snd_kcontrol *kcontrol,
 	struct snd_soc_dapm_update *update = NULL;
 
 	mutex_lock(&routing_lock);
+	if (value == 0 && adm_get_ec_ref_rx_open_count() > 0) {
+		/*
+		 * Echo-reference mixer being disabled but TX COPPs are still open
+		 * with an active EC ref port. This happens when HAL force-disables
+		 * concurrent capture streams during device reconfiguration and calls
+		 * audio_route_reset_and_update_path("echo-reference") at the moment
+		 * ec_ref_path_ref_cnt hits 0. Preserve msm_ec_ref_port_id and
+		 * msm_route_ec_ref_rx so that streams re-opening in this window
+		 * still see the correct echo reference port (e.g. 0x9033) instead
+		 * of AFE_PORT_INVALID. adm_ec_ref_rx_id is also self-guarded.
+		 */
+		pr_debug("%s: skipping ec_ref clear, %d COPPs still active\n",
+			__func__, adm_get_ec_ref_rx_open_count());
+		mutex_unlock(&routing_lock);
+		return 0;
+	}
 	msm_ec_ref_port_id = get_ec_ref_port_id(value, &msm_route_ec_ref_rx);
 	adm_ec_ref_rx_id(msm_ec_ref_port_id);
 	pr_debug("%s: msm_route_ec_ref_rx = %d\n",
