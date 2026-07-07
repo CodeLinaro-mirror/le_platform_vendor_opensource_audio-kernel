@@ -205,7 +205,7 @@ EXPORT_SYMBOL(q6core_send_uevent);
 static int parse_fwk_version_info(uint32_t *payload, uint16_t payload_size)
 {
 	size_t ver_size;
-	int num_services;
+	uint32_t num_services;
 
 	pr_debug("%s: Payload info num services %d\n",
 		 __func__, payload[4]);
@@ -604,7 +604,7 @@ int q6core_get_service_version(uint32_t service_id,
 			       size_t size)
 {
 	struct avcs_fwk_ver_info *cached_ver_info = NULL;
-	int i;
+	uint32_t i;
 	uint32_t num_services;
 	size_t ver_size;
 	int ret;
@@ -723,7 +723,7 @@ EXPORT_SYMBOL(q6core_get_fwk_version_size);
 int q6core_get_avcs_api_version_per_service(uint32_t service_id)
 {
 	struct avcs_fwk_ver_info *cached_ver_info = NULL;
-	int i;
+	uint32_t i;
 	uint32_t num_services;
 	int ret = 0;
 
