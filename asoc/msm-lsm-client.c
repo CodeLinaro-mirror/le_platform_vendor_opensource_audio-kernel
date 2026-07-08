@@ -42,6 +42,11 @@
 #define LSM_IS_LAST_STAGE(client, stage_idx) \
 	(client->num_stages == (stage_idx + 1))
 
+struct lsm_char_dev {
+	/* Protects access to LSM client substream private_data */
+	struct mutex lock;
+};
+
 static struct snd_pcm_hardware msm_pcm_hardware_capture = {
 	.info =                 (SNDRV_PCM_INFO_MMAP |
 				SNDRV_PCM_INFO_BLOCK_TRANSFER |
@@ -682,15 +687,45 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 		struct lsm_params_info_v2 *p_info)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct lsm_priv *prtd = runtime->private_data;
+	struct lsm_priv *prtd = NULL;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct lsm_char_dev *lsm_dev = NULL;
+	struct snd_soc_component *component = NULL;
 	int rc = 0;
 
+	if (!rtd) {
+		pr_err("%s substream runtime or private_data not found\n",
+			__func__);
+		return -EINVAL;
+	}
+	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: invalid component\n", __func__);
+		return -EINVAL;
+	}
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
 	if (p_info->param_type == LSM_MULTI_SND_MODEL_CONFIDENCE_LEVELS) {
 		if (p_info->param_size > MAX_KEYWORDS_SUPPORTED) {
 			dev_err(rtd->dev,
 				"%s: invalid number of snd_model keywords %d, the max is %d\n",
 				__func__, p_info->param_size, MAX_KEYWORDS_SUPPORTED);
+			mutex_unlock(&lsm_dev->lock);
 			return -EINVAL;
 		}
 
@@ -701,6 +736,7 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 			dev_err(rtd->dev,
 				"%s: get_conf_levels failed for snd_model %d, err = %d\n",
 				__func__, p_info->model_id, rc);
+			mutex_unlock(&lsm_dev->lock);
 			return rc;
 		}
 
@@ -721,6 +757,7 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 			dev_err(rtd->dev,
 				"%s: invalid confidence levels %d\n",
 				__func__, p_info->param_size);
+			mutex_unlock(&lsm_dev->lock);
 			return -EINVAL;
 		}
 
@@ -732,6 +769,7 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 			dev_err(rtd->dev,
 				"%s: get_conf_levels failed, err = %d\n",
 				__func__, rc);
+			mutex_unlock(&lsm_dev->lock);
 			return rc;
 		}
 
@@ -748,6 +786,7 @@ static int msm_lsm_set_conf(struct snd_pcm_substream *substream,
 			prtd->lsm_client->confidence_levels = NULL;
 		}
 	}
+	mutex_unlock(&lsm_dev->lock);
 	return rc;
 }
 
@@ -967,23 +1006,63 @@ static int msm_lsm_check_and_set_lab_controls(struct snd_pcm_substream *substrea
 			u32 enable, struct lsm_params_info_v2 *p_info)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct lsm_priv *prtd = runtime->private_data;
+	struct lsm_priv *prtd = NULL;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct lsm_hw_params *out_hw_params = &prtd->lsm_client->out_hw_params;
+	struct lsm_hw_params *out_hw_params = NULL;
+	struct snd_soc_component *component = NULL;
+	struct lsm_char_dev *lsm_dev = NULL;
 	u8 *chmap = NULL;
 	u32 ch_idx;
 	int rc = 0, stage_idx = p_info->stage_idx;
+
+	if (!rtd) {
+		pr_err("%s substream runtime or private_data not found\n",
+			__func__);
+		return -EINVAL;
+	}
+	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: invalid component\n", __func__);
+		return -EINVAL;
+	}
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	out_hw_params = &prtd->lsm_client->out_hw_params;
+	if (!out_hw_params) {
+		pr_err("%s: Invalid hw params\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
 
 	if (prtd->lsm_client->stage_cfg[stage_idx].lab_enable == enable) {
 		dev_dbg(rtd->dev, "%s: Lab for session %d, stage %d already %s\n",
 				__func__, prtd->lsm_client->session,
 				stage_idx, enable ? "enabled" : "disabled");
+		mutex_unlock(&lsm_dev->lock);
 		return rc;
 	}
 
 	chmap = kzalloc(out_hw_params->num_chs, GFP_KERNEL);
-	if (!chmap)
+	if (!chmap) {
+		mutex_unlock(&lsm_dev->lock);
 		return -ENOMEM;
+	}
 
 	rc = q6lsm_lab_control(prtd->lsm_client, enable, p_info);
 	if (rc) {
@@ -1024,6 +1103,7 @@ static int msm_lsm_check_and_set_lab_controls(struct snd_pcm_substream *substrea
 
 fail:
 	kfree(chmap);
+	mutex_unlock(&lsm_dev->lock);
 	return rc;
 }
 
@@ -3075,8 +3155,10 @@ static int msm_lsm_close(struct snd_pcm_substream *substream)
 {
 	unsigned long flags;
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct lsm_priv *prtd = runtime->private_data;
+	struct lsm_priv *prtd = NULL;
 	struct snd_soc_pcm_runtime *rtd;
+	struct snd_soc_component *component = NULL;
+	struct lsm_char_dev *lsm_dev = NULL;
 	struct msm_pcm_stream_app_type_cfg cfg_data = {0};
 	int ret = 0;
 	int be_id = 0;
@@ -3086,11 +3168,32 @@ static int msm_lsm_close(struct snd_pcm_substream *substream)
 		pr_err("%s: Invalid private_data", __func__);
 		return -EINVAL;
 	}
-	if (!prtd || !prtd->lsm_client) {
-		pr_err("%s: No LSM session active\n", __func__);
+	rtd = substream->private_data;
+
+	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component) {
+		pr_err("%s: component is NULL\n", __func__);
 		return -EINVAL;
 	}
-	rtd = substream->private_data;
+
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: lsm_dev is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&lsm_dev->lock);
+	if (!runtime) {
+		pr_err("%s: Invalid runtime", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
+	prtd = runtime->private_data;
+	if (!prtd || !prtd->lsm_client) {
+		pr_err("%s: No LSM session active\n", __func__);
+		mutex_unlock(&lsm_dev->lock);
+		return -EINVAL;
+	}
 
 	dev_dbg(rtd->dev, "%s\n", __func__);
 	if (prtd->lsm_client->started) {
@@ -3200,6 +3303,7 @@ static int msm_lsm_close(struct snd_pcm_substream *substream)
 	mutex_destroy(&prtd->lsm_api_lock);
 	kfree(prtd);
 	runtime->private_data = NULL;
+	mutex_unlock(&lsm_dev->lock);
 
 	return 0;
 }
@@ -3208,21 +3312,36 @@ static int msm_lsm_hw_params(struct snd_pcm_substream *substream,
 				struct snd_pcm_hw_params *params)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct lsm_priv *prtd = runtime->private_data;
+	struct lsm_priv *prtd = NULL;
 	struct lsm_hw_params *out_hw_params = NULL;
 	struct lsm_hw_params *in_hw_params = NULL;
 	struct snd_soc_pcm_runtime *rtd;
+	struct lsm_char_dev *lsm_dev = NULL;
+	struct snd_soc_component *component = NULL;
 
 	if (!substream->private_data) {
 		pr_err("%s: Invalid private_data", __func__);
 		return -EINVAL;
 	}
 	rtd = substream->private_data;
+	component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
+	if (!component || !component->dev) {
+		pr_err("%s: Invalid component\n", __func__);
+		return -EINVAL;
+	}
+	lsm_dev = (struct lsm_char_dev *) dev_get_drvdata(component->dev);
+	if (!lsm_dev) {
+		pr_err("%s: platform data is NULL\n", __func__);
+		return -EINVAL;
+	}
+	mutex_lock(&lsm_dev->lock);
+	prtd = runtime->private_data;
 
 	if (!prtd || !params) {
 		dev_err(rtd->dev,
 			"%s: invalid params prtd %pK params %pK",
 			 __func__, prtd, params);
+		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 	in_hw_params = &prtd->lsm_client->in_hw_params;
@@ -3237,6 +3356,7 @@ static int msm_lsm_hw_params(struct snd_pcm_substream *substream,
 			"%s: Invalid Params sample rate %d period count %d\n",
 			__func__, out_hw_params->sample_rate,
 			out_hw_params->period_count);
+		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 
@@ -3247,6 +3367,7 @@ static int msm_lsm_hw_params(struct snd_pcm_substream *substream,
 	} else {
 		dev_err(rtd->dev, "%s: Invalid Format 0x%x\n",
 			__func__, params_format(params));
+		mutex_unlock(&lsm_dev->lock);
 		return -EINVAL;
 	}
 
@@ -3267,6 +3388,7 @@ static int msm_lsm_hw_params(struct snd_pcm_substream *substream,
 	 */
 	memcpy(in_hw_params, out_hw_params,
 	       sizeof(struct lsm_hw_params));
+	mutex_unlock(&lsm_dev->lock);
 	return 0;
 }
 
@@ -3597,6 +3719,14 @@ static struct snd_soc_component_driver msm_soc_component = {
 
 static int msm_lsm_probe(struct platform_device *pdev)
 {
+	struct lsm_char_dev *lsm_dev;
+
+	lsm_dev = devm_kzalloc(&pdev->dev, sizeof(*lsm_dev), GFP_KERNEL);
+	if (!lsm_dev)
+		return -ENOMEM;
+
+	mutex_init(&lsm_dev->lock);
+	dev_set_drvdata(&pdev->dev, lsm_dev);
 
 	return snd_soc_register_component(&pdev->dev, &msm_soc_component,
 					  NULL, 0);
@@ -3604,6 +3734,11 @@ static int msm_lsm_probe(struct platform_device *pdev)
 
 static int msm_lsm_remove(struct platform_device *pdev)
 {
+	struct lsm_char_dev *lsm_dev = dev_get_drvdata(&pdev->dev);
+
+	if (lsm_dev)
+		mutex_destroy(&lsm_dev->lock);
+
 	snd_soc_unregister_component(&pdev->dev);
 
 	return 0;
