@@ -4879,6 +4879,10 @@ static const struct snd_kcontrol_new usb_audio_cfg_controls[] = {
 			UINT_MAX, 0,
 			msm_dai_q6_usb_audio_svc_interval_get,
 			msm_dai_q6_usb_audio_svc_interval_put),
+	SOC_SINGLE_EXT("USB_AUDIO_TX service_interval", SND_SOC_NOPM, 0,
+			UINT_MAX, 0,
+			msm_dai_q6_usb_audio_svc_interval_get,
+			msm_dai_q6_usb_audio_svc_interval_put),
 };
 
 static const struct snd_kcontrol_new avd_drift_config_controls[] = {
@@ -5052,6 +5056,9 @@ static int msm_dai_q6_dai_probe(struct snd_soc_dai *dai)
 				 dai_data));
 		rc = snd_ctl_add(dai->component->card->snd_card,
 				 snd_ctl_new1(&usb_audio_cfg_controls[3],
+				 dai_data));
+		rc = snd_ctl_add(dai->component->card->snd_card,
+				 snd_ctl_new1(&usb_audio_cfg_controls[5],
 				 dai_data));
 		break;
 	case SLIMBUS_0_RX:
