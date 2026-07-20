@@ -10441,6 +10441,13 @@ static int afe_spv4_get_calib_data(
 	}
 	memcpy(&calib_resp->res_cfg, &this_afe.spv4_calib_data.res_cfg,
 		sizeof(this_afe.calib_data.res_cfg));
+	if ((calib_resp->res_cfg.th_vi_ca_state < FBSP_INCORRECT_OP_MODE) ||
+			(calib_resp->res_cfg.th_vi_ca_state >= MAX_FBSP_STATE)) {
+		pr_err("%s: Error: invalid fsb state %d\n",
+			__func__, calib_resp->res_cfg.th_vi_ca_state);
+		ret = -EINVAL;
+		goto get_params_fail;
+	}
 	pr_info("%s: state %s resistance %d %d\n", __func__,
 		fbsp_state[calib_resp->res_cfg.th_vi_ca_state],
 		calib_resp->res_cfg.r0_cali_q24[SP_V2_SPKR_1],
@@ -10480,6 +10487,13 @@ int afe_spk_prot_get_calib_data(struct afe_spkr_prot_get_vi_calib *calib_resp)
 	}
 	memcpy(&calib_resp->res_cfg, &this_afe.calib_data.res_cfg,
 		sizeof(this_afe.calib_data.res_cfg));
+	if ((calib_resp->res_cfg.th_vi_ca_state < FBSP_INCORRECT_OP_MODE) ||
+			(calib_resp->res_cfg.th_vi_ca_state >= MAX_FBSP_STATE)) {
+		pr_err("%s: Error: invalid fsb state %d\n",
+			__func__, calib_resp->res_cfg.th_vi_ca_state);
+		ret = -EINVAL;
+		goto get_params_fail;
+	}
 	pr_info("%s: state %s resistance %d %d\n", __func__,
 		fbsp_state[calib_resp->res_cfg.th_vi_ca_state],
 		calib_resp->res_cfg.r0_cali_q24[SP_V2_SPKR_1],
