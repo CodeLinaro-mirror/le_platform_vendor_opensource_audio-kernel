@@ -4753,9 +4753,24 @@ struct msm_asm_config capture_cfg[] = {
 	[MSM_FRONTEND_DAI_VOICEMMODE2] = {0, 0, SNDRV_PCM_FORMAT_S16_LE},
 };
 
+static bool msm_pcm_asm_valid_fe_id(int fe_id)
+{
+	return fe_id >= MSM_FRONTEND_DAI_MULTIMEDIA1 &&
+		   fe_id < ARRAY_SIZE(playback_cfg) &&
+		   fe_id < ARRAY_SIZE(capture_cfg) &&
+		   fe_id < ARRAY_SIZE(loopback_cfg);
+}
+
 int msm_pcm_asm_cfg_get(int fe_id, int mode)
 {
-	int format = 0;
+	int format = SNDRV_PCM_FORMAT_S16_LE;
+
+	if (!msm_pcm_asm_valid_fe_id(fe_id)) {
+		pr_err("%s: Received invalid fe_id %d\n",
+			   __func__, fe_id);
+		return format;
+	}
+
 	if (mode == MSM_ASM_PLAYBACK_MODE) {
 		format = playback_cfg[fe_id].bit_format;
 	}
@@ -4809,9 +4824,8 @@ static int msm_pcm_asm_format_put(struct snd_kcontrol *kcontrol,
 		pr_debug("%s: fe_id:%d, mode:%d, format:%d, set:%d\n",
 				__func__,fe_id,mode,format,set);
 
-		if((fe_id < MSM_FRONTEND_DAI_MULTIMEDIA1) ||
-		(fe_id >= MSM_FRONTEND_DAI_MAX)) {
-			pr_err("%s: Received invalid fe_id %lu\n", __func__, fe_id);
+		if (!msm_pcm_asm_valid_fe_id(fe_id)) {
+			pr_err("%s: Received invalid fe_id %d\n", __func__, fe_id);
 			ret = -EINVAL;
 			goto done;
 		}
