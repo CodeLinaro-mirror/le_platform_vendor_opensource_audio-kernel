@@ -121,6 +121,8 @@ struct adm_ctl {
 	bool hyp_assigned;
 	int fnn_app_type;
 	bool is_channel_swapped;
+	int ec_ref_rx_open_count;
+	bool ec_ref_assigned[AFE_MAX_PORTS][MAX_COPPS_PER_PORT];
 };
 
 static struct adm_ctl			this_adm;
@@ -3642,13 +3644,20 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			open_v8.endpoint_id_2 = 0xFFFF;
 			open_v8.endpoint_id_3 = 0xFFFF;
 
-			if (((ec_ref_port_id & AFE_PORT_INVALID) !=
-				AFE_PORT_INVALID) &&
-				(path != ADM_PATH_PLAYBACK)) {
+			if ((path != ADM_PATH_PLAYBACK) &&
+				(ec_ref_port_id != AFE_PORT_INVALID)) {
 				if (ec_ref_ch != 0) {
 					open_v8.endpoint_id_2 =
 						ec_ref_port_id;
 					this_adm.ec_ref_rx = AFE_PORT_INVALID;
+					if (!this_adm.ec_ref_assigned[port_idx][copp_idx]) {
+						this_adm.ec_ref_rx_open_count++;
+						this_adm.ec_ref_assigned[port_idx][copp_idx] = true;
+						pr_debug("%s: ec_ref 0x%x assigned copp[%d][%d] cnt=%d\n",
+								__func__, ec_ref_port_id,
+								port_idx, copp_idx,
+								this_adm.ec_ref_rx_open_count);
+					}
 				} else {
 					pr_warn("%s: EC channels not set %d\n",
 						__func__, ec_ref_ch);
@@ -3879,7 +3888,6 @@ int adm_open_v2(int port_id, int path, int rate, int channel_mode, int topology,
 			ret = adm_copp_set_ec_ref_mfc_cfg(port_id, copp_idx,
 				rate, bit_width, this_adm.num_ec_ref_rx_chans,
 				this_adm.num_ec_ref_rx_chans_downmixed);
-			this_adm.num_ec_ref_rx_chans_downmixed = 0;
 			if (ret)
 				pr_err("%s: set EC REF MFC cfg failed, err %d\n",
 					__func__, ret);
@@ -4198,10 +4206,31 @@ EXPORT_SYMBOL(adm_matrix_map);
  */
 void adm_ec_ref_rx_id(int port_id)
 {
+	if (port_id == AFE_PORT_INVALID &&
+		this_adm.ec_ref_rx_open_count > 0) {
+		pr_debug("%s: skipping clear, %d COPPs still active\n",
+			__func__, this_adm.ec_ref_rx_open_count);
+		return;
+	}
 	this_adm.ec_ref_rx = port_id;
-	pr_debug("%s: ec_ref_rx:%d\n", __func__, this_adm.ec_ref_rx);
+	if (port_id == AFE_PORT_INVALID) {
+		this_adm.ec_ref_rx_open_count = 0;
+		this_adm.num_ec_ref_rx_chans = 0;
+		this_adm.ec_ref_rx_bit_width = 0;
+		this_adm.ec_ref_rx_sampling_rate = 0;
+		this_adm.num_ec_ref_rx_chans_downmixed = 0;
+	}
+	pr_debug("%s: ec_ref_rx:0x%x open_count:%d\n",
+		__func__, this_adm.ec_ref_rx,
+		this_adm.ec_ref_rx_open_count);
 }
 EXPORT_SYMBOL(adm_ec_ref_rx_id);
+
+int adm_get_ec_ref_rx_open_count(void)
+{
+	return this_adm.ec_ref_rx_open_count;
+}
+EXPORT_SYMBOL(adm_get_ec_ref_rx_open_count);
 
 /**
  * adm_num_ec_ref_rx_chans -
@@ -4357,6 +4386,15 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 
 	atomic_dec(&this_adm.copp.cnt[port_idx][copp_idx]);
 	if (!(atomic_read(&this_adm.copp.cnt[port_idx][copp_idx]))) {
+		if (this_adm.ec_ref_assigned[port_idx][copp_idx]) {
+			this_adm.ec_ref_assigned[port_idx][copp_idx] = false;
+			if (this_adm.ec_ref_rx_open_count > 0)
+				this_adm.ec_ref_rx_open_count--;
+			pr_debug("%s: ec_ref released copp[%d][%d] open_count=%d\n",
+				__func__, port_idx, copp_idx, this_adm.ec_ref_rx_open_count);
+			if (this_adm.ec_ref_rx_open_count == 0)
+				this_adm.num_ec_ref_rx_chans_downmixed = 0;
+		}
 		copp_id = adm_get_copp_id(port_idx, copp_idx);
 		pr_debug("%s: Closing ADM port_idx:%d copp_idx:%d copp_id:0x%x\n",
 			 __func__, port_idx, copp_idx, copp_id);

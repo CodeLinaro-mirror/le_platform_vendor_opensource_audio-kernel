@@ -21,6 +21,7 @@
 #include <dsp/q6core.h>
 #include "msm-dai-q6-v2.h"
 #include <asoc/core.h>
+#include "msm-pcm-routing-v2.h"
 
 #define MSM_DAI_PRI_RX_AUXPCM_DT_DEV_ID 1
 #define MSM_DAI_PRI_TX_AUXPCM_DT_DEV_ID 2
@@ -580,6 +581,27 @@ static int afe_dyn_clk_id_enum[] = {
 	Q6AFE_LPASS_CLK_ID_MCLK_5, Q6AFE_LPASS_CLK_ID_AHB_HDMI_INPUT,
 	Q6AFE_LPASS_CLK_ID_SPDIF_CORE
 };
+
+void set_eos_pending_be(bool eos, int be_idx)
+{
+	struct msm_pcm_routing_bdai_data *bdai;
+	if (be_idx < 0 || be_idx >= MSM_BACKEND_DAI_MAX) {
+		pr_err("%s: invalid be_idx %d\n", __func__, be_idx);
+		return;
+	}
+
+	bdai = &msm_bedais[be_idx];
+	if(!bdai->eos_waitq_init_done)
+	{
+		pr_warn("%s eos_waitq not initialized for be_idx %d dropping EOS",__func__,be_idx);
+		return;
+	}
+	WRITE_ONCE(bdai->eos_pending, eos);
+	if(eos == 0)
+	{
+		wake_up(&bdai->eos_waitq);
+	}
+}
 
 static int msm_dai_q6_get_tdm_clk_ref(u16 id)
 {
@@ -12076,7 +12098,7 @@ rtn:
 }
 
 static void msm_dai_q6_tdm_shutdown(struct snd_pcm_substream *substream,
-				     struct snd_soc_dai *dai)
+					 struct snd_soc_dai *dai)
 {
 	int rc = 0;
 	struct msm_dai_q6_tdm_dai_data *dai_data =
@@ -12084,7 +12106,35 @@ static void msm_dai_q6_tdm_shutdown(struct snd_pcm_substream *substream,
 	u16 group_id = dai_data->group_cfg.tdm_cfg.group_id;
 	int group_idx = 0;
 	atomic_t *group_ref = NULL;
+	struct msm_pcm_routing_bdai_data *bdai = NULL;
+	int be_idx = msm_pcm_get_be_id_from_port_id(dai->id);
+	int session_type=-1;
+	int fe_id;
+	struct msm_pcm_routing_fdai_data *fdai_check;
+	bool eos_in_flight = false;
 
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+		session_type = SESSION_TYPE_RX;
+	} else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+		session_type = SESSION_TYPE_TX;
+	} else {
+		dev_err(dai->dev,"%s invalid stream type %d",__func__,substream->stream);
+		return;
+	}
+
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK &&
+			be_idx >= 0 && be_idx < MSM_BACKEND_DAI_MAX) {
+		/* Check if any active FE on this BE actually has EOS pending */
+		for_each_set_bit(fe_id, &msm_bedais[be_idx].fe_sessions[0],
+						 MSM_FRONTEND_DAI_MAX) {
+			fdai_check = &fe_dai_map[fe_id][SESSION_TYPE_RX];
+			if (fdai_check->eos_waitq_init_done &&
+				READ_ONCE(fdai_check->eos_pending) != 0) {
+				eos_in_flight = true;
+				break;
+			}
+		}
+	}
 	group_idx = msm_dai_q6_get_group_idx(dai->id);
 	if (group_idx < 0) {
 		dev_err(dai->dev, "%s port id 0x%x not supported\n",
@@ -12097,6 +12147,21 @@ static void msm_dai_q6_tdm_shutdown(struct snd_pcm_substream *substream,
 	group_ref = &tdm_group_ref[group_idx];
 
 	if (test_bit(STATUS_PORT_STARTED, dai_data->status_mask)) {
+		if((be_idx >= 0) && (be_idx < MSM_BACKEND_DAI_MAX)) {
+			bdai = &msm_bedais[be_idx];
+			if(eos_in_flight && bdai && bdai->eos_waitq_init_done && (READ_ONCE(bdai->eos_pending) != 0)){
+				mutex_unlock(&tdm_mutex);
+				int ret = wait_event_timeout(bdai->eos_waitq,
+						 READ_ONCE(bdai->eos_pending) == 0,
+						 msecs_to_jiffies(CMD_EOS_MAX_TIMEOUT_LENGTH));
+				if (ret == 0){
+					dev_err(dai->dev,"%s timeout waiting for afe_close eos_pending to become 0\n",__func__);
+					WRITE_ONCE(bdai->eos_pending, 0);
+				}
+				mutex_lock(&tdm_mutex);
+			}
+		}
+
 		rc = afe_close(dai->id);
 		if (rc < 0) {
 			dev_err(dai->dev, "%s: fail to close AFE port 0x%x\n",

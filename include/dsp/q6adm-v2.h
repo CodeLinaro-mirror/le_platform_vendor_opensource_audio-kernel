@@ -151,6 +151,8 @@ int adm_connect_afe_port(int mode, int session_id, int port_id);
 
 void adm_ec_ref_rx_id(int  port_id);
 
+int adm_get_ec_ref_rx_open_count(void);
+
 void adm_num_ec_ref_rx_chans(int num_chans);
 
 void adm_num_ec_ref_rx_chans_downmixed(int num_chans);
