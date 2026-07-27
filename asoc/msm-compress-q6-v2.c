@@ -4120,7 +4120,7 @@ static int msm_compr_channel_map_put(struct snd_kcontrol *kcontrol,
 
 	pr_debug("%s: fe_id- %llu\n", __func__, fe_id);
 
-	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s Received out of bounds fe_id %llu\n",
 			__func__, fe_id);
 		rc = -EINVAL;
@@ -4162,7 +4162,7 @@ static int msm_compr_channel_map_get(struct snd_kcontrol *kcontrol,
 	int rc = 0, i;
 
 	pr_debug("%s: fe_id- %llu\n", __func__, fe_id);
-	if (fe_id >= MSM_FRONTEND_DAI_MM_SIZE) {
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s: Received out of bounds fe_id %llu\n",
 			__func__, fe_id);
 		rc = -EINVAL;
@@ -4196,6 +4196,7 @@ static int msm_compr_adsp_stream_cmd_put(struct snd_kcontrol *kcontrol,
 		return -EINVAL;
 	}
 
+	mutex_lock(&pdata->lock);
 	cstream = pdata->cstream[fe_id];
 	if (cstream == NULL) {
 		pr_err("%s cstream is null\n", __func__);
@@ -4208,7 +4209,6 @@ static int msm_compr_adsp_stream_cmd_put(struct snd_kcontrol *kcontrol,
 		return -EINVAL;
 	}
 
-	mutex_lock(&pdata->lock);
 	if (prtd->audio_client == NULL) {
 		pr_err("%s: audio_client is null\n", __func__);
 		ret = -EINVAL;

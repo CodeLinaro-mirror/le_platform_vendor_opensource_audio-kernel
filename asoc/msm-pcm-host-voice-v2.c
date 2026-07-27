@@ -601,6 +601,15 @@ static int hpcm_start_vocpcm(char *pcm_id, struct hpcm_drv *prtd,
 	if (prtd->mixer_conf.rx.enable && (get_tappnt_value(pcm_id) == RX)) {
 		if (hpcm_all_dais_are_ready(prtd->mixer_conf.rx.direction,
 					    tp, HPCM_PREPARED)) {
+			if (*no_of_tp >= ARRAY_SIZE(prtd->start_cmd.tap_pnt)) {
+			       pr_err("%s: no_of_tp %d exceeds tap_pnt array size, resetting\n",
+				      __func__, *no_of_tp);
+				memset(&prtd->start_cmd, 0, sizeof(struct start_cmd));
+				/* Also reset mixer config to prevent re-entry into bad state */
+				hpcm_reset_mixer_config(prtd);
+				return -EINVAL;
+			}
+
 			pr_debug("%s: RX conditions met\n", __func__);
 			tap_pnt[*no_of_tp].tap_point =
 					VSS_IVPCM_TAP_POINT_RX_DEFAULT;
@@ -615,6 +624,16 @@ static int hpcm_start_vocpcm(char *pcm_id, struct hpcm_drv *prtd,
 	if (prtd->mixer_conf.tx.enable && (get_tappnt_value(pcm_id) == TX)) {
 		if (hpcm_all_dais_are_ready(prtd->mixer_conf.tx.direction,
 					    tp, HPCM_PREPARED)) {
+
+			if (*no_of_tp >= ARRAY_SIZE(prtd->start_cmd.tap_pnt)) {
+				pr_err("%s: no_of_tp %d exceeds tap_pnt array size, resetting\n",
+				 __func__, *no_of_tp);
+				memset(&prtd->start_cmd, 0, sizeof(struct start_cmd));
+				/* Also reset mixer config to prevent re-entry into bad state */
+				hpcm_reset_mixer_config(prtd);
+				return -EINVAL;
+			}
+
 			pr_debug("%s: TX conditions met\n", __func__);
 			tap_pnt[*no_of_tp].tap_point =
 						VSS_IVPCM_TAP_POINT_TX_DEFAULT;

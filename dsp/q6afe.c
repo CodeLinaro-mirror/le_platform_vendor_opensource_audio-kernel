@@ -1327,6 +1327,9 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 				    sizeof(struct afe_port_mod_evt_rsp_hdr));
 				uint32_t *dc_presence_flag = num_channels + 1;
 
+				if (*num_channels < 1 || *num_channels > 4)
+					return -EINVAL;
+
 				for (i = 0; i < *num_channels; i++) {
 					if (dc_presence_flag[i] == 1)
 						dc_detected = true;
@@ -8555,6 +8558,14 @@ static int afe_sidetone_iir(u16 tx_port_id)
 		pr_debug("%s: adding 2 to size:%d\n", __func__, size);
 		size = size + 2;
 	}
+
+	if (size > MAX_SIDETONE_IIR_DATA_SIZE) {
+		pr_err("%s: iir_config size is out of bounds:%d\n", __func__, size);
+		mutex_unlock(&this_afe.cal_data[cal_index]->lock);
+		ret = -EINVAL;
+		goto done;
+	}
+
 	memcpy(&filter_data.iir_config, &st_iir_cal_info->iir_config, size);
 	mutex_unlock(&this_afe.cal_data[cal_index]->lock);
 
@@ -10441,6 +10452,13 @@ static int afe_spv4_get_calib_data(
 	}
 	memcpy(&calib_resp->res_cfg, &this_afe.spv4_calib_data.res_cfg,
 		sizeof(this_afe.calib_data.res_cfg));
+	if ((calib_resp->res_cfg.th_vi_ca_state < FBSP_INCORRECT_OP_MODE) ||
+			(calib_resp->res_cfg.th_vi_ca_state >= MAX_FBSP_STATE)) {
+		pr_err("%s: Error: invalid fsb state %d\n",
+			__func__, calib_resp->res_cfg.th_vi_ca_state);
+		ret = -EINVAL;
+		goto get_params_fail;
+	}
 	pr_info("%s: state %s resistance %d %d\n", __func__,
 		fbsp_state[calib_resp->res_cfg.th_vi_ca_state],
 		calib_resp->res_cfg.r0_cali_q24[SP_V2_SPKR_1],
@@ -10480,6 +10498,13 @@ int afe_spk_prot_get_calib_data(struct afe_spkr_prot_get_vi_calib *calib_resp)
 	}
 	memcpy(&calib_resp->res_cfg, &this_afe.calib_data.res_cfg,
 		sizeof(this_afe.calib_data.res_cfg));
+	if ((calib_resp->res_cfg.th_vi_ca_state < FBSP_INCORRECT_OP_MODE) ||
+			(calib_resp->res_cfg.th_vi_ca_state >= MAX_FBSP_STATE)) {
+		pr_err("%s: Error: invalid fsb state %d\n",
+			__func__, calib_resp->res_cfg.th_vi_ca_state);
+		ret = -EINVAL;
+		goto get_params_fail;
+	}
 	pr_info("%s: state %s resistance %d %d\n", __func__,
 		fbsp_state[calib_resp->res_cfg.th_vi_ca_state],
 		calib_resp->res_cfg.r0_cali_q24[SP_V2_SPKR_1],
