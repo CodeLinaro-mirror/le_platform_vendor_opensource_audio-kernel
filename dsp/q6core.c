@@ -1023,6 +1023,7 @@ int32_t q6core_avcs_load_unload_modules(struct avcs_load_unload_modules_payload
 	size_t packet_size = 0,  payload_size = 0;
 	struct avcs_cmd_dynamic_modules *mod = NULL;
 	int num_modules;
+	int32_t adsp_ready = 0;
 	unsigned long timeout;
 
 	if (payload == NULL) {
@@ -1034,9 +1035,10 @@ int32_t q6core_avcs_load_unload_modules(struct avcs_load_unload_modules_payload
 		&& (preload_type == AVCS_LOAD_MODULES)) {
 		timeout = jiffies +
 			msecs_to_jiffies(ADSP_STATE_READY_TIMEOUT_MS);
-
+		msleep(100);
 		do {
-			q6core_is_adsp_ready();
+			adsp_ready = q6core_is_adsp_ready();
+
 			if (q6core_lcl.param == ADSP_MODULES_READY_AVS_STATE) {
 				pr_debug("%s: ADSP state up with all modules loaded\n",
 					 __func__);
@@ -1055,6 +1057,10 @@ int32_t q6core_avcs_load_unload_modules(struct avcs_load_unload_modules_payload
 		if (q6core_lcl.param != ADSP_MODULES_READY_AVS_STATE)
 			pr_err("%s: all modules might be not loaded yet on ADSP\n",
 				__func__);
+	}
+	/*  Still if !adsp_ready, dont proceed further */
+	if (!adsp_ready) {
+		return -ENODEV;
 	}
 	mutex_lock(&(q6core_lcl.cmd_lock));
 	num_modules = payload->num_modules;
@@ -1826,7 +1832,7 @@ static int q6core_send_custom_topologies(void)
 
 		timeout = jiffies +
 			msecs_to_jiffies(ADSP_STATE_READY_TIMEOUT_MS);
-
+                msleep(100);
 		do {
 			adsp_ready = q6core_is_adsp_ready();
 			pr_debug("%s: ADSP Audio is %s\n", __func__,
