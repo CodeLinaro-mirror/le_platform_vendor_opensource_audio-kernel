@@ -948,6 +948,9 @@ static void swrm_wait_for_fifo_avail(struct swr_mstr_ctrl *swrm, int swrm_rd_wr)
 	u32 fifo_outstanding_cmd;
 	u32 fifo_retry_count = SWR_OVERFLOW_RETRY_COUNT;
 
+	if (!swrm->dev_up) {
+        	return;
+	}
 	if (swrm_rd_wr) {
 		/* Check for fifo underflow during read */
 		/* Check no of outstanding commands in fifo before read */
@@ -3828,7 +3831,7 @@ static int swrm_runtime_resume(struct device *dev)
 			swrm->req_clk_switch = false;
 		mutex_unlock(&swrm->reslock);
 		mutex_unlock(&swrm->runtime_lock);
-		return 0;
+		return -ENODEV;
 	}
 
 	if (swrm_request_hw_vote(swrm, LPASS_AUDIO_CORE, true)) {
@@ -4334,7 +4337,7 @@ int swrm_wcd_notify(struct platform_device *pdev, u32 id, void *data)
 		dev_dbg(swrm->dev, "%s: swr master down called\n", __func__);
 		mutex_lock(&swrm->mlock);
 		if (swrm->state == SWR_MSTR_DOWN)
-			dev_dbg(swrm->dev, "%s:SWR master is already Down:%d\n",
+			dev_err(swrm->dev, "%s:SWR master is already Down:%d\n",
 				__func__, swrm->state);
 		else
 			swrm_device_down(&pdev->dev);
