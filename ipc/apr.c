@@ -529,16 +529,15 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 				pr_err("%s: adsp not up rproc is NULL\n", __func__);
 				return NULL;
 			} else {
-				apr_adsp_up();
-				pr_info("%s:adsp Up,updated adsp status using rproc boot status\n"
-					, __func__);
+				pr_info("%s :adsp rproc booted up,waiting for audio_pd service up \n", __func__);
+				//apr_adsp_up();
 				spin_lock(&apr_priv->apr_lock);
 				apr_priv->is_initial_boot = false;
 				spin_unlock(&apr_priv->apr_lock);
 				apr_reg_initial_bootup = false;
 			}
 		}
-		pr_debug("%s: adsp Up\n", __func__);
+		pr_debug("%s: adsp booted Up\n", __func__);
 	} else if (dest_id == APR_DEST_MODEM) {
 		if (apr_get_modem_state() == APR_SUBSYS_DOWN) {
 			if (is_modem_up) {
@@ -1127,6 +1126,7 @@ static int apr_notifier_service_cb(struct notifier_block *this,
 			apr_modem_up();
 		else
 			apr_adsp_up();
+
 		spin_lock(&apr_priv->apr_lock);
 		apr_priv->is_initial_boot = false;
 		spin_unlock(&apr_priv->apr_lock);
