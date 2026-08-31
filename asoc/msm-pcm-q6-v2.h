@@ -62,6 +62,9 @@ struct msm_audio_in_frame_info {
 
 struct msm_audio {
 	struct snd_pcm_substream *substream;
+	int fedai_id;
+	int stream_id;
+	bool closing;
 	unsigned int pcm_size;
 	unsigned int pcm_count;
 	unsigned int pcm_irq_pos;       /* IRQ position */

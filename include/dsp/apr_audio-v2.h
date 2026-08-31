@@ -5760,6 +5760,8 @@ struct afe_param_id_lpass_core_shared_clk_cfg {
 #define VPM_TX_DM_FLUENCE_EF_COPP_TOPOLOGY		0x10000005
 #define AUDIO_RX_MONO_VOIP_COPP_TOPOLOGY		0x11000101
 #define VPM_TX_VOICE_FLUENCE_NN_COPP_TOPOLOGY		0x10028008
+#define AUDIO_TX_FluenceV9_Auto_SM_HFP_ECNS		0x1FFF0001
+#define AUDIO_TX_FluenceV9_Auto_MM_HFP_ECNS		0x1FFF0002
 
 /* Memory map regions command payload used by the
  * #ASM_CMD_SHARED_MEM_MAP_REGIONS ,#ADM_CMD_SHARED_MEM_MAP_REGIONS
