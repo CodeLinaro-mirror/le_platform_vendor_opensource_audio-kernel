@@ -50,7 +50,7 @@
 #define SESSION_MAX 8
 
 #define ENC_FRAMES_PER_BUFFER 0x01
-
+#define RTIC_EVENT_ACK_MAX_PARAM_SIZE 508U
 enum {
 	ASM_TOPOLOGY_CAL = 0,
 	ASM_CUSTOM_TOP_CAL,
@@ -9361,7 +9361,8 @@ int q6asm_send_rtic_event_ack(struct audio_client *ac,
 			      void *param, uint32_t params_length)
 {
 	char *asm_params = NULL;
-	int sz, rc;
+	size_t sz;
+	int rc;
 	struct avs_param_rtic_event_ack ack;
 
 	if (!param || !ac) {
@@ -9371,16 +9372,21 @@ int q6asm_send_rtic_event_ack(struct audio_client *ac,
 		goto done;
 	}
 
-	sz = sizeof(struct avs_param_rtic_event_ack) + params_length;
+	if (params_length > RTIC_EVENT_ACK_MAX_PARAM_SIZE) {
+		pr_err("%s: invalid params_length=%u\n",
+                       __func__, params_length);
+                rc = -EINVAL;
+                goto done;
+        }
+
+	sz = sizeof(struct avs_param_rtic_event_ack) + (size_t)params_length;
 	asm_params = kzalloc(sz, GFP_KERNEL);
 	if (!asm_params) {
 		rc = -ENOMEM;
 		goto done;
 	}
 
-	q6asm_add_hdr_async(ac, &ack.hdr,
-			    sizeof(struct avs_param_rtic_event_ack) +
-			    params_length, TRUE);
+	q6asm_add_hdr_async(ac, &ack.hdr, sz, TRUE);
 	atomic_set(&ac->cmd_state, -1);
 	ack.hdr.opcode = ASM_STREAM_CMD_SET_ENCDEC_PARAM_V2;
 	ack.encdec.param_id = AVS_PARAM_ID_RTIC_EVENT_ACK;
